@@ -1,8 +1,8 @@
-/** 《균열의 시대》 world 데이터를 그대로 가져온다(복사하지 않는다, GDD §10). */
-import sites from '../../../docs/grand-strategy/data/world/sites.json';
-import regions from '../../../docs/grand-strategy/data/world/regions.json';
-import factions from '../../../docs/grand-strategy/data/world/factions.json';
-import map from '../../../docs/grand-strategy/data/world/map.json';
+/** 《균열의 시대》 world 데이터. 게임이 혼자 빌드되도록 src/data/world/ 에 사본을 둔다(원본: docs/grand-strategy/data/world, 갱신: node tools/sync-world.mjs). */
+import sites from './world/sites.json';
+import regions from './world/regions.json';
+import factions from './world/factions.json';
+import map from './world/map.json';
 import type { WorldData, RawSite, RawRegion, RawFaction, RawMap } from '../core/world';
 
 export const WORLD_DATA: WorldData = {

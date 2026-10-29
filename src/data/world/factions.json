@@ -1,0 +1,127 @@
+[
+ {
+  "id": "fac_01",
+  "name": "제국 섭정부",
+  "capital": "C001",
+  "playable": "start",
+  "color": "#9b2335",
+  "ruler": "H0001"
+ },
+ {
+  "id": "fac_02",
+  "name": "북부 변경백령",
+  "capital": "C037",
+  "playable": "start",
+  "color": "#2f5d8a",
+  "ruler": "H0006"
+ },
+ {
+  "id": "fac_03",
+  "name": "드워프 산왕국",
+  "capital": "C008",
+  "playable": "start",
+  "color": "#8a6d3b",
+  "ruler": "H0008"
+ },
+ {
+  "id": "fac_04",
+  "name": "엘프 삼림왕국",
+  "capital": "C013",
+  "playable": "start",
+  "color": "#3f7f4f",
+  "ruler": "H0010"
+ },
+ {
+  "id": "fac_05",
+  "name": "동부 상인 공화국",
+  "capital": "C017",
+  "playable": "start",
+  "color": "#c08a1e",
+  "ruler": "H0012"
+ },
+ {
+  "id": "fac_06",
+  "name": "남부 왕국",
+  "capital": "C025",
+  "playable": "start",
+  "color": "#6b3fa0",
+  "ruler": "H0014"
+ },
+ {
+  "id": "fac_07",
+  "name": "성광 교단국",
+  "capital": "C004",
+  "playable": "start",
+  "color": "#d8d0b0",
+  "ruler": "H0016"
+ },
+ {
+  "id": "fac_08",
+  "name": "망명 마법사 공국",
+  "capital": "C050",
+  "playable": "start",
+  "color": "#2aa198",
+  "ruler": "H0019"
+ },
+ {
+  "id": "fac_09",
+  "name": "남부 유목 연합",
+  "playable": "start",
+  "color": "#b5562b",
+  "ruler": "H0021"
+ },
+ {
+  "id": "fac_10",
+  "name": "잿빛 교단",
+  "capital": "C005",
+  "playable": "unlock_unification",
+  "color": "#5a5a5a",
+  "ruler": "H0023"
+ },
+ {
+  "id": "fac_11",
+  "name": "서부 공작령",
+  "capital": "C045",
+  "playable": "start",
+  "color": "#4a6fd1",
+  "ruler": "H0025"
+ },
+ {
+  "id": "fac_12",
+  "name": "해적 연맹",
+  "capital": "C034",
+  "playable": "start",
+  "color": "#222f3e",
+  "ruler": "H0028"
+ },
+ {
+  "id": "fac_13",
+  "name": "자유 용병단 검은 창",
+  "playable": "start",
+  "color": "#3d3d3d",
+  "ruler": "H0029"
+ },
+ {
+  "id": "fac_14",
+  "name": "중동 호수 백작령",
+  "capital": "C041",
+  "playable": "start",
+  "color": "#5fa8a0",
+  "ruler": "H0030"
+ },
+ {
+  "id": "fac_15",
+  "name": "북서 고원 씨족",
+  "capital": "C031",
+  "playable": "start",
+  "color": "#7d5a3c",
+  "ruler": "H0033"
+ },
+ {
+  "id": "fac_16",
+  "name": "황제 친위파",
+  "playable": "event",
+  "color": "#c9a227",
+  "ruler": "H0040"
+ }
+]

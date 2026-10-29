@@ -1,0 +1,81 @@
+[
+ {
+  "id": "reg_r01",
+  "name": "중앙 제도",
+  "races": [
+   "race_human"
+  ]
+ },
+ {
+  "id": "reg_r02",
+  "name": "북부 철산",
+  "races": [
+   "race_dwarf"
+  ]
+ },
+ {
+  "id": "reg_r03",
+  "name": "서부 대삼림",
+  "races": [
+   "race_elf"
+  ]
+ },
+ {
+  "id": "reg_r04",
+  "name": "동부 해안",
+  "races": [
+   "race_human",
+   "race_halfling"
+  ]
+ },
+ {
+  "id": "reg_r05",
+  "name": "남부 사막",
+  "races": [
+   "race_orc"
+  ]
+ },
+ {
+  "id": "reg_r06",
+  "name": "남서 곡창",
+  "races": [
+   "race_human"
+  ]
+ },
+ {
+  "id": "reg_r07",
+  "name": "북서 고원",
+  "races": [
+   "race_human",
+   "race_orc"
+  ]
+ },
+ {
+  "id": "reg_r08",
+  "name": "남동 군도",
+  "races": [
+   "race_human"
+  ]
+ },
+ {
+  "id": "reg_r09",
+  "name": "북동 균열변경",
+  "races": [
+   "race_human"
+  ]
+ },
+ {
+  "id": "reg_r10",
+  "name": "중동 호수지대",
+  "races": [
+   "race_human"
+  ]
+ },
+ {
+  "id": "reg_r11",
+  "name": "중서 구릉",
+  "races": [
+   "race_human"
+  ]
+ }
+]

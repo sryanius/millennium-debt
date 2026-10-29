@@ -1,0 +1,3217 @@
+[
+ {
+  "id": "C001",
+  "name": "아르덴",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r01",
+  "origin": [
+   "E0013",
+   "E0158"
+  ],
+  "adjacent": [
+   "P001",
+   "P002",
+   "P057",
+   "P081",
+   "C005",
+   "C007",
+   "P042"
+  ],
+  "specialty": "황궁: 명망 +, 황제 보유 시 \"조칙\" 명령 가능. 슬롯 16",
+  "population": 220000,
+  "owner": "fac_01",
+  "pos": [
+   170,
+   110
+  ]
+ },
+ {
+  "id": "C002",
+  "name": "벨로크",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r01",
+  "origin": [
+   "E0014",
+   "E0027",
+   "E0221"
+  ],
+  "adjacent": [
+   "P038",
+   "P081",
+   "C005",
+   "C007"
+  ],
+  "specialty": "벨로크 가 본가. 징세 효율 +10%",
+  "population": 220000,
+  "owner": "fac_01",
+  "pos": [
+   190,
+   110
+  ]
+ },
+ {
+  "id": "C003",
+  "name": "카스테르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0018"
+  ],
+  "adjacent": [
+   "P001",
+   "P017",
+   "P082",
+   "P084",
+   "C006"
+  ],
+  "specialty": "서쪽 가도 집산지. 중장기사 생산",
+  "population": 100000,
+  "owner": "fac_01",
+  "pos": [
+   130,
+   110
+  ]
+ },
+ {
+  "id": "C004",
+  "name": "루멘",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r01",
+  "origin": [
+   "E0047",
+   "E0048",
+   "E0131"
+  ],
+  "adjacent": [
+   "P002",
+   "P019",
+   "P051",
+   "C006"
+  ],
+  "specialty": "대성당: 신앙 민심 +, 사제단 징모. 교황 소재",
+  "population": 220000,
+  "owner": "fac_07",
+  "pos": [
+   170,
+   150
+  ]
+ },
+ {
+  "id": "C005",
+  "name": "하이펠트",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0045",
+   "E0197",
+   "E0235",
+   "E0245"
+  ],
+  "adjacent": [
+   "P083",
+   "P086",
+   "C001",
+   "C002"
+  ],
+  "specialty": "곡물 집산지: 병량 +. 민심이 잿빛 교단에 우호",
+  "population": 100000,
+  "owner": "fac_10",
+  "pos": [
+   170,
+   90
+  ]
+ },
+ {
+  "id": "C006",
+  "name": "도른",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0076",
+   "E0101",
+   "E0164",
+   "E0246"
+  ],
+  "adjacent": [
+   "P003",
+   "P018",
+   "P056",
+   "C003",
+   "C004",
+   "C048"
+  ],
+  "specialty": "성벽 내구 +20%. 모르간★ 출생지",
+  "population": 100000,
+  "owner": "fac_10",
+  "pos": [
+   150,
+   130
+  ]
+ },
+ {
+  "id": "C007",
+  "name": "에스펠",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r01",
+  "origin": [
+   "E0035",
+   "E0112",
+   "E0253"
+  ],
+  "adjacent": [
+   "P042",
+   "C001",
+   "C002",
+   "C044"
+  ],
+  "specialty": "\"검게 탄 탑\" 유적: 마법 공방 건설 가능(유일한 인간 세력 마나 생산 후보)",
+  "population": 40000,
+  "owner": "fac_01",
+  "pos": [
+   190,
+   90
+  ]
+ },
+ {
+  "id": "C008",
+  "name": "카즈둠",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r02",
+  "origin": [
+   "E0004",
+   "E0017",
+   "E0049"
+  ],
+  "adjacent": [
+   "P004",
+   "P060",
+   "P065",
+   "P043",
+   "C009",
+   "C010"
+  ],
+  "specialty": "맹약의 인장(드워프). 대장간 슬롯 2배. 기병 불가",
+  "population": 220000,
+  "owner": "fac_03",
+  "pos": [
+   170,
+   30
+  ]
+ },
+ {
+  "id": "C009",
+  "name": "바라크하임",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0068"
+  ],
+  "adjacent": [
+   "P005",
+   "P061",
+   "C008"
+  ],
+  "specialty": "인구 성장 보너스(드워프 기준)",
+  "population": 100000,
+  "owner": "fac_03",
+  "pos": [
+   150,
+   30
+  ]
+ },
+ {
+  "id": "C010",
+  "name": "그람둔",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0055",
+   "E0068",
+   "E0175",
+   "E0283"
+  ],
+  "adjacent": [
+   "P007",
+   "P063",
+   "C008",
+   "C012",
+   "C011"
+  ],
+  "specialty": "드워프 대포 생산 유일 거점",
+  "population": 100000,
+  "owner": "fac_03",
+  "pos": [
+   190,
+   30
+  ]
+ },
+ {
+  "id": "C011",
+  "name": "노르바르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0030",
+   "E0071",
+   "E0144",
+   "E0272"
+  ],
+  "adjacent": [
+   "P004",
+   "P062",
+   "P086",
+   "C010"
+  ],
+  "specialty": "인간 다수 도시: 인간 장수 등용 가능. 교역 +10%",
+  "population": 100000,
+  "owner": "fac_03",
+  "pos": [
+   170,
+   50
+  ]
+ },
+ {
+  "id": "C012",
+  "name": "토르가르트",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r02",
+  "origin": [
+   "E0067",
+   "E0182",
+   "E0266"
+  ],
+  "adjacent": [
+   "P006",
+   "P079",
+   "P040",
+   "P064",
+   "C010"
+  ],
+  "specialty": "겨울 봉쇄 면제(드워프 전용). 수비 +15%",
+  "population": 40000,
+  "owner": "fac_03",
+  "pos": [
+   210,
+   10
+  ]
+ },
+ {
+  "id": "C013",
+  "name": "실바니엘",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r03",
+  "origin": [
+   "E0003",
+   "E0017",
+   "E0133"
+  ],
+  "adjacent": [
+   "P009",
+   "P039",
+   "P058",
+   "C014",
+   "C016"
+  ],
+  "specialty": "세계수: 마나 +, 인구 성장 느림. 맹약의 인장(엘프). 수비 최강",
+  "population": 220000,
+  "owner": "fac_04",
+  "pos": [
+   30,
+   90
+  ]
+ },
+ {
+  "id": "C014",
+  "name": "라엘린",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r03",
+  "origin": [
+   "E0073",
+   "E0263"
+  ],
+  "adjacent": [
+   "P008",
+   "P077",
+   "C013"
+  ],
+  "specialty": "엘프 궁기병 생산",
+  "population": 100000,
+  "owner": "fac_04",
+  "pos": [
+   50,
+   70
+  ]
+ },
+ {
+  "id": "C015",
+  "name": "티아렌",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r03",
+  "origin": [
+   "E0073",
+   "E0260"
+  ],
+  "adjacent": [
+   "P009",
+   "P016",
+   "C016"
+  ],
+  "specialty": "보수파 거점. 혼혈 등용 불가",
+  "population": 100000,
+  "owner": "fac_04",
+  "pos": [
+   50,
+   110
+  ]
+ },
+ {
+  "id": "C016",
+  "name": "아엘라스",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r03",
+  "origin": [
+   "E0073",
+   "E0117",
+   "E0185",
+   "E0270"
+  ],
+  "adjacent": [
+   "P010",
+   "P041",
+   "P084",
+   "C013",
+   "C015"
+  ],
+  "specialty": "혼혈·망명자 도시: 혼혈 영웅 출현율 ↑. 상아탑과 인접",
+  "population": 40000,
+  "owner": "fac_04",
+  "pos": [
+   70,
+   110
+  ]
+ },
+ {
+  "id": "C017",
+  "name": "벨마르",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r04",
+  "origin": [
+   "E0038",
+   "E0039",
+   "E0180"
+  ],
+  "adjacent": [
+   "P020",
+   "P021",
+   "P085",
+   "C018",
+   "C019"
+  ],
+  "specialty": "대금고: 금 수입 +30%. 집정 선거 이벤트",
+  "population": 220000,
+  "owner": "fac_05",
+  "pos": [
+   270,
+   90
+  ]
+ },
+ {
+  "id": "C018",
+  "name": "코르산",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r04",
+  "origin": [
+   "E0040",
+   "E0157",
+   "E0212"
+  ],
+  "adjacent": [
+   "P022",
+   "P023",
+   "P087",
+   "C017"
+  ],
+  "specialty": "조선 +. 코르산파 잔당(반란 위험)",
+  "population": 100000,
+  "owner": "fac_05",
+  "pos": [
+   270,
+   110
+  ]
+ },
+ {
+  "id": "C019",
+  "name": "메릴호른",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r04",
+  "origin": [
+   "E0122",
+   "E0267"
+  ],
+  "adjacent": [
+   "P027",
+   "P053",
+   "C017",
+   "C020"
+  ],
+  "specialty": "교단 공동 관할: 사원 슬롯 고정. 신앙 민심",
+  "population": 100000,
+  "owner": "fac_05",
+  "pos": [
+   270,
+   70
+  ]
+ },
+ {
+  "id": "C020",
+  "name": "오스트하펜",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r04",
+  "origin": [
+   "E0134",
+   "E0256"
+  ],
+  "adjacent": [
+   "P028",
+   "C019"
+  ],
+  "specialty": "조선소: 전함 건조 -25%",
+  "population": 100000,
+  "owner": "fac_05",
+  "pos": [
+   290,
+   70
+  ]
+ },
+ {
+  "id": "C021",
+  "name": "세레나",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r04",
+  "origin": [
+   "E0043",
+   "E0257",
+   "E0271"
+  ],
+  "adjacent": [
+   "P024",
+   "P029",
+   "P087"
+  ],
+  "specialty": "매력 성장 이벤트. 문화 명망",
+  "population": 40000,
+  "owner": "fac_05",
+  "pos": [
+   290,
+   130
+  ]
+ },
+ {
+  "id": "C022",
+  "name": "자하르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r05",
+  "origin": [
+   "E0044",
+   "E0258"
+  ],
+  "adjacent": [
+   "P074",
+   "P026",
+   "P070",
+   "P071",
+   "P045",
+   "P088",
+   "P096",
+   "C023"
+  ],
+  "specialty": "캐러밴 시장: 교역 +. 유목민 포위 시 민심 하락",
+  "population": 100000,
+  "owner": "fac_06",
+  "pos": [
+   170,
+   190
+  ]
+ },
+ {
+  "id": "C023",
+  "name": "케슈",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r05",
+  "origin": [
+   "E0125",
+   "E0261"
+  ],
+  "adjacent": [
+   "P075",
+   "P092",
+   "C022"
+  ],
+  "specialty": "토후 자치. 점령 시 사막 기병 징모",
+  "population": 100000,
+  "pos": [
+   210,
+   190
+  ]
+ },
+ {
+  "id": "C024",
+  "name": "움 라히",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r05",
+  "origin": [
+   "E0139"
+  ],
+  "adjacent": [
+   "P071",
+   "P049",
+   "C029"
+  ],
+  "specialty": "유목 연합이 점령하면 \"본거지\" 승격 이벤트",
+  "population": 40000,
+  "pos": [
+   130,
+   210
+  ]
+ },
+ {
+  "id": "C025",
+  "name": "오르블랑",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r06",
+  "origin": [
+   "E0023",
+   "E0091",
+   "E0106"
+  ],
+  "adjacent": [
+   "P025",
+   "P069",
+   "P090",
+   "C026",
+   "C030"
+  ],
+  "specialty": "남조 왕궁: 정통성 명망. 중장기사 생산 -15%",
+  "population": 220000,
+  "owner": "fac_06",
+  "pos": [
+   90,
+   170
+  ]
+ },
+ {
+  "id": "C026",
+  "name": "발리스",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0092"
+  ],
+  "adjacent": [
+   "P018",
+   "C025",
+   "C027"
+  ],
+  "specialty": "성벽 +. 북쪽 관문 [S18] 연결",
+  "population": 100000,
+  "owner": "fac_06",
+  "pos": [
+   110,
+   150
+  ]
+ },
+ {
+  "id": "C027",
+  "name": "몽클레르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0077",
+   "E0093"
+  ],
+  "adjacent": [
+   "P003",
+   "P019",
+   "P056",
+   "C026"
+  ],
+  "specialty": "몽클레르 가 본가(세베린★)",
+  "population": 100000,
+  "owner": "fac_06",
+  "pos": [
+   130,
+   150
+  ]
+ },
+ {
+  "id": "C028",
+  "name": "샹파르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0094",
+   "E0147",
+   "E0195"
+  ],
+  "adjacent": [
+   "P076",
+   "P090"
+  ],
+  "specialty": "포도주: 금 +. 용병 고용 비용 -10%",
+  "population": 100000,
+  "owner": "fac_06",
+  "pos": [
+   70,
+   170
+  ]
+ },
+ {
+  "id": "C029",
+  "name": "리보른",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0041",
+   "E0098",
+   "E0167",
+   "E0226"
+  ],
+  "adjacent": [
+   "P076",
+   "P033",
+   "C024"
+  ],
+  "specialty": "남부 유일 외항. 항구 [S33]",
+  "population": 100000,
+  "owner": "fac_06",
+  "pos": [
+   50,
+   190
+  ]
+ },
+ {
+  "id": "C030",
+  "name": "세인트 아르노",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r06",
+  "origin": [
+   "E0100",
+   "E0128",
+   "E0281"
+  ],
+  "adjacent": [
+   "P074",
+   "P055",
+   "C025"
+  ],
+  "specialty": "교단 영지(남부 안의 섬). 사제 징모",
+  "population": 40000,
+  "owner": "fac_07",
+  "pos": [
+   110,
+   190
+  ]
+ },
+ {
+  "id": "C031",
+  "name": "하이크래그",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r07",
+  "origin": [
+   "E0070",
+   "E0213"
+  ],
+  "adjacent": [
+   "P078",
+   "P072",
+   "P046",
+   "C032",
+   "C033"
+  ],
+  "specialty": "오크·인간 혼성 병과. 절벽 수비 +",
+  "population": 100000,
+  "owner": "fac_15",
+  "pos": [
+   50,
+   10
+  ]
+ },
+ {
+  "id": "C032",
+  "name": "울프덴",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r07",
+  "origin": [
+   "E0070",
+   "E0191"
+  ],
+  "adjacent": [
+   "P077",
+   "C031"
+  ],
+  "specialty": "늑대기병 생산",
+  "population": 40000,
+  "owner": "fac_15",
+  "pos": [
+   30,
+   30
+  ]
+ },
+ {
+  "id": "C033",
+  "name": "스카르호",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r07",
+  "origin": [
+   "E0026",
+   "E0070",
+   "E0213"
+  ],
+  "adjacent": [
+   "P079",
+   "P073",
+   "C031"
+  ],
+  "specialty": "은 광산 [S73] 연결",
+  "population": 40000,
+  "owner": "fac_15",
+  "pos": [
+   90,
+   10
+  ]
+ },
+ {
+  "id": "C034",
+  "name": "코르바 요새",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r08",
+  "origin": [
+   "E0145",
+   "E0194"
+  ],
+  "adjacent": [
+   "P080",
+   "P030",
+   "P031",
+   "P034",
+   "C036",
+   "P097"
+  ],
+  "specialty": "해적 전함 건조. 약탈 수입",
+  "population": 40000,
+  "owner": "fac_12",
+  "pos": [
+   290,
+   190
+  ]
+ },
+ {
+  "id": "C035",
+  "name": "이슬라 베르데",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r08",
+  "origin": [
+   "E0136",
+   "E0193"
+  ],
+  "adjacent": [
+   "P080",
+   "P029",
+   "P032"
+  ],
+  "specialty": "향신료 농장: 금 +",
+  "population": 40000,
+  "owner": "fac_05",
+  "pos": [
+   270,
+   150
+  ]
+ },
+ {
+  "id": "C036",
+  "name": "토르톨라",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r08",
+  "origin": [
+   "E0052",
+   "E0142",
+   "E0234"
+  ],
+  "adjacent": [
+   "P035",
+   "C034"
+  ],
+  "specialty": "해적 잔당 거주. 점령 시 선장 등용",
+  "population": 40000,
+  "pos": [
+   310,
+   210
+  ]
+ },
+ {
+  "id": "C037",
+  "name": "아이언게이트",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r09",
+  "origin": [
+   "E0063",
+   "E0082",
+   "E0184"
+  ],
+  "adjacent": [
+   "P011",
+   "P099",
+   "P059",
+   "P047",
+   "C040"
+  ],
+  "specialty": "철문: 성벽 내구 2배. 마물 전투 경험치 +",
+  "population": 220000,
+  "owner": "fac_02",
+  "pos": [
+   270,
+   30
+  ]
+ },
+ {
+  "id": "C038",
+  "name": "그림홀드",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0065",
+   "E0085",
+   "E0216"
+  ],
+  "adjacent": [
+   "P012",
+   "P099",
+   "P054",
+   "C039"
+  ],
+  "specialty": "드워프 포 60문 고정 배치",
+  "population": 100000,
+  "owner": "fac_02",
+  "pos": [
+   250,
+   30
+  ]
+ },
+ {
+  "id": "C039",
+  "name": "노르덴바흐",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0056",
+   "E0065",
+   "E0227"
+  ],
+  "adjacent": [
+   "P007",
+   "P013",
+   "P052",
+   "C038",
+   "C042"
+  ],
+  "specialty": "아델라 성지 [S52] 연결. 설원 전투 +",
+  "population": 100000,
+  "owner": "fac_02",
+  "pos": [
+   230,
+   50
+  ]
+ },
+ {
+  "id": "C040",
+  "name": "베르겐프리트",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r09",
+  "origin": [
+   "E0065",
+   "E0150"
+  ],
+  "adjacent": [
+   "P098",
+   "P028",
+   "P036",
+   "C037"
+  ],
+  "specialty": "재건 성벽. 북해 항구 [S36]",
+  "population": 40000,
+  "owner": "fac_02",
+  "pos": [
+   290,
+   50
+  ]
+ },
+ {
+  "id": "C041",
+  "name": "라크엘름",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r10",
+  "origin": [
+   "E0031",
+   "E0069",
+   "E0148",
+   "E0233"
+  ],
+  "adjacent": [
+   "P014",
+   "P037",
+   "P048",
+   "P089",
+   "C042"
+  ],
+  "specialty": "수상성: 기병 공성 불가, 수군으로만 포위 가능",
+  "population": 100000,
+  "owner": "fac_14",
+  "pos": [
+   230,
+   110
+  ]
+ },
+ {
+  "id": "C042",
+  "name": "모르덴",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r10",
+  "origin": [
+   "E0069",
+   "E0174",
+   "E0206",
+   "E0247"
+  ],
+  "adjacent": [
+   "P015",
+   "P050",
+   "P083",
+   "C039",
+   "C041"
+  ],
+  "specialty": "역병 유적: 언데드 징모 +(잿빛 전용)",
+  "population": 100000,
+  "owner": "fac_10",
+  "pos": [
+   230,
+   90
+  ]
+ },
+ {
+  "id": "C043",
+  "name": "티르휘",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r10",
+  "origin": [
+   "E0069"
+  ],
+  "adjacent": [
+   "P015",
+   "P075",
+   "P023",
+   "P089"
+  ],
+  "specialty": "어장: 병량 +",
+  "population": 40000,
+  "owner": "fac_14",
+  "pos": [
+   250,
+   130
+  ]
+ },
+ {
+  "id": "C044",
+  "name": "베르센",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r10",
+  "origin": [
+   "E0036",
+   "E0069",
+   "E0237"
+  ],
+  "adjacent": [
+   "P014",
+   "P020",
+   "P038",
+   "C007"
+  ],
+  "specialty": "운하 통행세: 금 +. 민심 낮음",
+  "population": 100000,
+  "owner": "fac_01",
+  "pos": [
+   210,
+   110
+  ]
+ },
+ {
+  "id": "C045",
+  "name": "웨스트윈드",
+  "kind": "castle",
+  "size": 5,
+  "region": "reg_r11",
+  "origin": [
+   "E0074",
+   "E0137",
+   "E0188"
+  ],
+  "adjacent": [
+   "P016",
+   "P091",
+   "C046",
+   "C049"
+  ],
+  "specialty": "일곱 영웅 유산: 명망 +. 중장기사",
+  "population": 220000,
+  "owner": "fac_11",
+  "pos": [
+   90,
+   90
+  ]
+ },
+ {
+  "id": "C046",
+  "name": "하벨",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0075",
+   "E0181",
+   "E0188"
+  ],
+  "adjacent": [
+   "P017",
+   "P100",
+   "P068",
+   "C045",
+   "C048"
+  ],
+  "specialty": "하벨 가 본가(레지날드★). 충성 불안",
+  "population": 100000,
+  "owner": "fac_11",
+  "pos": [
+   110,
+   90
+  ]
+ },
+ {
+  "id": "C047",
+  "name": "로슈포르",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0075",
+   "E0217"
+  ],
+  "adjacent": [
+   "P067",
+   "P091",
+   "C048",
+   "C050"
+  ],
+  "specialty": "검술 도장: 무력 성장 이벤트",
+  "population": 100000,
+  "owner": "fac_11",
+  "pos": [
+   90,
+   110
+  ]
+ },
+ {
+  "id": "C048",
+  "name": "그레이홀로",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r11",
+  "origin": [
+   "E0075",
+   "E0241",
+   "E0294"
+  ],
+  "adjacent": [
+   "C006",
+   "C046",
+   "C047"
+  ],
+  "specialty": "돌발톱 잔당 주둔",
+  "population": 40000,
+  "owner": "fac_10",
+  "pos": [
+   110,
+   130
+  ]
+ },
+ {
+  "id": "C049",
+  "name": "던모어",
+  "kind": "castle",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0075",
+   "E0288"
+  ],
+  "adjacent": [
+   "P008",
+   "P100",
+   "P066",
+   "C045"
+  ],
+  "specialty": "광산 [S66~S68] 집산. 충성 불안",
+  "population": 100000,
+  "owner": "fac_11",
+  "pos": [
+   70,
+   70
+  ]
+ },
+ {
+  "id": "C050",
+  "name": "상아탑",
+  "kind": "castle",
+  "size": 2,
+  "region": "reg_r11",
+  "origin": [
+   "E0119",
+   "E0127",
+   "E0187",
+   "E0199"
+  ],
+  "adjacent": [
+   "P010",
+   "P044",
+   "C047"
+  ],
+  "specialty": "마법 공방 슬롯 3. 결계탑 [S44] 관리. 마법병 생산 유일",
+  "population": 40000,
+  "owner": "fac_08",
+  "pos": [
+   70,
+   90
+  ]
+ },
+ {
+  "id": "P001",
+  "name": "루트거 성채",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0018"
+  ],
+  "adjacent": [
+   "C003",
+   "C001"
+  ],
+  "specialty": "제도 서쪽 최후 방어선. 수비 +30%",
+  "owner": "fac_01",
+  "pos": [
+   150,
+   110
+  ]
+ },
+ {
+  "id": "P002",
+  "name": "순례자 관문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0048"
+  ],
+  "adjacent": [
+   "C001",
+   "C004"
+  ],
+  "specialty": "교단군 통행 자유. 사제단 사기 +",
+  "owner": "fac_07",
+  "pos": [
+   170,
+   130
+  ]
+ },
+ {
+  "id": "P003",
+  "name": "도른 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r01",
+  "origin": [
+   "E0101"
+  ],
+  "adjacent": [
+   "C006",
+   "C027",
+   "P056"
+  ],
+  "specialty": "도른 대회전 옛 전장",
+  "owner": "fac_10",
+  "pos": [
+   140,
+   140
+  ]
+ },
+ {
+  "id": "P004",
+  "name": "철산 대문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0015"
+  ],
+  "adjacent": [
+   "C011",
+   "C008"
+  ],
+  "specialty": "드워프 외 세력 공성 시 성벽 2배. 겨울 봉쇄",
+  "owner": "fac_03",
+  "pos": [
+   170,
+   40
+  ]
+ },
+ {
+  "id": "P005",
+  "name": "바라크 협곡",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0070"
+  ],
+  "adjacent": [
+   "C009",
+   "P078"
+  ],
+  "specialty": "협곡: 부대 1열 통과",
+  "owner": "fac_03",
+  "pos": [
+   155,
+   34
+  ]
+ },
+ {
+  "id": "P006",
+  "name": "얼음 문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0067",
+   "E0266"
+  ],
+  "adjacent": [
+   "C012",
+   "P040"
+  ],
+  "specialty": "겨울 봉쇄 면제(드워프). 수비 +25%",
+  "owner": "fac_03",
+  "pos": [
+   215,
+   14
+  ]
+ },
+ {
+  "id": "P007",
+  "name": "그람둔 동쪽 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r02",
+  "origin": [
+   "E0065"
+  ],
+  "adjacent": [
+   "C010",
+   "C039"
+  ],
+  "specialty": "드워프-변경백령 통상로",
+  "owner": "fac_03",
+  "pos": [
+   210,
+   40
+  ]
+ },
+ {
+  "id": "P008",
+  "name": "안개 관문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r03",
+  "origin": [
+   "E0172"
+  ],
+  "adjacent": [
+   "C014",
+   "C049"
+  ],
+  "specialty": "안개: 공격 측 시야 -2",
+  "owner": "fac_04",
+  "pos": [
+   60,
+   70
+  ]
+ },
+ {
+  "id": "P009",
+  "name": "세계수 길",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r03",
+  "origin": [
+   "E0029"
+  ],
+  "adjacent": [
+   "C013",
+   "C015"
+  ],
+  "specialty": "엘프 외 부대 이동 속도 절반",
+  "owner": "fac_04",
+  "pos": [
+   40,
+   100
+  ]
+ },
+ {
+  "id": "P010",
+  "name": "아엘라스 문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r03",
+  "origin": [
+   "E0117"
+  ],
+  "adjacent": [
+   "C016",
+   "C050"
+  ],
+  "specialty": "마법사 공국-엘프 동맹의 통로",
+  "owner": "fac_04",
+  "pos": [
+   70,
+   100
+  ]
+ },
+ {
+  "id": "P011",
+  "name": "철문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0063",
+   "E0082"
+  ],
+  "adjacent": [
+   "C037",
+   "P093"
+  ],
+  "specialty": "마물 출현 시 자동 요격. 성벽 최강",
+  "owner": "fac_02",
+  "pos": [
+   275,
+   34
+  ]
+ },
+ {
+  "id": "P012",
+  "name": "그림 성벽",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0065",
+   "E0085"
+  ],
+  "adjacent": [
+   "C038",
+   "P094"
+  ],
+  "specialty": "아델라 순교지: 사제단 효과 +",
+  "owner": "fac_02",
+  "pos": [
+   255,
+   34
+  ]
+ },
+ {
+  "id": "P013",
+  "name": "노르덴 보루",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0065"
+  ],
+  "adjacent": [
+   "C039",
+   "P095"
+  ],
+  "specialty": "설원: 기병 페널티",
+  "owner": "fac_02",
+  "pos": [
+   235,
+   54
+  ]
+ },
+ {
+  "id": "P014",
+  "name": "운하 수문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r10",
+  "origin": [
+   "E0069"
+  ],
+  "adjacent": [
+   "C044",
+   "C041"
+  ],
+  "specialty": "수문 개방 시 호수 수위 변경(라크엘름 공성 가능)",
+  "owner": "fac_01",
+  "pos": [
+   220,
+   110
+  ]
+ },
+ {
+  "id": "P015",
+  "name": "모르덴 둑길",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r10",
+  "origin": [
+   "E0069"
+  ],
+  "adjacent": [
+   "C042",
+   "C043"
+  ],
+  "specialty": "늪: 중장기사 불가",
+  "owner": "fac_10",
+  "pos": [
+   240,
+   110
+  ]
+ },
+ {
+  "id": "P016",
+  "name": "서풍 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0172"
+  ],
+  "adjacent": [
+   "C045",
+   "C015"
+  ],
+  "specialty": "벌목 사건 현장. 엘프 관계 이벤트",
+  "owner": "fac_11",
+  "pos": [
+   68,
+   98
+  ]
+ },
+ {
+  "id": "P017",
+  "name": "하벨 성채",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0075"
+  ],
+  "adjacent": [
+   "C046",
+   "C003",
+   "P082"
+  ],
+  "specialty": "공작령 동쪽 문. 수비 +20%",
+  "owner": "fac_11",
+  "pos": [
+   120,
+   100
+  ]
+ },
+ {
+  "id": "P018",
+  "name": "발리스 관문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0092",
+   "E0230"
+  ],
+  "adjacent": [
+   "C026",
+   "C006"
+  ],
+  "specialty": "남북 국경. 요새화 완료(수비 +30%)",
+  "owner": "fac_06",
+  "pos": [
+   130,
+   140
+  ]
+ },
+ {
+  "id": "P019",
+  "name": "몽클레르 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0093"
+  ],
+  "adjacent": [
+   "C027",
+   "C004"
+  ],
+  "specialty": "—",
+  "owner": "fac_06",
+  "pos": [
+   150,
+   150
+  ]
+ },
+ {
+  "id": "P020",
+  "name": "벨마르 육문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r04",
+  "origin": [
+   "E0038"
+  ],
+  "adjacent": [
+   "C017",
+   "C044",
+   "P085"
+  ],
+  "specialty": "통행세: 금 +",
+  "owner": "fac_05",
+  "pos": [
+   240,
+   100
+  ]
+ },
+ {
+  "id": "P074",
+  "name": "자하르 모래문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r05",
+  "origin": [
+   "E0024"
+  ],
+  "adjacent": [
+   "C022",
+   "C030",
+   "P088"
+  ],
+  "specialty": "사막 진입점. 보급 거점",
+  "owner": "fac_06",
+  "pos": [
+   140,
+   190
+  ]
+ },
+ {
+  "id": "P075",
+  "name": "케슈 협곡",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r05",
+  "origin": [
+   "E0125"
+  ],
+  "adjacent": [
+   "C023",
+   "C043",
+   "P092"
+  ],
+  "specialty": "사막-호수 연결",
+  "pos": [
+   230,
+   160
+  ]
+ },
+ {
+  "id": "P076",
+  "name": "리보른 해안 성채",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r06",
+  "origin": [
+   "E0098"
+  ],
+  "adjacent": [
+   "C029",
+   "C028"
+  ],
+  "specialty": "상륙 저지",
+  "owner": "fac_06",
+  "pos": [
+   60,
+   180
+  ]
+ },
+ {
+  "id": "P077",
+  "name": "늑대 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r07",
+  "origin": [
+   "E0070"
+  ],
+  "adjacent": [
+   "C032",
+   "C014"
+  ],
+  "specialty": "늑대기병 야간 보너스",
+  "owner": "fac_15",
+  "pos": [
+   40,
+   50
+  ]
+ },
+ {
+  "id": "P078",
+  "name": "하이크래그 절벽길",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r07",
+  "origin": [
+   "E0182"
+  ],
+  "adjacent": [
+   "P005",
+   "C031"
+  ],
+  "specialty": "절벽: 공성병기 불가",
+  "owner": "fac_15",
+  "pos": [
+   103,
+   22
+  ]
+ },
+ {
+  "id": "P079",
+  "name": "스카르호 관문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r07",
+  "origin": [
+   "E0026"
+  ],
+  "adjacent": [
+   "C033",
+   "C012"
+  ],
+  "specialty": "고원-드워프 통로",
+  "owner": "fac_15",
+  "pos": [
+   150,
+   10
+  ]
+ },
+ {
+  "id": "P080",
+  "name": "코르바 암초 요새",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r08",
+  "origin": [
+   "E0145"
+  ],
+  "adjacent": [
+   "C034",
+   "C035"
+  ],
+  "specialty": "해상 관문: 적 함대 통과 시 피해",
+  "owner": "fac_12",
+  "pos": [
+   280,
+   170
+  ]
+ },
+ {
+  "id": "P098",
+  "name": "베르겐 북문",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0150"
+  ],
+  "adjacent": [
+   "C040",
+   "P036"
+  ],
+  "specialty": "재건 성벽",
+  "owner": "fac_02",
+  "pos": [
+   295,
+   54
+  ]
+ },
+ {
+  "id": "P099",
+  "name": "잿빛 언덕 요새",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r09",
+  "origin": [
+   "E0083"
+  ],
+  "adjacent": [
+   "C037",
+   "C038"
+  ],
+  "specialty": "세드릭-말라카르 일기토 터. 일기토 보너스",
+  "owner": "fac_02",
+  "pos": [
+   260,
+   30
+  ]
+ },
+ {
+  "id": "P100",
+  "name": "던모어 고개",
+  "kind": "gate",
+  "size": 3,
+  "region": "reg_r11",
+  "origin": [
+   "E0288"
+  ],
+  "adjacent": [
+   "C049",
+   "C046"
+  ],
+  "specialty": "—",
+  "owner": "fac_11",
+  "pos": [
+   90,
+   80
+  ]
+ },
+ {
+  "id": "P021",
+  "name": "벨마르 대항만",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0038"
+  ],
+  "adjacent": [
+   "C017"
+  ],
+  "specialty": "해상 교역 수입 최대. 전함 건조",
+  "owner": "fac_05",
+  "pos": [
+   275,
+   94
+  ]
+ },
+ {
+  "id": "P022",
+  "name": "코르산 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0040"
+  ],
+  "adjacent": [
+   "C018"
+  ],
+  "specialty": "조선",
+  "owner": "fac_05",
+  "pos": [
+   275,
+   114
+  ]
+ },
+ {
+  "id": "P023",
+  "name": "살리나 소금 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0051"
+  ],
+  "adjacent": [
+   "C018",
+   "C043"
+  ],
+  "specialty": "소금: 금 +",
+  "owner": "fac_05",
+  "pos": [
+   260,
+   120
+  ]
+ },
+ {
+  "id": "P024",
+  "name": "세레나 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0043"
+  ],
+  "adjacent": [
+   "C021",
+   "P029"
+  ],
+  "specialty": "—",
+  "owner": "fac_05",
+  "pos": [
+   295,
+   134
+  ]
+ },
+ {
+  "id": "P025",
+  "name": "포르블랑 외항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0098"
+  ],
+  "adjacent": [
+   "C025"
+  ],
+  "specialty": "남부 함대 모항",
+  "owner": "fac_06",
+  "pos": [
+   95,
+   174
+  ]
+ },
+ {
+  "id": "P026",
+  "name": "유리 만",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0044"
+  ],
+  "adjacent": [
+   "C022"
+  ],
+  "specialty": "유리 특산",
+  "owner": "fac_06",
+  "pos": [
+   175,
+   194
+  ]
+ },
+ {
+  "id": "P027",
+  "name": "메릴호른 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0122"
+  ],
+  "adjacent": [
+   "C019"
+  ],
+  "specialty": "교단 선교선",
+  "owner": "fac_05",
+  "pos": [
+   275,
+   74
+  ]
+ },
+ {
+  "id": "P028",
+  "name": "오스트하펜 조선항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0134"
+  ],
+  "adjacent": [
+   "C020",
+   "C040",
+   "P036"
+  ],
+  "specialty": "전함 건조 -25%",
+  "owner": "fac_05",
+  "pos": [
+   290,
+   60
+  ]
+ },
+ {
+  "id": "P029",
+  "name": "이슬라 베르데 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0136"
+  ],
+  "adjacent": [
+   "C035",
+   "C021",
+   "P024"
+  ],
+  "specialty": "향신료",
+  "owner": "fac_05",
+  "pos": [
+   285,
+   138
+  ]
+ },
+ {
+  "id": "P030",
+  "name": "검은 갈매기 정박지",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0142"
+  ],
+  "adjacent": [
+   "C034"
+  ],
+  "specialty": "해적선 건조",
+  "owner": "fac_12",
+  "pos": [
+   295,
+   194
+  ]
+ },
+ {
+  "id": "P031",
+  "name": "유황 섬 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0052"
+  ],
+  "adjacent": [
+   "C034",
+   "P097"
+  ],
+  "specialty": "유황: 화공 전법 재료",
+  "owner": "fac_12",
+  "pos": [
+   293,
+   192
+  ]
+ },
+ {
+  "id": "P032",
+  "name": "진주 만",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0052"
+  ],
+  "adjacent": [
+   "C035"
+  ],
+  "specialty": "진주: 금 +",
+  "owner": "fac_12",
+  "pos": [
+   275,
+   154
+  ]
+ },
+ {
+  "id": "P033",
+  "name": "리보른 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0041"
+  ],
+  "adjacent": [
+   "C029"
+  ],
+  "specialty": "남부 유일 대외 항구",
+  "owner": "fac_06",
+  "pos": [
+   55,
+   194
+  ]
+ },
+ {
+  "id": "P034",
+  "name": "코르바 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0145"
+  ],
+  "adjacent": [
+   "C034"
+  ],
+  "specialty": "약탈 수입",
+  "owner": "fac_12",
+  "pos": [
+   293,
+   196
+  ]
+ },
+ {
+  "id": "P035",
+  "name": "토르톨라 항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0142"
+  ],
+  "adjacent": [
+   "C036"
+  ],
+  "specialty": "해적 잔당",
+  "pos": [
+   315,
+   214
+  ]
+ },
+ {
+  "id": "P036",
+  "name": "베르겐 북해항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0150"
+  ],
+  "adjacent": [
+   "P098",
+   "C040",
+   "P028"
+  ],
+  "specialty": "모피 교역. 겨울 결빙",
+  "owner": "fac_02",
+  "pos": [
+   292,
+   55
+  ]
+ },
+ {
+  "id": "P037",
+  "name": "라크엘름 호수항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r10",
+  "origin": [
+   "E0053"
+  ],
+  "adjacent": [
+   "C041"
+  ],
+  "specialty": "호수 수군 건조",
+  "owner": "fac_14",
+  "pos": [
+   235,
+   114
+  ]
+ },
+ {
+  "id": "P038",
+  "name": "베르센 운하항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r10",
+  "origin": [
+   "E0036",
+   "E0053"
+  ],
+  "adjacent": [
+   "C044",
+   "C002"
+  ],
+  "specialty": "운하 통행세",
+  "owner": "fac_01",
+  "pos": [
+   200,
+   110
+  ]
+ },
+ {
+  "id": "P039",
+  "name": "달빛 만",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r03",
+  "origin": [
+   "E0003"
+  ],
+  "adjacent": [
+   "C013"
+  ],
+  "specialty": "엘프 마법선",
+  "owner": "fac_04",
+  "pos": [
+   35,
+   94
+  ]
+ },
+ {
+  "id": "P040",
+  "name": "토르가르트 북빙항",
+  "kind": "port",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0067"
+  ],
+  "adjacent": [
+   "P006",
+   "C012"
+  ],
+  "specialty": "겨울 결빙. 드워프 철갑선",
+  "owner": "fac_03",
+  "pos": [
+   213,
+   12
+  ]
+ },
+ {
+  "id": "P059",
+  "name": "변경 마석 광산",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0056"
+  ],
+  "adjacent": [
+   "C037"
+  ],
+  "specialty": "마석(마나 소량)",
+  "owner": "fac_02",
+  "pos": [
+   273,
+   32
+  ]
+ },
+ {
+  "id": "P060",
+  "name": "카즈둠 철광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0004"
+  ],
+  "adjacent": [
+   "C008"
+  ],
+  "specialty": "철 大",
+  "owner": "fac_03",
+  "pos": [
+   175,
+   34
+  ]
+ },
+ {
+  "id": "P061",
+  "name": "바라크 철광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0030"
+  ],
+  "adjacent": [
+   "C009"
+  ],
+  "specialty": "철",
+  "owner": "fac_03",
+  "pos": [
+   153,
+   32
+  ]
+ },
+ {
+  "id": "P062",
+  "name": "노르바르 석탄",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0030"
+  ],
+  "adjacent": [
+   "C011"
+  ],
+  "specialty": "석탄(대장간 효율)",
+  "owner": "fac_03",
+  "pos": [
+   175,
+   54
+  ]
+ },
+ {
+  "id": "P063",
+  "name": "그람둔 갱도",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0175"
+  ],
+  "adjacent": [
+   "C010"
+  ],
+  "specialty": "철·화약 원료. 붕괴 이벤트",
+  "owner": "fac_03",
+  "pos": [
+   195,
+   34
+  ]
+ },
+ {
+  "id": "P064",
+  "name": "토르가르트 유황",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0055"
+  ],
+  "adjacent": [
+   "C012"
+  ],
+  "specialty": "유황(화약)",
+  "owner": "fac_03",
+  "pos": [
+   213,
+   16
+  ]
+ },
+ {
+  "id": "P065",
+  "name": "미스릴 갱",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0049",
+   "E0176"
+  ],
+  "adjacent": [
+   "C008"
+  ],
+  "specialty": "미스릴(전설 무기). 대륙 유일",
+  "owner": "fac_03",
+  "pos": [
+   173,
+   32
+  ]
+ },
+ {
+  "id": "P066",
+  "name": "던모어 은광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r11",
+  "origin": [
+   "E0109",
+   "E0207"
+  ],
+  "adjacent": [
+   "C049"
+  ],
+  "specialty": "은: 금 +",
+  "owner": "fac_11",
+  "pos": [
+   75,
+   74
+  ]
+ },
+ {
+  "id": "P067",
+  "name": "로슈포르 철광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r11",
+  "origin": [
+   "E0109"
+  ],
+  "adjacent": [
+   "C047"
+  ],
+  "specialty": "철",
+  "owner": "fac_11",
+  "pos": [
+   95,
+   114
+  ]
+ },
+ {
+  "id": "P068",
+  "name": "하벨 채석장",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r11",
+  "origin": [
+   "E0109"
+  ],
+  "adjacent": [
+   "C046"
+  ],
+  "specialty": "석재(성벽 건설 -)",
+  "owner": "fac_11",
+  "pos": [
+   115,
+   94
+  ]
+ },
+ {
+  "id": "P069",
+  "name": "오르블랑 석회암 채석장",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0023"
+  ],
+  "adjacent": [
+   "C025"
+  ],
+  "specialty": "석재",
+  "owner": "fac_06",
+  "pos": [
+   93,
+   172
+  ]
+ },
+ {
+  "id": "P070",
+  "name": "자하르 구리 광산",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0299"
+  ],
+  "adjacent": [
+   "C022"
+  ],
+  "specialty": "구리",
+  "owner": "fac_09",
+  "pos": [
+   173,
+   192
+  ]
+ },
+ {
+  "id": "P071",
+  "name": "소금 호수 광산",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0222",
+   "E0299"
+  ],
+  "adjacent": [
+   "C022",
+   "C024"
+  ],
+  "specialty": "소금. 쿠릴타이 장소(유목 연합 명망 +)",
+  "owner": "fac_09",
+  "pos": [
+   150,
+   200
+  ]
+ },
+ {
+  "id": "P072",
+  "name": "하이크래그 은광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r07",
+  "origin": [
+   "E0070"
+  ],
+  "adjacent": [
+   "C031"
+  ],
+  "specialty": "은",
+  "owner": "fac_15",
+  "pos": [
+   55,
+   14
+  ]
+ },
+ {
+  "id": "P073",
+  "name": "스카르호 은광",
+  "kind": "mine",
+  "size": 1,
+  "region": "reg_r07",
+  "origin": [
+   "E0026"
+  ],
+  "adjacent": [
+   "C033"
+  ],
+  "specialty": "은",
+  "owner": "fac_15",
+  "pos": [
+   95,
+   14
+  ]
+ },
+ {
+  "id": "P041",
+  "name": "리아나스의 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r03",
+  "origin": [
+   "E0006",
+   "E0087",
+   "E0185"
+  ],
+  "adjacent": [
+   "C016"
+  ],
+  "specialty": "마나 大. 세라핀★ 발견지. 용소 인접(비룡)",
+  "owner": "fac_04",
+  "pos": [
+   75,
+   114
+  ]
+ },
+ {
+  "id": "P042",
+  "name": "에스펠 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0006",
+   "E0081"
+  ],
+  "adjacent": [
+   "C007",
+   "C001"
+  ],
+  "specialty": "마나 中. 섭정부 유일 마나원",
+  "owner": "fac_01",
+  "pos": [
+   180,
+   100
+  ]
+ },
+ {
+  "id": "P043",
+  "name": "철산 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0006",
+   "E0084"
+  ],
+  "adjacent": [
+   "C008"
+  ],
+  "specialty": "마나 中. 엘프-드워프 분쟁지",
+  "owner": "fac_03",
+  "pos": [
+   173,
+   36
+  ]
+ },
+ {
+  "id": "P044",
+  "name": "상아 결계탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r03",
+  "origin": [
+   "E0006",
+   "E0119",
+   "E0231"
+  ],
+  "adjacent": [
+   "C050"
+  ],
+  "specialty": "마나 大. 엘프와 공유 협정",
+  "owner": "fac_08",
+  "pos": [
+   75,
+   94
+  ]
+ },
+ {
+  "id": "P045",
+  "name": "모래 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0006"
+  ],
+  "adjacent": [
+   "C022",
+   "P096"
+  ],
+  "specialty": "마나 中. 사막 한가운데, 보급 어려움",
+  "pos": [
+   173,
+   196
+  ]
+ },
+ {
+  "id": "P046",
+  "name": "고원 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r07",
+  "origin": [
+   "E0006"
+  ],
+  "adjacent": [
+   "C031"
+  ],
+  "specialty": "마나 小. 씨족 샤먼이 점유",
+  "owner": "fac_15",
+  "pos": [
+   53,
+   12
+  ]
+ },
+ {
+  "id": "P047",
+  "name": "일곱의 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0006",
+   "E0086",
+   "E0088"
+  ],
+  "adjacent": [
+   "C037",
+   "P093"
+  ],
+  "specialty": "마나 大. 대봉인 중심. 균열 활성도 표시",
+  "owner": "fac_02",
+  "pos": [
+   273,
+   36
+  ]
+ },
+ {
+  "id": "P048",
+  "name": "호수 탑",
+  "kind": "ward_tower",
+  "size": 1,
+  "region": "reg_r10",
+  "origin": [
+   "E0006"
+  ],
+  "adjacent": [
+   "C041"
+  ],
+  "specialty": "마나 中. 호수 한가운데 섬",
+  "owner": "fac_14",
+  "pos": [
+   233,
+   112
+  ]
+ },
+ {
+  "id": "P049",
+  "name": "불의 서약 성소",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0008"
+  ],
+  "adjacent": [
+   "C024"
+  ],
+  "specialty": "유목 연합 점령 시 오크 사기 +. 신앙 '자연'",
+  "pos": [
+   135,
+   214
+  ]
+ },
+ {
+  "id": "P050",
+  "name": "모르덴 수녀원",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r10",
+  "origin": [
+   "E0174",
+   "E0206"
+  ],
+  "adjacent": [
+   "C042"
+  ],
+  "specialty": "불탄 수녀원. 탈환 시 교단 명망 +",
+  "owner": "fac_10",
+  "pos": [
+   235,
+   94
+  ]
+ },
+ {
+  "id": "P051",
+  "name": "루멘 대성당",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0048"
+  ],
+  "adjacent": [
+   "C004"
+  ],
+  "specialty": "교황청. 교단 통합 승리의 핵심. 사제단 大",
+  "owner": "fac_07",
+  "pos": [
+   175,
+   154
+  ]
+ },
+ {
+  "id": "P052",
+  "name": "아델라 성지",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0066"
+  ],
+  "adjacent": [
+   "C039"
+  ],
+  "specialty": "치유 기적: 주둔 부대 회복 +",
+  "owner": "fac_02",
+  "pos": [
+   233,
+   52
+  ]
+ },
+ {
+  "id": "P053",
+  "name": "메릴호른 사원",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0122",
+   "E0267"
+  ],
+  "adjacent": [
+   "C019"
+  ],
+  "specialty": "공화국 영토 안의 교단 사원(공동 관할)",
+  "owner": "fac_07",
+  "pos": [
+   273,
+   72
+  ]
+ },
+ {
+  "id": "P054",
+  "name": "변경 순교 사원",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0130"
+  ],
+  "adjacent": [
+   "C038"
+  ],
+  "specialty": "대언데드 보너스",
+  "owner": "fac_07",
+  "pos": [
+   253,
+   32
+  ]
+ },
+ {
+  "id": "P055",
+  "name": "세인트 아르노 수도원",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0100",
+   "E0128"
+  ],
+  "adjacent": [
+   "C030"
+  ],
+  "specialty": "남부 신앙 중심",
+  "owner": "fac_07",
+  "pos": [
+   115,
+   194
+  ]
+ },
+ {
+  "id": "P056",
+  "name": "도른 예배당",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0224"
+  ],
+  "adjacent": [
+   "C006",
+   "C027",
+   "P003"
+  ],
+  "specialty": "불탄 예배당. 레이몬드★-모르간★ 원수 현장",
+  "owner": "fac_10",
+  "pos": [
+   138,
+   138
+  ]
+ },
+ {
+  "id": "P057",
+  "name": "아르덴 황릉",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0020"
+  ],
+  "adjacent": [
+   "C001"
+  ],
+  "specialty": "황실 명망 +. 황제 보유 세력 사기 +",
+  "owner": "fac_01",
+  "pos": [
+   175,
+   114
+  ]
+ },
+ {
+  "id": "P058",
+  "name": "세계수 성소",
+  "kind": "shrine",
+  "size": 1,
+  "region": "reg_r03",
+  "origin": [
+   "E0003"
+  ],
+  "adjacent": [
+   "C013"
+  ],
+  "specialty": "신앙 '자연'. 엘프 인구 성장 +",
+  "owner": "fac_04",
+  "pos": [
+   33,
+   92
+  ]
+ },
+ {
+  "id": "P081",
+  "name": "아르덴 동역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0028"
+  ],
+  "adjacent": [
+   "C001",
+   "C002"
+  ],
+  "specialty": "보급선 연장",
+  "owner": "fac_01",
+  "pos": [
+   180,
+   110
+  ]
+ },
+ {
+  "id": "P082",
+  "name": "카스테르 서역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0028"
+  ],
+  "adjacent": [
+   "C003",
+   "P017"
+  ],
+  "specialty": "보급선 연장",
+  "owner": "fac_01",
+  "pos": [
+   125,
+   105
+  ]
+ },
+ {
+  "id": "P083",
+  "name": "하이펠트 곡물 교역소",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r01",
+  "origin": [
+   "E0045"
+  ],
+  "adjacent": [
+   "C005",
+   "C042"
+  ],
+  "specialty": "병량 교역",
+  "owner": "fac_10",
+  "pos": [
+   200,
+   90
+  ]
+ },
+ {
+  "id": "P084",
+  "name": "숲가 교역소",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r03",
+  "origin": [
+   "E0028"
+  ],
+  "adjacent": [
+   "C016",
+   "C003"
+  ],
+  "specialty": "엘프-인간 교역. 약초",
+  "owner": "fac_04",
+  "pos": [
+   100,
+   110
+  ]
+ },
+ {
+  "id": "P085",
+  "name": "벨마르 가도 역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0042"
+  ],
+  "adjacent": [
+   "C017",
+   "P020"
+  ],
+  "specialty": "이동 속도 +",
+  "owner": "fac_05",
+  "pos": [
+   255,
+   95
+  ]
+ },
+ {
+  "id": "P086",
+  "name": "노르바르 교역소",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r02",
+  "origin": [
+   "E0071"
+  ],
+  "adjacent": [
+   "C011",
+   "C005"
+  ],
+  "specialty": "철-곡물 교환. 병장기 구매",
+  "owner": "fac_03",
+  "pos": [
+   170,
+   70
+  ]
+ },
+ {
+  "id": "P087",
+  "name": "세레나 역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r04",
+  "origin": [
+   "E0042"
+  ],
+  "adjacent": [
+   "C021",
+   "C018"
+  ],
+  "specialty": "—",
+  "owner": "fac_05",
+  "pos": [
+   280,
+   120
+  ]
+ },
+ {
+  "id": "P088",
+  "name": "자하르 캐러밴 역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0044",
+   "E0299"
+  ],
+  "adjacent": [
+   "C022",
+   "P074"
+  ],
+  "specialty": "사막 보급 거점(유목 연합 \"이동 천막\" 기본 위치)",
+  "owner": "fac_09",
+  "pos": [
+   155,
+   190
+  ]
+ },
+ {
+  "id": "P089",
+  "name": "운하 교역소",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r10",
+  "origin": [
+   "E0108"
+  ],
+  "adjacent": [
+   "C041",
+   "C043"
+  ],
+  "specialty": "수운 교역",
+  "owner": "fac_14",
+  "pos": [
+   240,
+   120
+  ]
+ },
+ {
+  "id": "P090",
+  "name": "샹파르 포도주 교역소",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r06",
+  "origin": [
+   "E0094"
+  ],
+  "adjacent": [
+   "C028",
+   "C025"
+  ],
+  "specialty": "금 +",
+  "owner": "fac_06",
+  "pos": [
+   80,
+   170
+  ]
+ },
+ {
+  "id": "P091",
+  "name": "웨스트윈드 양모 시장",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r11",
+  "origin": [
+   "E0042"
+  ],
+  "adjacent": [
+   "C045",
+   "C047"
+  ],
+  "specialty": "금 +",
+  "owner": "fac_11",
+  "pos": [
+   90,
+   100
+  ]
+ },
+ {
+  "id": "P092",
+  "name": "케슈 캐러밴 역참",
+  "kind": "trade_post",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0125"
+  ],
+  "adjacent": [
+   "C023",
+   "P075"
+  ],
+  "specialty": "—",
+  "pos": [
+   220,
+   175
+  ]
+ },
+ {
+  "id": "P093",
+  "name": "대균열",
+  "kind": "rift",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0005",
+   "E0060",
+   "E0088"
+  ],
+  "adjacent": [
+   "P011",
+   "P047"
+  ],
+  "specialty": "1028년경 재개방 예정(#H09). 정화 시 전설 보상 최대",
+  "pos": [
+   275,
+   37
+  ]
+ },
+ {
+  "id": "P094",
+  "name": "검은 가을 균열",
+  "kind": "rift",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0184"
+  ],
+  "adjacent": [
+   "P012"
+  ],
+  "specialty": "가을마다 마물 출현",
+  "pos": [
+   260,
+   38
+  ]
+ },
+ {
+  "id": "P095",
+  "name": "노르덴 소굴",
+  "kind": "rift",
+  "size": 1,
+  "region": "reg_r09",
+  "origin": [
+   "E0056"
+  ],
+  "adjacent": [
+   "P013"
+  ],
+  "specialty": "설원 마물",
+  "pos": [
+   240,
+   58
+  ]
+ },
+ {
+  "id": "P096",
+  "name": "모래 균열",
+  "kind": "rift",
+  "size": 1,
+  "region": "reg_r05",
+  "origin": [
+   "E0005"
+  ],
+  "adjacent": [
+   "C022",
+   "P045"
+  ],
+  "specialty": "사막 마물. 3막 활성",
+  "pos": [
+   171,
+   194
+  ]
+ },
+ {
+  "id": "P097",
+  "name": "유황 구멍",
+  "kind": "rift",
+  "size": 1,
+  "region": "reg_r08",
+  "origin": [
+   "E0005"
+  ],
+  "adjacent": [
+   "P031",
+   "C034"
+  ],
+  "specialty": "해상 마물. 해적 연맹 이벤트",
+  "pos": [
+   290,
+   193
+  ]
+ }
+]
