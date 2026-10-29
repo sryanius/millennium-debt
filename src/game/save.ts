@@ -3,8 +3,10 @@ import type { World } from '../core/world';
 
 const KEY = 'mercenary.save.v1';
 
+/** 새 게임을 고른 뒤에는 저장하지 않는다(페이지가 닫힐 때 자동 저장이 옛 게임을 다시 써 넣던 문제) */
+let resetting = false;
 export function saveGame(g: Game): boolean {
-  if (g.battle) return false;
+  if (g.battle || resetting) return false;
   try { localStorage.setItem(KEY, JSON.stringify(g.toJSON())); return true; } catch { return false; }
 }
 export function loadGame(world: World): Game | null {
@@ -19,3 +21,5 @@ export function loadGame(world: World): Game | null {
 }
 export function hasSave(): boolean { try { return !!localStorage.getItem(KEY); } catch { return false; } }
 export function clearSave(): void { try { localStorage.removeItem(KEY); } catch { /* ignore */ } }
+/** 저장을 지우고 새 게임으로 다시 연다 */
+export function startNewGame(): void { resetting = true; clearSave(); location.reload(); }

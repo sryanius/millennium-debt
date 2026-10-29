@@ -7,7 +7,7 @@ import { INCOME_LABEL, INCOME_SOURCES } from '../../core/ledger';
 import { KIND_LABEL, hasMarket, isTown } from '../../core/world';
 import { GameClock as Clock } from '../../core/clock';
 import { Window, makeButton } from '../Window';
-import { clearSave, hasSave, loadGame, saveGame } from '../save';
+import { hasSave, loadGame, saveGame, startNewGame } from '../save';
 import { C, H, K, REGION_COLOR, TEXT, TEXT_SMALL, W, portraitKey } from '../theme';
 import type { MapScene } from './MapScene';
 import type { BattleScene } from './BattleScene';
@@ -347,7 +347,7 @@ export class UIScene extends Phaser.Scene {
     INCOME_SOURCES.forEach((s, i) => w.small(6, 76 + i * 10, INCOME_LABEL[s] + '으로 번 돈  ' + fmt(l.earned[s]), { color: s === this.g.ending ? C.gold : C.paper }));
     w.rect(230, 22, 120, 120, C.panelLight); w.small(260, 76, '부대장 전신\n일러스트', { color: C.grey });
     w.small(6, 150, '"빚을 갚은 날, 여섯 부대장은 각자의 길을 갔다." (후일담 6×5는 5단계)', { color: C.paperDark, wordWrap: { width: 340 } });
-    w.button(w.bw - 100, w.bh - 34, '새 게임', () => { clearSave(); location.reload(); }, { w: 94, h: 16 });
+    w.button(w.bw - 100, w.bh - 34, '새 게임', () => startNewGame(), { w: 94, h: 16 });
   }
 
   private openSquads(): void {
@@ -398,12 +398,12 @@ export class UIScene extends Phaser.Scene {
     w.menu([
       { label: '저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
       { label: '불러오기', disabled: !hasSave(), onClick: () => { const g = loadGame(this.g.world); if (g) { this.registry.set('game', g); location.reload(); } } },
-      { label: '새 게임', onClick: () => { clearSave(); location.reload(); } },
+      { label: '새 게임', onClick: () => startNewGame() },
       { label: '음악 ' + (AUDIO.musicOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setMusic(!AUDIO.musicOn); w.close(); this.openSystem(); } },
       { label: '효과음 ' + (AUDIO.sfxOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setSfx(!AUDIO.sfxOn); w.close(); this.openSystem(); } },
       { label: '닫기', onClick: () => w.close() },
     ]);
-    w.small(6, 104, '시제품 · 설계 480×270 · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
+    w.small(6, 104, '시제품 · 설계 ' + W + '×' + H + ' · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
   }
   private toastText?: Phaser.GameObjects.Text;
   toast(s: string): void {

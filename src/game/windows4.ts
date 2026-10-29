@@ -3,7 +3,7 @@ import { GameClock as Clock } from '../core/clock';
 import { ENDING_POEM, EPILOGUES } from '../core/events';
 import { fmt } from '../core/game';
 import { INCOME_LABEL, INCOME_SOURCES } from '../core/ledger';
-import { clearSave } from './save';
+import { startNewGame } from './save';
 import { C, portraitKey } from './theme';
 import type { UIScene } from './scenes/UIScene';
 
@@ -48,7 +48,7 @@ export function openEnding(ui: UIScene): void {
     }
     if (page > 0) w.button(6, w.bh - 32, '이전', () => { page--; render(); }, { w: 50, h: 14 });
     if (page < 7) w.button(w.bw - 56, w.bh - 32, '다음', () => { page++; render(); }, { w: 50, h: 14 });
-    else w.button(w.bw - 100, w.bh - 32, '새 게임', () => { clearSave(); location.reload(); }, { w: 94, h: 14 });
+    else w.button(w.bw - 100, w.bh - 32, '새 게임', () => startNewGame(), { w: 94, h: 14 });
     w.small(150, w.bh - 29, (page === 0 ? '결산' : page <= 6 ? '후일담 ' + page + '/6' : '시'), { color: C.grey });
   };
   render();
