@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>도트 목업 — 천 년의 빚</title>
+<link rel="stylesheet" href="/node_modules/galmuri/dist/galmuri.css" />
+<style>
+  html, body { margin: 0; background: #101010; color: #e8dcc0; font-family: Galmuri11, sans-serif; }
+  .wrap { display: flex; flex-direction: column; gap: 12px; padding: 12px; align-items: flex-start; }
+  canvas { image-rendering: pixelated; display: block; border: 1px solid #333; max-width: 100%; height: auto; }
+  h2 { font: 14px Galmuri11; margin: 8px 0 0; color: #e0b23c; }
+  p { font: 11px Galmuri11; margin: 0; color: #a89f8a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>메인 화면 목업 (480×270 ×3) — 지형 타일 4px/칸, 거점 16px, 부대 12×16, UI 금테</h2>
+  <canvas id="map" width="1440" height="810"></canvas>
+  <h2>전투 화면 목업</h2>
+  <canvas id="battle" width="1440" height="810"></canvas>
+  <h2>초상 40×48 (×3) · 병사 12×16 (×4) · 거점 16×16 (×4) · 지형 타일 (×4) · 팔레트 32색</h2>
+  <canvas id="sheets" width="1440" height="420"></canvas>
+</div>
+<script src="./mockup.js"></script>
+</body>
+</html>

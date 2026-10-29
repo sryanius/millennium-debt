@@ -61,4 +61,4 @@ PWA manifest·서비스 워커(배포 빌드에서만)·아이콘(임시 도트)
 6단계 도트 아트·음악(네모 → 도트), 7단계 실기기 검증, 밸런스(상환 1,000만까지의 수입 곡선).
 
 ## 그래픽
-1~3단계는 네모·선·글자(Galmuri9/11 도트 글꼴)만 쓴다. 도트 아트는 6단계(GDD §10: 로컬 ComfyUI 초안 → Aseprite). 논리 해상도 480×270, 정수 배율, 가로 전용.
+게임 화면은 아직 네모·선·글자(Galmuri9/11 도트 글꼴). 6단계 도트 아트 **시안 A(코드로 그린 32색 도트)**는 [docs/mercenary/art-samples/](../docs/mercenary/art-samples/README.md)에 있고, `node mercenary/tools/pixel-samples.mjs` 로 다시 만든다. 글자까지 얹은 목업은 개발 서버의 `/art/mockup.html`. 논리 해상도 480×270, 정수 배율, 가로 전용.
