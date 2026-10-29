@@ -39,11 +39,13 @@ export class Window extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, w: number, h: number, title: string, opts: { closable?: boolean } = {}) {
     super(scene, x, y);
     this.bw = w; this.bh = h;
-    const shadow = scene.add.rectangle(3, 3, w, h, C.shadow, 0.55).setOrigin(0);
     const skin = hasSkin(scene);
-    const bg = scene.add.rectangle(0, 0, w, h, C.panel, skin ? 0.001 : 1).setOrigin(0);
+    // 금테(6px) 만큼 아래로 늘려 그린다: 창마다 "bh - 24" 같은 아래쪽 글이 테두리에 잘리지 않게
+    const fh = skin ? h + 8 : h;
+    const shadow = scene.add.rectangle(3, 3, w, fh, C.shadow, 0.55).setOrigin(0);
+    const bg = scene.add.rectangle(0, 0, w, fh, C.panel, skin ? 0.001 : 1).setOrigin(0);
     if (!skin) bg.setStrokeStyle(1, C.border);
-    const frame = skin ? nine(scene, 0, 0, w, h, 'sk_win', 6) : null;
+    const frame = skin ? nine(scene, 0, 0, w, fh, 'sk_win', 6) : null;
     bg.setInteractive(); // 입력 삼키기
     bg.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
     const titleBar: any = skin ? scene.add.image(3, 2, 'sk_title').setOrigin(0).setDisplaySize(w - 6, 12) : scene.add.rectangle(1, 1, w - 2, 12, 0x8a6a1c).setOrigin(0);

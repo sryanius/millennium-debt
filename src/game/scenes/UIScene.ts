@@ -72,7 +72,9 @@ export class UIScene extends Phaser.Scene {
     const sc = this.miniScale; const gfx = this.miniGfx; gfx.clear();
     for (const r of this.g.world.regions.values()) {
       const b = this.g.world.regionBounds(r.id);
-      gfx.fillStyle(REGION_COLOR[r.id] ?? 0x555555, this.g.blocked.has(r.id) ? 0.35 : 0.9);
+      const hasMap = this.textures.exists('mappx');
+      if (hasMap && !this.g.blocked.has(r.id)) continue; // 그림 지도 위에는 막힌 지역만 어둡게
+      gfx.fillStyle(hasMap ? 0x000000 : (REGION_COLOR[r.id] ?? 0x555555), hasMap ? 0.55 : this.g.blocked.has(r.id) ? 0.35 : 0.9);
       gfx.fillRect(4 + (b.minX - 6) * sc, 4 + (b.minY - 6) * sc, (b.maxX - b.minX + 12) * sc, (b.maxY - b.minY + 12) * sc);
     }
     this.miniBlockedKey = [...this.g.blocked].join(',');
@@ -80,6 +82,14 @@ export class UIScene extends Phaser.Scene {
   private buildMinimap(): void {
     const m = this.g.world.map!; const sc = this.miniScale; const w = Math.round(m.width * sc), h = Math.round(m.height * sc);
     this.panel(2, 2, w + 4, h + 4);
+    if (this.textures.exists('mappx')) {
+      // 지도 그림을 부드럽게 줄인 텍스처(K배 해상도)를 만들어 쓴다
+      if (!this.textures.exists('minimap')) {
+        const src = this.textures.get('mappx').getSourceImage() as HTMLImageElement;
+        const t = this.textures.createCanvas('minimap', w * K, h * K)!; const ctx = t.getContext(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w * K, h * K); t.refresh();
+      }
+      this.add.image(4, 4, 'minimap').setOrigin(0).setScale(1 / K);
+    }
     const gfx = this.add.graphics(); this.miniGfx = gfx; this.drawMini();
     this.miniView = this.add.rectangle(4, 4, 10, 10, 0xffffff, 0).setOrigin(0).setStrokeStyle(1, 0xffffff);
     const hit = this.add.rectangle(4, 4, w, h, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
@@ -101,31 +111,32 @@ export class UIScene extends Phaser.Scene {
     makeButton(this, x0 + 44, 2, '⚙', () => this.openSystem(), { w: 20, h: 14 });
   }
   private buildClock(): void {
-    this.panel(2, H - 44, 98, 42);
+    this.panel(2, H - 44, 100, 42);
     this.clockGfx = this.add.graphics();
-    this.dateText = this.add.text(36, H - 41, '', TEXT);
-    this.dueText = this.add.text(36, H - 28, '', TEXT_SMALL);
-    this.add.text(36, H - 17, '상환일 7·14·21·28', { ...TEXT_SMALL, color: C.grey });
+    this.dateText = this.add.text(36, H - 40, '', TEXT);
+    this.dueText = this.add.text(36, H - 27, '', TEXT_SMALL);
+    this.add.text(36, H - 17, '7·14·21·28일', { ...TEXT_SMALL, color: C.grey });
   }
   private buildFinance(): void {
-    this.panel(W - 118, H - 44, 116, 42);
-    this.regionText = this.add.text(W - 114, H - 41, '', { ...TEXT_SMALL, color: C.gold });
-    this.debtText = this.add.text(W - 114, H - 31, '', TEXT_SMALL);
-    this.cashText = this.add.text(W - 114, H - 12, '', { ...TEXT, color: C.white });
-    const hit = this.add.rectangle(W - 118, H - 44, 116, 42, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+    this.panel(W - 118, H - 52, 116, 50);
+    this.regionText = this.add.text(W - 111, H - 48, '', { ...TEXT_SMALL, color: C.gold });
+    this.debtText = this.add.text(W - 111, H - 38, '', { ...TEXT_SMALL, lineSpacing: 0 });
+    this.cashText = this.add.text(W - 111, H - 17, '', { ...TEXT, color: C.white });
+    const hit = this.add.rectangle(W - 118, H - 52, 116, 50, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
     hit.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLedger(); });
   }
   private buildSquadBar(): void {
-    const sw = 44, gap = 2, total = 6 * sw + 5 * gap; const x0 = Math.round((W - total) / 2);
+    // 시계 패널(2~100)과 재정 패널(362~478) 사이에 딱 맞게
+    const sw = 42, gap = 1, total = 6 * sw + 5 * gap; const x0 = 104;
     this.panels.push(new Phaser.Geom.Rectangle(x0 - 2, H - 26, total + 4, 26));
     this.g.squads.forEach((sq, i) => {
       const x = x0 + i * (sw + gap);
-      const frame = hasSkin(this) ? nine(this, x, H - 24, sw, 22, buttonKey(this, 0x2e241c, 'n'), 3) : null;
+      const frame = hasSkin(this) ? nine(this, x, H - 25, sw, 23, buttonKey(this, 0x2e241c, 'n'), 3) : null;
       const bg = this.add.rectangle(x, H - 24, sw, 22, C.panel, frame ? 0.001 : 0.92).setOrigin(0).setInteractive({ useHandCursor: true });
       if (!frame) bg.setStrokeStyle(1, C.border);
-      const num = this.add.text(x + 2, H - 23, String(i + 1), { ...TEXT_SMALL, color: C.gold });
-      const name = this.add.text(x + 9, H - 23, sq.leader.name.split(' ')[0], TEXT_SMALL);
-      const state = this.add.text(x + 2, H - 13, '', { ...TEXT_SMALL, color: C.paperDark });
+      const num = this.add.text(x + 4, H - 22, String(i + 1), { ...TEXT_SMALL, color: C.gold });
+      const name = this.add.text(x + 11, H - 22, sq.leader.name.split(' ')[0], TEXT_SMALL);
+      const state = this.add.text(x + 4, H - 13, '', { ...TEXT_SMALL, color: C.paperDark });
       bg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => {
         ev.stopPropagation(); if (this.modal) return;
         const now = this.time.now;
@@ -136,11 +147,11 @@ export class UIScene extends Phaser.Scene {
     });
   }
   private buildTicker(): void {
-    if (hasSkin(this)) nine(this, 102, H - 45, W - 222, 14, buttonKey(this, 0x1e1812, 'n'), 3);
-    this.msgBg = this.add.rectangle(102, H - 44, W - 222, 12, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
-    this.msgText = this.add.text(105, H - 43, '', { ...TEXT_SMALL, color: C.white });
+    if (hasSkin(this)) nine(this, 104, H - 45, 257, 14, buttonKey(this, 0x1e1812, 'n'), 3);
+    this.msgBg = this.add.rectangle(104, H - 44, 257, 12, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
+    this.msgText = this.add.text(108, H - 43, '', { ...TEXT_SMALL, color: C.white });
     this.msgBg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLog(); });
-    this.panels.push(new Phaser.Geom.Rectangle(102, H - 44, W - 222, 12));
+    this.panels.push(new Phaser.Geom.Rectangle(104, H - 45, 257, 14));
   }
 
   private cycleSpeed(): void {
@@ -164,12 +175,12 @@ export class UIScene extends Phaser.Scene {
   }
 
   private openIntro(): void {
-    const w = this.win(300, 120, '제국력 1000년 봄 — 샹파르');
+    const w = this.win(300, 142, '제국력 1000년 봄 — 샹파르');
     w.portrait(6, 6, 40, 48, 'kael', '카엘');
     w.text(52, 6, '아버지가 남긴 빚은 ' + fmt(BALANCE.startDebt) + '골.', { wordWrap: { width: 240 } });
     w.text(52, 22, '벨마르 대금고는 매달 7·14·21·28일에\n최소 ' + fmt(BALANCE.minRepayment) + '골씩 받아 간다.', { wordWrap: { width: 240 } });
     w.small(52, 54, '거점을 눌러 이동하고, 성에 들어가 교역소·민사게시판에서 돈을 벌자.\n화면 아래 1~6번이 부대장. 지도는 끌어서 움직이고 휠로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
-    w.button(230, 84, '시작', () => w.close(), { w: 60, h: 16 });
+    w.button(230, 106, '시작', () => w.close(), { w: 60, h: 16 });
   }
 
   /** 거점 클릭(GDD §7.1): 이동 또는 거점 명령 */
@@ -177,7 +188,7 @@ export class UIScene extends Phaser.Scene {
     if (this.modal) return;
     const s = this.g.world.site(id); const sq = this.g.squad; const here = sq.siteId === id;
     const region = this.g.world.regions.get(s.region)?.name ?? '';
-    const w = this.win(190, here && isTown(s) ? 186 : 128, s.name + ' (' + KIND_LABEL[s.kind] + ' · ' + region + ')' + (this.g.enemyHeld.has(id) ? ' ⚑' : ''));
+    const w = this.win(190, here && isTown(s) ? 190 : 128, s.name + ' (' + KIND_LABEL[s.kind] + ' · ' + region + ')' + (this.g.enemyHeld.has(id) ? ' ⚑' : ''));
     const eta = this.g.eta(this.g.selected, id);
     const blocked = this.g.blocked.has(s.region);
     const items: { label: string; onClick?: () => void; disabled?: boolean }[] = [];
@@ -398,7 +409,7 @@ export class UIScene extends Phaser.Scene {
     gfx.fillStyle(0xffffff).fillRect(cx - 1, cy - 1, 2, 2);
     this.dateText.setText(GameClock.format(c.date));
     const due = c.daysToRepayment;
-    this.dueText.setText(due === 0 ? '오늘 상환일!' : '다음 상환까지 ' + due + '일').setColor(due <= 1 ? C.red : C.paperDark);
+    this.dueText.setText(due === 0 ? '오늘 상환일!' : '상환까지 ' + due + '일').setColor(due <= 1 ? C.red : C.paperDark);
     this.speedBtn.getAt<Phaser.GameObjects.Text>(1).setText(c.speed === 0 ? '⏸' : '▶' + c.speed);
     // 재정
     this.regionText.setText(g.world.regions.get(this.map.regionId)?.name ?? '');
@@ -418,7 +429,7 @@ export class UIScene extends Phaser.Scene {
     const full = (g.unread > 0 ? '● ' : '') + (last?.text ?? '');
     if (full !== this.lastTicker) {
       this.lastTicker = full; let s = full; this.msgText.setText(s);
-      while (this.msgText.width > W - 230 && s.length > 4) { s = s.slice(0, -3) + '…'; this.msgText.setText(s); }
+      while (this.msgText.width > 248 && s.length > 4) { s = s.slice(0, -2) + '…'; this.msgText.setText(s); }
     }
     if (this.miniBlockedKey !== [...g.blocked].join(',')) this.drawMini();
     // 축소 지도의 현재 화면 틀

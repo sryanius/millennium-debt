@@ -26,7 +26,7 @@ function panelTex(scene: Phaser.Scene, key: string, fill: RGB, alpha: number): v
       else if (e === 1) px(x, y, (x + y < 24 ? GOLD1 : GOLD0));
       else if (e === 2) px(x, y, (x + y < 24 ? GOLD2 : GOLD1));
       else if (e === 3) px(x, y, INK, 0.85);
-      else { const d = (x + y * 3) % 7 === 0 ? 0.06 : 0; px(x, y, mix(fill, WHITE, d), alpha); }
+      else px(x, y, e === 4 ? mix(fill, INK, 0.25) : fill, alpha); // 가운데(늘어나는 칸)는 무늬 없이
     }
     for (const [cx, cy] of [[2, 2], [21, 2], [2, 21], [21, 21]]) { px(cx, cy, WHITE); px(cx + (cx < 12 ? 1 : -1), cy + (cy < 12 ? 1 : -1), GOLD0); }
   });
@@ -58,7 +58,7 @@ export function buttonKey(scene: Phaser.Scene, base: number, state: 'n' | 'h' | 
 
 export function makeSkin(scene: Phaser.Scene): void {
   panelTex(scene, 'sk_win', [46, 34, 26], 1);
-  panelTex(scene, 'sk_panel', [36, 28, 22], 0.9);
+  panelTex(scene, 'sk_panel', [36, 28, 22], 1);
   titleTex(scene);
 }
 export const hasSkin = (scene: Phaser.Scene) => scene.textures.exists('sk_win');

@@ -78,5 +78,6 @@ export const REGION_COLOR: Record<string, number> = {
   reg_r07: 0x7a8a9a, reg_r08: 0x2a7a8a, reg_r09: 0x2f5d8a, reg_r10: 0x4a8ab0, reg_r11: 0x8a5a3a,
 };
 
-export const TEXT = { fontFamily: FONT, fontSize: '11px', color: C.paper, resolution: 1 } as const;
-export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: '9px', color: C.paper, resolution: 1 } as const;
+/** 글자는 렌더 배율(K)만큼 고해상도로 굽는다. 1 이면 11px 로 구운 뒤 늘려서 계단이 고르지 않다 */
+export const TEXT = { fontFamily: FONT, fontSize: '11px', color: C.paper, resolution: K } as const;
+export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: '9px', color: C.paper, resolution: K } as const;
