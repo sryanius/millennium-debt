@@ -1,0 +1,16 @@
+{
+  "name": "천 년의 빚 (가칭)",
+  "short_name": "천년의빚",
+  "description": "하이리워드식 용병단 경영 게임 — 균열의 시대 세계관",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#101010",
+  "theme_color": "#101010",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
