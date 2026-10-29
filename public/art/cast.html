@@ -38,5 +38,5 @@ const N=[['tobias','토비아스 애플가드','벨마르 대금고 집행관','
 const card=([k,n,r,d])=>{const local=false;return `<div class="card"><img class="px" src="portraits-px/${k}.png?v=2"><div><div class="name">${n}</div><div class="role">${r}</div><div class="desc">${d}</div><img class="ai" src="portraits/${k}.png" title="원본 채색"><br><span class="tag" id="t_${k}"></span></div></div>`};
 document.getElementById('leaders').innerHTML=L.map(card).join('');document.getElementById('npcs').innerHTML=N.map(card).join('');
 const AI=new Set(['kael','brok','phoebe','ella','liesel','durin']);
-for(const [k] of [...L,...N]){const t=document.getElementById('t_'+k);t.className='tag '+(AI.has(k)?'ai':'local');t.textContent=AI.has(k)?'AI 도트':'로컬 대체품(한도 대기)';}
+for(const [k] of [...L,...N]){const t=document.getElementById('t_'+k);t.className='tag ai';t.textContent=AI.has(k)?'AI 도트(Gemini)':'AI 도트(로컬 Qwen)';}
 </script></body></html>

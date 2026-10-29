@@ -1,7 +1,8 @@
 /**
  * 도트 지도 만들기.
  *   node mercenary/tools/pixel-map.mjs          로컬 변환(채색 대륙 지도 → 색 보정 → 4px/칸 · 40색)
- *   node mercenary/tools/pixel-map.mjs --ai     Gemini 로 조각마다 16비트 도트로 다시 그린 뒤 이어 붙임(월 한도 필요)
+ *   node mercenary/tools/pixel-map.mjs --ai     로컬 Qwen-Image-Edit-2511(Lightning)로 조각마다 16비트 도트로 다시 그린 뒤 이어 붙임
+ *                                               (GEMINI=1 이면 예전 Gemini 경로)
  * 원본: 《균열의 시대》 strategy/Unity/Assets/Resources/MapPainted/painted_continent_8192.jpg (같은 지도 자료에서 칠한 그림).
  * 격자 320×220 에 맞춰 늘린다(원본은 2:1 — 물 마스크 IoU 0.92 로 확인).
  * 산출: mercenary/public/art/map-pixel.png (1280×880), docs/mercenary/art-samples/map-pixel-preview.png
@@ -11,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { pixelize, quantize } from './pixelize.mjs';
+import { ensureComfy, putInput, run, wfQwenEdit } from './comfy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SRC = path.join(ROOT, 'strategy/Unity/Assets/Resources/MapPainted/painted_continent_8192.jpg');
@@ -29,7 +31,9 @@ if (!AI) {
 } else {
   // 4×3 조각(겹침 12칸)을 다시 그린 뒤 가중 평균으로 잇는다
   fs.mkdirSync(CACHE, { recursive: true });
-  const key = fs.readFileSync(path.join(ROOT, '.secrets', 'gemini.key'), 'utf8').trim();
+  const useGemini = !!process.env.GEMINI;
+  const key = useGemini ? fs.readFileSync(path.join(ROOT, '.secrets', 'gemini.key'), 'utf8').trim() : '';
+  if (!useGemini) await ensureComfy();
   const meta = await sharp(SRC).metadata(); const sx = meta.width / GW, sy = meta.height / GH;
   const COLS = 4, ROWS = 3, OV = 12; const tw = Math.ceil(GW / COLS), th = Math.ceil(GH / ROWS);
   const acc = new Float32Array(OW * OH * 3), wsum = new Float32Array(OW * OH);
@@ -38,7 +42,13 @@ if (!AI) {
     + 'Crisp hard pixels, small pixel trees and pixel mountains with dark outlines, limited palette of about 32 colors, rich saturated but tasteful colors, no anti-aliasing, no text, no labels, no frame.';
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const x0 = Math.max(0, c * tw - OV), y0 = Math.max(0, r * th - OV), x1 = Math.min(GW, (c + 1) * tw + OV), y1 = Math.min(GH, (r + 1) * th + OV);
-    const file = path.join(CACHE, `t${r}${c}.png`);
+    const file = path.join(CACHE, `${useGemini ? 'g' : 'q'}${r}${c}.png`);
+    if (!fs.existsSync(file) && !useGemini) {
+      const crop = await sharp(SRC).extract({ left: Math.round(x0 * sx), top: Math.round(y0 * sy), width: Math.round((x1 - x0) * sx), height: Math.round((y1 - y0) * sy) }).resize(1344, Math.round(1344 * (y1 - y0) / (x1 - x0)), { fit: 'fill' }).png().toBuffer();
+      const t0 = Date.now();
+      fs.writeFileSync(file, await run(wfQwenEdit({ image: putInput(`merc_tile${r}${c}.png`, crop), instruction: prompt, seed: 1001 })));
+      console.log('tile', r, c, Math.round((Date.now() - t0) / 1000) + 's');
+    }
     if (!fs.existsSync(file)) {
       const crop = await sharp(SRC).extract({ left: Math.round(x0 * sx), top: Math.round(y0 * sy), width: Math.round((x1 - x0) * sx), height: Math.round((y1 - y0) * sy) }).resize(1400, Math.round(1400 * (y1 - y0) / (x1 - x0) / 1.0)).png().toBuffer();
       const body = { contents: [{ parts: [{ inline_data: { mime_type: 'image/png', data: crop.toString('base64') } }, { text: prompt }] }], generationConfig: { responseModalities: ['IMAGE'] } };
