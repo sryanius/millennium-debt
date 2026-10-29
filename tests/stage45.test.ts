@@ -124,7 +124,7 @@ describe('이야기 시작: 카엘 혼자, 부대장은 합류 이벤트로', ()
     expect(g.event?.id).toBe('join_brok');
     g.chooseEvent(1); // 아직은 됐다 → 다음에 다시 온다
     expect(g.isActive(1)).toBe(false); while (g.event) g.chooseEvent(0);
-    g.fireEvents({ site: 'C025', squadIdx: 0 }); expect(g.event?.id).toBe('join_brok');
+    g.fireEvents({ site: 'C025', squadIdx: 0 }); expect((g as Game).event?.id).toBe('join_brok');
     g.chooseEvent(0); while (g.event) g.chooseEvent(0);
     expect(g.isActive(1)).toBe(true); expect(g.squads[1].siteId).toBe('C025');
     const back = Game.fromJSON(world(), JSON.parse(JSON.stringify(g.toJSON())));
