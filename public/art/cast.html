@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>등장인물 — 천 년의 빚</title>
+<link rel="stylesheet" href="/node_modules/galmuri/dist/galmuri.css" />
+<style>
+ body{margin:0;background:#14121c;color:#e8dcc0;font-family:Galmuri11,sans-serif}
+ h2{font:15px Galmuri11;color:#e0b23c;margin:14px 16px 6px}
+ .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;padding:0 16px 10px}
+ .card{display:flex;gap:10px;background:#2a2219;border:2px solid #8a6a1c;outline:1px solid #e0b23c;outline-offset:-4px;padding:10px}
+ .card img.px{width:144px;height:168px;image-rendering:pixelated;border:1px solid #e0b23c;background:#000}
+ .card img.ai{width:72px;height:90px;object-fit:cover;border:1px solid #555;opacity:.9}
+ .name{font:13px Galmuri11;color:#fbf6e8} .role{font:11px Galmuri9;color:#e0b23c;margin:2px 0 6px} .desc{font:11px Galmuri9;color:#c9bfa6;line-height:1.5}
+ .tag{display:inline-block;font:9px Galmuri9;padding:1px 4px;margin-top:6px;border:1px solid}
+ .tag.ai{color:#9cc45a;border-color:#9cc45a}.tag.local{color:#e2654a;border-color:#e2654a}
+</style></head><body>
+<h2>부대장 6명</h2><div class="grid" id="leaders"></div>
+<h2>NPC 14명</h2><div class="grid" id="npcs"></div>
+<script>
+const L=[['kael','카엘 하임','인간 · 전투 · 주인공','몰락한 하임 가 방계. 아버지가 남긴 빚 1,000만 골을 떠안은 용병단장. 오른뺨의 오래된 흉터.'],
+['brok','브록','오크 · 전투','제도 대학 병법과 유일한 오크 학생. 검은 창 그락의 조카. 이마에 올린 안경.'],
+['phoebe','피비 애플가드','하프링 · 교역','채권자 가문 애플가드의 방계. 상업력 최고. 집행관과 친척이라는 긴장감.'],
+['ella','엘라','혼혈(인간+엘프) · 다목적','아엘라스에서 추방된 혼혈 가문. 엘프 숲 입장의 열쇠. 녹색·호박색 오드아이.'],
+['liesel','리젤','인간(남부) · 공연','세레나 경연 출신 음유시인. 류트를 메고 다닌다. 공연 엔딩의 주역.'],
+['durin','두린','드워프 · 건축·전투','그람둔 포병 학교 중퇴. 투석기·공성 담당. 산문 개방 이벤트의 열쇠.']];
+const N=[['tobias','토비아스 애플가드','벨마르 대금고 집행관','상환일마다 찾아오는 하프링 회계사. 금 사슬 직인, 두꺼운 장부.'],
+['oswin','오스윈 애플가드','벨마르 대금고 총재','완납하면 직접 나오는 채권자. 다정한 미소, 웃지 않는 눈.'],
+['rohan','로한','검은 창 용병대장','라이벌 용병단. 고수익 의뢰를 먼저 채가고 공동 작전을 제안한다.'],
+['shopkeeper','상점 주인','무기점·방패점·약국·도구점·계약소','성마다 있는 상인. 쓰던 장비는 반값에 받는다.'],
+['innkeeper','술집 주인','술집(소문·공연·임무)','소문과 공연 무대, 그리고 대형 이벤트의 입구.'],
+['officer','사관','군사 게시판','토벌령 의뢰를 붙이는 수비대장. 관문 문지기·선장·심판 역도 겸한다.'],
+['clerk','게시판 관리인','민사 게시판','편지·소포·서류·총호송 의뢰를 붙이는 서기.'],
+['guildmaster','건축 길드장','건축 길드','요새 보수·성벽 증축 공사를 맡긴다.'],
+['healer','치유사','병원(사원)','HP·피로를 돈 받고 회복. 아델라 성지 수녀 역도.'],
+['herald','전령','배경 역사 소식','하이펠트 봉기·토벌령·제도 약탈 같은 역사 사건을 전한다.'],
+['alaric','알라릭','상아탑의 마법사','저주받은 골렘, 결계 부품 이벤트.'],
+['isolde','이졸데','세레나 경연 우승자','무희 호송 이벤트. 무사히 데려가면 단원으로 합류(P 38).'],
+['leon','어린 황제 레온','황태후의 밀서','1003년 제도 탈출 대작전의 대상. 250만 골.'],
+['empress','황태후','황태후의 밀서','아들을 남쪽으로 빼내 줄 용병을 찾는다.']];
+const card=([k,n,r,d])=>{const local=false;return `<div class="card"><img class="px" src="portraits-px/${k}.png?v=2"><div><div class="name">${n}</div><div class="role">${r}</div><div class="desc">${d}</div><img class="ai" src="portraits/${k}.png" title="원본 채색"><br><span class="tag" id="t_${k}"></span></div></div>`};
+document.getElementById('leaders').innerHTML=L.map(card).join('');document.getElementById('npcs').innerHTML=N.map(card).join('');
+const AI=new Set(['kael','brok','phoebe','ella','liesel','durin']);
+for(const [k] of [...L,...N]){const t=document.getElementById('t_'+k);t.className='tag '+(AI.has(k)?'ai':'local');t.textContent=AI.has(k)?'AI 도트':'로컬 대체품(한도 대기)';}
+</script></body></html>
