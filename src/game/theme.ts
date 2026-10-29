@@ -1,6 +1,11 @@
 /** 1단계 "네모 그래픽" 팔레트와 글꼴. 6단계에서 도트로 바뀌어도 이름은 유지. */
-export const W = 480;
-export const H = 270;
+/**
+ * 설계 해상도. 큰 화면(PC)은 640×360 으로 넓혀 글자·패널이 화면에서 차지하는 비율을 줄이고 지도를 더 보여 준다.
+ * 폰처럼 작은 화면은 480×270(글자·버튼이 상대적으로 크다). 시작할 때 한 번 정한다.
+ */
+const BIG = typeof window !== 'undefined' && Math.min(window.innerWidth / 640, window.innerHeight / 360) >= 1.45;
+export const W = BIG ? 640 : 480;
+export const H = BIG ? 360 : 270;
 /** HD 렌더 배율: 설계는 480×270, 캔버스는 ×K(1440×810). UI 카메라를 K배로 두어 좌표는 그대로 쓴다. */
 export const K = 3;
 /** 초상 파일 키(public/art/portraits/<key>.png) */

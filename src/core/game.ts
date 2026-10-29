@@ -40,6 +40,7 @@ export interface GameJSON {
   offices: OfficeJSON[]; military: ReturnType<MilitaryBoard['toJSON']>[]; activeMilitary: MilitaryQuest[]; bands: EnemyBand[]; escortLevel: number; deferrals: number;
   forts: Record<string, number>; enemyHeld: string[]; lastShow: Record<string, number>; buildJobs: { siteId: string; day: number; jobs: BuildJob[] }[]; reports: FortReport[]; roamNext: number; rng: number;
   flags: string[]; firedEvents: string[]; jointTarget: string | null; lastMonth: number; startDay: number;
+  recruited?: string[];
 }
 
 export const START_SITE = 'C028'; // 샹파르(GDD §4.1)
@@ -73,6 +74,8 @@ export class Game {
   /** 시작 시점의 통산 일수. 경과일 = day − startDay */
   startDay: number;
   roamNext = 0;
+  /** 합류한 부대장(squad id). 새 게임은 카엘 혼자 시작하고 나머지는 이벤트로 합류한다(startStory). 테스트·옛 저장은 전원 */
+  recruited = new Set<string>(LEADERS.map(l => l.id));
   /** 이벤트 플래그(인장 조각·골렘·호송 중 …) */
   flags = new Set<string>();
   firedEvents = new Set<string>();
@@ -110,6 +113,15 @@ export class Game {
   }
 
   get day(): number { return this.clock.dayIndex; }
+  /** 새 게임: 카엘 하임 부대만으로 시작 */
+  startStory(): void { this.recruited = new Set(['kael']); this.selected = 0; }
+  isActive(i: number): boolean { return this.recruited.has(this.squads[i].id); }
+  /** 부대장 합류: 그 거점에 부대가 생긴다 */
+  recruit(id: string, siteId: string): void {
+    const i = this.squads.findIndex(s => s.id === id); if (i < 0 || this.recruited.has(id)) return;
+    this.recruited.add(id); const s = this.squads[i]; s.pos = { kind: 'at', site: siteId }; s.path = []; s.order = 'idle';
+    this.say('info', '★ ' + s.leader.name + '이(가) 용병단에 합류했다! 화면 아래 ' + (i + 1) + '번 칸.');
+  }
   /** 게임 시작 뒤 지난 날 수 */
   get elapsed(): number { return this.day - this.startDay; }
   get squad(): Squad { return this.squads[this.selected]; }
@@ -289,7 +301,7 @@ export class Game {
     return { ok: true };
   }
   move(squadIdx: number, toSite: string): boolean {
-    const s = this.squads[squadIdx]; if (squadIdx === this.battleSquad) return false;
+    const s = this.squads[squadIdx]; if (squadIdx === this.battleSquad || !this.isActive(squadIdx)) return false;
     if (!this.canEnter(squadIdx, this.world.site(toSite).region).ok) return false;
     const origin = s.pos.kind === 'at' ? s.pos.site : s.pos.to;
     const p = this.world.path(origin, toSite, this.blocked, this.enemyHeld); if (!p) return false;
@@ -497,7 +509,7 @@ export class Game {
       if (b.path && b.path.length) {
         const next = b.path.shift()!; b.site = next; b.nextMove = this.day + BALANCE.rebelMoveDays;
         // 지나가는 길에 아군 부대가 있으면 그 부대가 공격받는다
-        const idx = this.squads.findIndex(s => s.siteId === next);
+        const idx = this.squads.findIndex((s, j) => s.siteId === next && this.isActive(j));
         if (idx >= 0 && !this.battle) { this.say('battle', b.name + '이(가) ' + this.world.site(next).name + '의 ' + this.squads[idx].name + '를 덮쳤다!'); this.engageBand(idx, b); }
         else if (!b.path.length && b.site === b.target) this.say('fort', b.name + '이(가) ' + this.world.site(next).name + ' 앞에 진을 쳤다.');
         continue;
@@ -543,7 +555,7 @@ export class Game {
     if (this.day >= this.roamNext) {
       this.roamNext = this.day + BALANCE.roamSpawnDays;
       if (this.bands.filter(b => b.kind === 'roam').length < BALANCE.roamMaxBands) {
-        const pool = [...this.world.sites.values()].filter(s => s.kind !== 'castle' && !this.blocked.has(s.region) && !this.enemyHeld.has(s.id) && !this.bands.some(b => b.site === s.id) && !this.squads.some(q => q.siteId === s.id));
+        const pool = [...this.world.sites.values()].filter(s => s.kind !== 'castle' && !this.blocked.has(s.region) && !this.enemyHeld.has(s.id) && !this.bands.some(b => b.site === s.id) && !this.squads.some((q, j) => q.siteId === s.id && this.isActive(j)));
         if (pool.length) { const at = this.rng.pick(pool); const tier = this.rng.next() < 0.3 ? 2 : 1; this.bands.push({ id: 'W' + this.day, name: '떠돌이 도적단', site: at.id, tier, questId: null, kind: 'roam', nextMove: this.day + BALANCE.roamMoveDays }); this.say('warn', '소문: ' + this.world.regions.get(at.region)?.name + ' ' + at.name + ' 근처에 떠돌이 도적이 나타났다.'); }
       }
     }
@@ -552,7 +564,7 @@ export class Game {
       if (b.kind !== 'roam' || (b.nextMove ?? 0) > this.day) continue;
       b.nextMove = this.day + BALANCE.roamMoveDays;
       const opts = this.world.site(b.site).adjacent.filter(n => { const s = this.world.site(n); return s.kind !== 'castle' && !this.enemyHeld.has(n) && !this.blocked.has(s.region) && !this.bands.some(x => x.site === n); });
-      if (opts.length) { b.site = this.rng.pick(opts); const idx = this.squads.findIndex(s => s.siteId === b.site); if (idx >= 0 && !this.battle) { this.say('battle', b.name + '이(가) ' + this.squads[idx].name + '를 습격했다!'); this.engageBand(idx, b); } }
+      if (opts.length) { b.site = this.rng.pick(opts); const idx = this.squads.findIndex((s, j) => s.siteId === b.site && this.isActive(j)); if (idx >= 0 && !this.battle) { this.say('battle', b.name + '이(가) ' + this.squads[idx].name + '를 습격했다!'); this.engageBand(idx, b); } }
     }
   }
 
@@ -723,6 +735,7 @@ export class Game {
       forts: Object.fromEntries(this.forts), enemyHeld: [...this.enemyHeld], lastShow: { ...this.lastShow },
       buildJobs: [...this.buildJobs.entries()].map(([siteId, e]) => ({ siteId, day: e.day, jobs: e.jobs })), reports: this.reports.slice(-20), roamNext: this.roamNext, rng: this.rng.state,
       flags: [...this.flags], firedEvents: [...this.firedEvents], jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
+      recruited: [...this.recruited],
     };
   }
   static fromJSON(world: World | WorldData, j: GameJSON): Game {
@@ -740,6 +753,7 @@ export class Game {
     g.buildJobs = new Map((j.buildJobs ?? []).map(e => [e.siteId, { day: e.day, jobs: e.jobs }])); g.reports = j.reports ?? []; g.roamNext = j.roamNext ?? BALANCE.roamSpawnDays;
     if (j.rng) g.rng = new Rng(j.rng);
     if (j.startDay !== undefined) g.startDay = j.startDay;
+    if (j.recruited) g.recruited = new Set(j.recruited);
     g.flags = new Set(j.flags ?? []); g.firedEvents = new Set(j.firedEvents ?? []); g.jointTarget = j.jointTarget ?? null; g.lastMonth = j.lastMonth ?? g.clock.month;
     g.blocked = new Set(j.blocked); g.messages = j.messages; g.unread = 0; g.ending = j.ending; g.selected = j.selected;
     return g;

@@ -224,7 +224,21 @@ const BIG: EventDef[] = [
   },
 ];
 
-export const EVENTS: EventDef[] = [...UNLOCKS, ...HISTORY, ...BIG];
+/** 부대장 합류(새 게임은 카엘 혼자 시작). 남서 곡창 안에서 하나씩 만난다 */
+const join = (id: string, site: string, title: string, portrait: string, text: string, cond: (g: Game) => boolean = () => true): EventDef => ({
+  id: 'join_' + id, once: true,
+  trigger: (g, c) => !g.recruited.has(id) && at(c, site) && cond(g),
+  build: () => ({ id: 'join_' + id, title, portrait, text, choices: [{ label: '함께 가자', effect: g => { g.recruit(id, site); return undefined; } }, { label: '아직은 됐다', effect: g => { g.firedEvents.delete('join_' + id); } }] }),
+});
+const JOINS: EventDef[] = [
+  join('phoebe', 'C028', '대금고의 감시인', '피비 애플가드', '"벨마르 대금고 애플가드 가문의 피비예요. 숙부님(토비아스)이 당신 장부를 지켜보라고 보냈죠. 어차피 따라다닐 거, 장사 수완이라도 빌려 드릴게요." 상업력이 높아 교역에 강하다.', g => g.elapsed >= 3),
+  join('brok', 'C025', '오크 병법가', '브록', '"제도 대학 병법과에서 쫓겨난 오크, 브록이다. 삼촌 그락은 검은 창에 있지만 나는 내 이름으로 싸우고 싶다." 오르블랑 술집 구석의 오크가 자리에서 일어선다. 전투에 강하다.'),
+  join('liesel', 'C026', '떠돌이 음유시인', '리젤', '"발리스 광장에서 노래하는 리젤이에요. 용병단엔 사기를 올릴 노래가 필요하잖아요?" 공연으로 돈을 번다(술집).'),
+  join('ella', 'C029', '숲에서 쫓겨난 혼혈', '엘라', '"아엘라스에서 쫓겨난 혼혈, 엘라. 엘프 숲은 혼혈이나 엘프가 있어야 들어갈 수 있어. 언젠가 쓸모가 있을 거야." 활을 잘 쏜다.'),
+  join('durin', 'C030', '수도원의 드워프 공병', '두린', '"세인트 아르노 수도원 지붕을 고치던 두린이오. 포병 학교는 중퇴했지만 성벽은 잘 쌓지." 건축·공성에 강하고, 드워프 산문을 여는 열쇠다.'),
+];
+
+export const EVENTS: EventDef[] = [...JOINS, ...UNLOCKS, ...HISTORY, ...BIG];
 
 /** 검은 창 공동 작전 때 붙는 아군 */
 export const BLACK_SPEAR_ALLIES: EnemyDef[] = [1, 2, 3].map(i => ({ name: '검은 창 창병 ' + i, job: '창병', hp: 36, s: 20, d: 14, range: 0, cooldown: 1.0, speed: 21, bounty: 0 }));

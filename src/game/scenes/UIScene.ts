@@ -33,7 +33,7 @@ export class UIScene extends Phaser.Scene {
   private dateText!: Phaser.GameObjects.Text; private dueText!: Phaser.GameObjects.Text; private clockGfx!: Phaser.GameObjects.Graphics;
   private debtText!: Phaser.GameObjects.Text; private cashText!: Phaser.GameObjects.Text; private regionText!: Phaser.GameObjects.Text;
   private speedBtn!: Phaser.GameObjects.Container; private msgText!: Phaser.GameObjects.Text; private msgBg!: Phaser.GameObjects.Rectangle;
-  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text }[] = [];
+  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number }[] = [];
   private miniView!: Phaser.GameObjects.Rectangle; private miniScale = 0.2125;
   private lastSlotTap = { i: -1, t: 0 };
   private autosaveAt = 0;
@@ -68,30 +68,32 @@ export class UIScene extends Phaser.Scene {
     return r;
   }
   private miniGfx!: Phaser.GameObjects.Graphics; private miniBlockedKey = '';
+  private miniW = 0; private miniH = 0;
   private drawMini(): void {
+    // 막힌 지역은 축소 지도에 자물쇠 점만(네모로 덮지 않는다)
     const sc = this.miniScale; const gfx = this.miniGfx; gfx.clear();
     for (const r of this.g.world.regions.values()) {
-      const b = this.g.world.regionBounds(r.id);
-      const hasMap = this.textures.exists('mappx');
-      if (hasMap && !this.g.blocked.has(r.id)) continue; // 그림 지도 위에는 막힌 지역만 어둡게
-      gfx.fillStyle(hasMap ? 0x000000 : (REGION_COLOR[r.id] ?? 0x555555), hasMap ? 0.55 : this.g.blocked.has(r.id) ? 0.35 : 0.9);
-      gfx.fillRect(4 + (b.minX - 6) * sc, 4 + (b.minY - 6) * sc, (b.maxX - b.minX + 12) * sc, (b.maxY - b.minY + 12) * sc);
+      if (!this.g.blocked.has(r.id)) continue;
+      const b = this.g.world.regionBounds(r.id); const cx = 4 + (b.minX + b.maxX) / 2 * sc, cy = 4 + (b.minY + b.maxY) / 2 * sc;
+      gfx.fillStyle(0x000000, 0.7).fillRect(cx - 2.5, cy - 2, 5, 4); gfx.fillStyle(0xe0b23c, 1).fillRect(cx - 1.5, cy - 1, 3, 2); gfx.lineStyle(1, 0xe0b23c, 1).strokeRect(cx - 1, cy - 3.5, 2, 2.5);
     }
     this.miniBlockedKey = [...this.g.blocked].join(',');
   }
+  /** 좌상: 축소 지도(실제 도트 지도) + 세계 지도 단추 */
   private buildMinimap(): void {
-    const m = this.g.world.map!; const sc = this.miniScale; const w = Math.round(m.width * sc), h = Math.round(m.height * sc);
+    const m = this.g.world.map!; this.miniScale = (W >= 640 ? 84 : 68) / m.width; const sc = this.miniScale; const w = Math.round(m.width * sc), h = Math.round(m.height * sc);
+    this.miniW = w; this.miniH = h;
     this.panel(2, 2, w + 4, h + 4);
     if (this.textures.exists('mappx')) {
-      // 지도 그림을 부드럽게 줄인 텍스처(K배 해상도)를 만들어 쓴다
-      if (!this.textures.exists('minimap')) {
+      const key = 'minimap' + w;
+      if (!this.textures.exists(key)) {
         const src = this.textures.get('mappx').getSourceImage() as HTMLImageElement;
-        const t = this.textures.createCanvas('minimap', w * K, h * K)!; const ctx = t.getContext(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w * K, h * K); t.refresh();
+        const t = this.textures.createCanvas(key, w * K, h * K)!; const ctx = t.getContext(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w * K, h * K); t.refresh();
       }
-      this.add.image(4, 4, 'minimap').setOrigin(0).setScale(1 / K);
+      this.add.image(4, 4, key).setOrigin(0).setScale(1 / K);
     }
     const gfx = this.add.graphics(); this.miniGfx = gfx; this.drawMini();
-    this.miniView = this.add.rectangle(4, 4, 10, 10, 0xffffff, 0).setOrigin(0).setStrokeStyle(1, 0xffffff);
+    this.miniView = this.add.rectangle(4, 4, 10, 10, 0xffffff, 0).setOrigin(0).setStrokeStyle(1, 0xfbf6e8, 0.9);
     const hit = this.add.rectangle(4, 4, w, h, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
     hit.on('pointerup', (_p: Phaser.Input.Pointer, lx: number, ly: number, ev: Phaser.Types.Input.EventData) => {
       ev.stopPropagation(); if (this.modal) return;
@@ -103,56 +105,68 @@ export class UIScene extends Phaser.Scene {
     makeButton(this, 2, h + 8, '세계 지도', () => { if (!this.modal) (this.map.mode === 'world' ? this.map.showRegion(this.map.regionId) : this.map.showWorld()); }, { w: w + 4, h: 12, small: true });
     this.panels.push(new Phaser.Geom.Rectangle(2, h + 8, w + 4, 12));
   }
+  /** 우상: 속도·부대·시스템 */
   private buildTopRight(): void {
-    const x0 = W - 2 - 3 * 22;
-    this.panels.push(new Phaser.Geom.Rectangle(x0, 2, 66, 16));
-    this.speedBtn = makeButton(this, x0, 2, '▶1', () => this.cycleSpeed(), { w: 20, h: 14 });
-    makeButton(this, x0 + 22, 2, '⚑', () => this.openSquads(), { w: 20, h: 14 });
-    makeButton(this, x0 + 44, 2, '⚙', () => this.openSystem(), { w: 20, h: 14 });
+    const x0 = W - 2 - 3 * 18;
+    this.panels.push(new Phaser.Geom.Rectangle(x0, 2, 54, 14));
+    this.speedBtn = makeButton(this, x0, 2, '▶1', () => this.cycleSpeed(), { w: 17, h: 13, small: true });
+    makeButton(this, x0 + 18, 2, '⚑', () => this.openSquads(), { w: 17, h: 13, small: true });
+    makeButton(this, x0 + 36, 2, '⚙', () => this.openSystem(), { w: 17, h: 13, small: true });
   }
+  /** 좌하: 반원 시계 + 날짜 */
   private buildClock(): void {
-    this.panel(2, H - 44, 100, 42);
+    this.panel(2, H - 30, 92, 28);
     this.clockGfx = this.add.graphics();
-    this.dateText = this.add.text(36, H - 40, '', TEXT);
-    this.dueText = this.add.text(36, H - 27, '', TEXT_SMALL);
-    this.add.text(36, H - 17, '7·14·21·28일', { ...TEXT_SMALL, color: C.grey });
+    this.dateText = this.add.text(30, H - 27, '', TEXT_SMALL);
+    this.dueText = this.add.text(30, H - 17, '', TEXT_SMALL);
   }
+  /** 우하: 재정 */
   private buildFinance(): void {
-    this.panel(W - 118, H - 52, 116, 50);
-    this.regionText = this.add.text(W - 111, H - 48, '', { ...TEXT_SMALL, color: C.gold });
-    this.debtText = this.add.text(W - 111, H - 38, '', { ...TEXT_SMALL, lineSpacing: 0 });
-    this.cashText = this.add.text(W - 111, H - 17, '', { ...TEXT, color: C.white });
-    const hit = this.add.rectangle(W - 118, H - 52, 116, 50, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+    const w = 104; this.panel(W - w - 2, H - 30, w, 28);
+    this.debtText = this.add.text(W - w + 4, H - 27, '', { ...TEXT_SMALL, color: '#e2a08a' });
+    this.cashText = this.add.text(W - w + 4, H - 17, '', { ...TEXT_SMALL, color: C.white });
+    this.regionText = this.add.text(W - 4, 4 + 16, '', { ...TEXT_SMALL, color: C.gold, stroke: '#1a1c2c', strokeThickness: 2 }).setOrigin(1, 0);
+    const hit = this.add.rectangle(W - w - 2, H - 30, w, 28, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
     hit.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLedger(); });
   }
+  /** 하단 가운데: 부대장 카드 6장(초상 + 이름 + HP·피로 막대). 아직 합류 안 한 칸은 자물쇠 */
+  private slotX0 = 0; private slotW = 0;
   private buildSquadBar(): void {
-    // 시계 패널(2~100)과 재정 패널(362~478) 사이에 딱 맞게
-    const sw = 42, gap = 1, total = 6 * sw + 5 * gap; const x0 = 104;
-    this.panels.push(new Phaser.Geom.Rectangle(x0 - 2, H - 26, total + 4, 26));
+    const left = 96, right = W - 108; const gap = 2; const sw = Math.min(54, Math.floor((right - left - 5 * gap) / 6)); const total = 6 * sw + 5 * gap; const x0 = Math.round(left + (right - left - total) / 2);
+    this.slotX0 = x0; this.slotW = sw;
+    this.panels.push(new Phaser.Geom.Rectangle(x0 - 1, H - 30, total + 2, 28));
     this.g.squads.forEach((sq, i) => {
-      const x = x0 + i * (sw + gap);
-      const frame = hasSkin(this) ? nine(this, x, H - 25, sw, 23, buttonKey(this, 0x2e241c, 'n'), 3) : null;
-      const bg = this.add.rectangle(x, H - 24, sw, 22, C.panel, frame ? 0.001 : 0.92).setOrigin(0).setInteractive({ useHandCursor: true });
-      if (!frame) bg.setStrokeStyle(1, C.border);
-      const num = this.add.text(x + 4, H - 22, String(i + 1), { ...TEXT_SMALL, color: C.gold });
-      const name = this.add.text(x + 11, H - 22, sq.leader.name.split(' ')[0], TEXT_SMALL);
-      const state = this.add.text(x + 4, H - 13, '', { ...TEXT_SMALL, color: C.paperDark });
+      const x = x0 + i * (sw + gap), y = H - 30;
+      const frame = hasSkin(this) ? nine(this, x, y, sw, 28, buttonKey(this, 0x2e241c, 'n'), 3) : null;
+      const bg = this.add.rectangle(x, y, sw, 28, C.panel, frame ? 0.001 : 0.92).setOrigin(0).setInteractive({ useHandCursor: true });
+      // 초상: 얼굴 부분만(48×56 도트에서 위쪽 가운데)
+      let face: Phaser.GameObjects.Image | null = null;
+      const fs_ = sw >= 50 ? 0.73 : 0.54; const tx = sw >= 50 ? 26 : 19;
+      if (this.textures.exists('p_' + sq.id)) { face = this.add.image(0, 0, 'p_' + sq.id).setOrigin(0).setCrop(10, 4, 28, 30).setScale(fs_); face.setPosition(x + 3 - 10 * fs_, y + (sw >= 50 ? 3 : 6) - 4 * fs_); }
+      const name = this.add.text(x + tx, y + 3, (sw >= 50 ? (i + 1) + ' ' : '') + sq.leader.name.split(' ')[0], { ...TEXT_SMALL, color: C.gold });
+      const state = this.add.text(x + tx, y + 12, '', { ...TEXT_SMALL, color: C.paperDark });
+      const bars = this.add.graphics();
+      const lock = this.add.text(x + sw / 2, y + 14, '?', { ...TEXT, color: '#6a5a44' }).setOrigin(0.5);
       bg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => {
         ev.stopPropagation(); if (this.modal) return;
+        if (!this.g.isActive(i)) { this.toast('아직 합류하지 않은 부대장 — 남서 곡창의 성들을 돌아보자'); return; }
         const now = this.time.now;
         if (this.lastSlotTap.i === i && now - this.lastSlotTap.t < 400) this.map.focusSquad(i);
         this.lastSlotTap = { i, t: now }; this.g.selected = i;
       });
-      this.slots.push({ bg, frame, name, state }); void num;
+      this.slots.push({ bg, frame, name, state, face, bars, lock, x, y });
     });
   }
+  /** 상단 가운데: 소식 한 줄 */
   private buildTicker(): void {
-    if (hasSkin(this)) nine(this, 104, H - 45, 257, 14, buttonKey(this, 0x1e1812, 'n'), 3);
-    this.msgBg = this.add.rectangle(104, H - 44, 257, 12, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
-    this.msgText = this.add.text(108, H - 43, '', { ...TEXT_SMALL, color: C.white });
+    const x = this.miniW + 10, w = W - x - 62;
+    if (hasSkin(this)) nine(this, x, 2, w, 13, buttonKey(this, 0x1e1812, 'n'), 3);
+    this.msgBg = this.add.rectangle(x, 2, w, 13, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
+    this.msgText = this.add.text(x + 4, 4, '', { ...TEXT_SMALL, color: C.white });
     this.msgBg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLog(); });
-    this.panels.push(new Phaser.Geom.Rectangle(104, H - 45, 257, 14));
+    this.panels.push(new Phaser.Geom.Rectangle(x, 2, w, 13)); this.tickerW = w - 10;
   }
+  private tickerW = 200;
 
   private cycleSpeed(): void {
     if (this.modal || this.g.ending) return;
@@ -179,7 +193,7 @@ export class UIScene extends Phaser.Scene {
     w.portrait(6, 6, 40, 48, 'kael', '카엘');
     w.text(52, 6, '아버지가 남긴 빚은 ' + fmt(BALANCE.startDebt) + '골.', { wordWrap: { width: 240 } });
     w.text(52, 22, '벨마르 대금고는 매달 7·14·21·28일에\n최소 ' + fmt(BALANCE.minRepayment) + '골씩 받아 간다.', { wordWrap: { width: 240 } });
-    w.small(52, 54, '거점을 눌러 이동하고, 성에 들어가 교역소·민사게시판에서 돈을 벌자.\n화면 아래 1~6번이 부대장. 지도는 끌어서 움직이고 휠로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
+    w.small(52, 54, '지금은 카엘 혼자다. 성을 눌러 용병을 고용하고, 교역소·게시판에서 돈을 벌자. 남서 곡창의 성들을 돌면 다른 부대장들을 만난다. 지도는 끌어서 움직이고 휠로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
     w.button(230, 106, '시작', () => w.close(), { w: 60, h: 16 });
   }
 
@@ -188,13 +202,14 @@ export class UIScene extends Phaser.Scene {
     if (this.modal) return;
     const s = this.g.world.site(id); const sq = this.g.squad; const here = sq.siteId === id;
     const region = this.g.world.regions.get(s.region)?.name ?? '';
-    const w = this.win(190, here && isTown(s) ? 190 : 128, s.name + ' (' + KIND_LABEL[s.kind] + ' · ' + region + ')' + (this.g.enemyHeld.has(id) ? ' ⚑' : ''));
+    const w = this.win(190, here && isTown(s) ? 206 : 128, s.name + ' (' + KIND_LABEL[s.kind] + ' · ' + region + ')' + (this.g.enemyHeld.has(id) ? ' ⚑' : ''));
     const eta = this.g.eta(this.g.selected, id);
     const blocked = this.g.blocked.has(s.region);
     const items: { label: string; onClick?: () => void; disabled?: boolean }[] = [];
     if (here && isTown(s)) {
       // 원작의 거점 명령 9항목(GDD §7.1.1)
       items.push(
+        { label: '용병 고용 (계약소)', onClick: () => openContract(this, id) },
         { label: '부대원 편성', onClick: () => openRoster(this) }, { label: '병기 편성', onClick: () => openEquip(this) },
         { label: '교역소에 감', onClick: () => this.openMarket(id), disabled: !hasMarket(s) },
         { label: '건축', onClick: () => openBuild(this, id) },
@@ -339,6 +354,7 @@ export class UIScene extends Phaser.Scene {
     if (this.g.ending) return;
     const w = this.win(300, 130, '부대');
     this.g.squads.forEach((sq, i) => {
+      if (!this.g.isActive(i)) { w.small(6, 6 + i * 17, (i + 1) + ' ???  (아직 만나지 못한 부대장)', { color: C.grey }); return; }
       const y = 4 + i * 17;
       const where = sq.siteId ? this.g.world.site(sq.siteId).name : (this.g.world.site((sq.pos as any).to).name + '로 이동 중');
       w.button(6, y, (i + 1) + ' ' + sq.name, () => { this.g.selected = i; w.close(); this.openSquad(i); }, { w: 110, h: 14, small: true, color: i === this.g.selected ? 0x6a5a2a : undefined });
@@ -399,37 +415,41 @@ export class UIScene extends Phaser.Scene {
   // ───── 매 프레임 ─────
   update(time: number): void {
     const g = this.g; const c = g.clock;
-    // 시계: 반원 황금 시계 + 바늘(원작 좌하), 날짜, 다음 상환
+    // 시계: 반원 황금 시계 + 바늘(원작 좌하)
     const gfx = this.clockGfx; gfx.clear();
-    const cx = 18, cy = H - 8;
-    gfx.fillStyle(0x3a2e1a).slice(cx, cy, 16, Math.PI, 0, false).fillPath();
-    gfx.lineStyle(1, C.border).beginPath().arc(cx, cy, 16, Math.PI, 0, false).strokePath();
-    for (let i = 0; i <= 4; i++) { const a = Math.PI + (Math.PI * i) / 4; gfx.lineStyle(1, 0xe0b23c).lineBetween(cx + Math.cos(a) * 13, cy + Math.sin(a) * 13, cx + Math.cos(a) * 16, cy + Math.sin(a) * 16); }
-    const a = Math.PI + Math.PI * c.frac; gfx.lineStyle(1, 0xffffff).lineBetween(cx, cy, cx + Math.cos(a) * 12, cy + Math.sin(a) * 12);
-    gfx.fillStyle(0xffffff).fillRect(cx - 1, cy - 1, 2, 2);
+    const cx = 15, cy = H - 7, R = 11;
+    gfx.fillStyle(0x3a2e1a).slice(cx, cy, R, Math.PI, 0, false).fillPath();
+    gfx.lineStyle(1, C.border).beginPath().arc(cx, cy, R, Math.PI, 0, false).strokePath();
+    for (let i = 0; i <= 4; i++) { const a = Math.PI + (Math.PI * i) / 4; gfx.lineStyle(1, 0xe0b23c).lineBetween(cx + Math.cos(a) * (R - 3), cy + Math.sin(a) * (R - 3), cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
+    const a = Math.PI + Math.PI * c.frac; gfx.lineStyle(1, 0xffffff).lineBetween(cx, cy, cx + Math.cos(a) * (R - 2), cy + Math.sin(a) * (R - 2));
     this.dateText.setText(GameClock.format(c.date));
     const due = c.daysToRepayment;
     this.dueText.setText(due === 0 ? '오늘 상환일!' : '상환까지 ' + due + '일').setColor(due <= 1 ? C.red : C.paperDark);
     this.speedBtn.getAt<Phaser.GameObjects.Text>(1).setText(c.speed === 0 ? '⏸' : '▶' + c.speed);
     // 재정
     this.regionText.setText(g.world.regions.get(this.map.regionId)?.name ?? '');
-    this.debtText.setText('부채  ' + fmt(g.ledger.debt) + '\n상환  ' + fmt(g.ledger.minRepayment));
-    this.cashText.setText('소지금 ' + fmt(g.ledger.cash));
-    // 부대 바
+    this.debtText.setText('부채 ' + fmt(g.ledger.debt));
+    this.cashText.setText('소지 ' + fmt(g.ledger.cash) + '골');
+    // 부대 카드
     g.squads.forEach((sq, i) => {
-      const s = this.slots[i];
-      if (s.frame) { const k = buttonKey(this, i === g.selected ? 0x6a5020 : 0x2e241c, i === g.selected ? 'h' : 'n'); if (s.frame.texture.key !== k) s.frame.setTexture(k); }
-      else s.bg.setStrokeStyle(1, i === g.selected ? C.flagSel : C.border).setFillStyle(i === g.selected ? 0x4a3b2a : C.panel, 0.92);
+      const s = this.slots[i]; const on = g.isActive(i);
+      s.lock.setVisible(!on); s.name.setVisible(on); s.state.setVisible(on); s.face?.setVisible(on);
+      if (s.frame) { const k = buttonKey(this, !on ? 0x1e1a16 : i === g.selected ? 0x6a5020 : 0x2e241c, on && i === g.selected ? 'h' : 'n'); if (s.frame.texture.key !== k) s.frame.setTexture(k); }
+      s.bars.clear(); if (!on) return;
       const dest = sq.destination;
-      const where = sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, 4) : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, 4) : '…');
-      s.state.setText((sq.order === 'stay' ? '체재 ' : sq.order === 'build' ? '공사 ' : '') + where);
+      const nl = this.slotW >= 50 ? 4 : 3; const where = g.battleSquad === i ? '교전' : sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, nl - 1) : sq.order === 'build' ? '공사' : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, nl) : '…');
+      if (s.state.text !== where) s.state.setText(where).setColor(g.battleSquad === i ? C.red : C.paperDark);
+      const hp = sq.people.reduce((t, p) => t + p.stats.hp, 0) / Math.max(1, sq.people.reduce((t, p) => t + p.stats.maxHp, 0));
+      const tx = this.slotW >= 50 ? 26 : 19; const bw = this.slotW - tx - 3; const bx = s.x + tx, by = s.y + 22;
+      s.bars.fillStyle(0x1a1c2c).fillRect(bx, by, bw, 2).fillStyle(hp > 0.5 ? 0x5f9a3c : hp > 0.25 ? 0xd0b040 : 0xd04040).fillRect(bx, by, Math.round(bw * hp), 2);
+      s.bars.fillStyle(0x1a1c2c).fillRect(bx, by + 3, bw, 1).fillStyle(0xe0b23c).fillRect(bx, by + 3, Math.round(bw * Math.min(1, sq.members.length / 8)), 1);
     });
     // 소식 한 줄
     const last = g.messages[g.messages.length - 1];
     const full = (g.unread > 0 ? '● ' : '') + (last?.text ?? '');
     if (full !== this.lastTicker) {
       this.lastTicker = full; let s = full; this.msgText.setText(s);
-      while (this.msgText.width > 248 && s.length > 4) { s = s.slice(0, -2) + '…'; this.msgText.setText(s); }
+      while (this.msgText.width > this.tickerW && s.length > 4) { s = s.slice(0, -2) + '…'; this.msgText.setText(s); }
     }
     if (this.miniBlockedKey !== [...g.blocked].join(',')) this.drawMini();
     // 축소 지도의 현재 화면 틀

@@ -114,3 +114,20 @@ describe('5단계: 대형 이벤트와 엔딩', () => {
 let cached: World | null = null;
 function world(): World { return cached ??= new World(WORLD_DATA, { maxDistance: BALANCE.ferryMaxDistance, speedMul: BALANCE.ferrySpeedMul }); }
 void START_SITE; void run;
+
+describe('이야기 시작: 카엘 혼자, 부대장은 합류 이벤트로', () => {
+  it('새 이야기에서는 카엘만 움직이고, 브록은 그의 성에서 "함께 가자" 로 합류한다', () => {
+    const g = new Game(world(), 31); g.startStory();
+    expect(g.isActive(0)).toBe(true); expect(g.isActive(1)).toBe(false);
+    expect(g.move(1, 'C028')).toBe(false);
+    teleport(g, 0, 'C025'); g.fireEvents({ site: 'C025', squadIdx: 0 });
+    expect(g.event?.id).toBe('join_brok');
+    g.chooseEvent(1); // 아직은 됐다 → 다음에 다시 온다
+    expect(g.isActive(1)).toBe(false); while (g.event) g.chooseEvent(0);
+    g.fireEvents({ site: 'C025', squadIdx: 0 }); expect(g.event?.id).toBe('join_brok');
+    g.chooseEvent(0); while (g.event) g.chooseEvent(0);
+    expect(g.isActive(1)).toBe(true); expect(g.squads[1].siteId).toBe('C025');
+    const back = Game.fromJSON(world(), JSON.parse(JSON.stringify(g.toJSON())));
+    expect(back.isActive(1)).toBe(true); expect(back.isActive(2)).toBe(false);
+  });
+});
