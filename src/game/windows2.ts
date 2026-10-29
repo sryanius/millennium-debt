@@ -29,7 +29,7 @@ export function openContract(ui: UIScene, siteId: string): void {
   let picked: string | null = null;
   const render = () => {
     w.clearBody(); const g = ui.g; const sq = g.squad; const cands = g.office(siteId)!;
-    w.rect(6, 2, 36, 22, C.panelLight); w.small(8, 8, '계약소', { color: C.grey });
+    w.portrait(6, 2, 36, 24, 'shopkeeper', '계약소');
     w.small(48, 4, '"' + sq.leader.name + ' 부대장, 쓸 만한 사람들입니다. 급료는 매달 1일."', { color: C.paperDark });
     w.small(48, 14, '소지금 ' + fmt(g.ledger.cash) + '골   부대 급료 합계 ' + fmt(sq.wages) + '/월', { color: C.gold });
     const cols = [6, 70, 100, 134, 258, 300];
@@ -62,7 +62,7 @@ export function openShop(ui: UIScene, siteId: string, kind: 'weapon' | 'armor' |
   let picked: string | null = ui.g.squad.leader.id;
   const render = () => {
     w.clearBody(); const g = ui.g; const sq = g.squad; const items = g.shopItems(siteId, kind);
-    w.rect(6, 2, 36, 22, C.panelLight); w.small(12, 8, '점주', { color: C.grey });
+    w.portrait(6, 2, 36, 24, 'shopkeeper', '점주');
     const p = sq.people.find(x => x.id === picked) ?? sq.leader; picked = p.id;
     w.small(48, 4, '"' + p.name + '에게 맞춰 드리지요. 쓰던 건 반값에 받습니다."', { color: C.paperDark });
     w.small(48, 14, '소지금 ' + fmt(g.ledger.cash) + '골', { color: C.gold });
@@ -93,7 +93,7 @@ export function openHospital(ui: UIScene, siteId: string): void {
   const w = ui.win(300, 150, ui.g.world.site(siteId).name + ' 병원(사원)');
   const render = () => {
     w.clearBody(); const g = ui.g; const sq = g.squad; const cost = g.hospitalCost(g.selected);
-    w.rect(6, 4, 36, 40, C.panelLight); w.small(10, 18, '치유사', { color: C.grey });
+    w.portrait(6, 4, 36, 44, 'healer', '치유사');
     w.small(48, 4, cost > 0 ? '"다친 분들이군요. 전부 돌봐 드리면 ' + fmt(cost) + '골입니다."' : '"모두 건강합니다. 또 오십시오."', { color: C.paperDark, wordWrap: { width: 240 } });
     sq.people.slice(0, 9).forEach((p, i) => w.small(6 + (i % 3) * 98, 48 + Math.floor(i / 3) * 12, p.name.slice(0, 5) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피로' + p.stats.f, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paper }));
     w.button(6, w.bh - 32, '치료 (' + fmt(cost) + '골)', () => { if (!g.heal(g.selected)) ui.toast('돈 부족'); render(); }, { w: 120, h: 16, disabled: cost <= 0 || g.ledger.cash < cost });
@@ -107,7 +107,7 @@ export function openMilitary(ui: UIScene, siteId: string): void {
   const w = ui.win(400, 160, ui.g.world.site(siteId).name + ' 군사 게시판');
   const render = () => {
     w.clearBody(); const g = ui.g; const b = g.militaryBoard(siteId)!;
-    w.rect(6, 4, 36, 36, C.panelLight); w.small(10, 16, '사관', { color: C.grey });
+    w.portrait(6, 4, 36, 44, 'officer', '사관');
     w.small(48, 4, '"토벌령이다. 도적단을 치면 보수를 준다. 기한은 없다."', { color: C.paperDark });
     ['작전 내용', '규모', '의뢰인', '보수', ''].forEach((h, i) => w.small([48, 220, 262, 320, 356][i], 18, h, { color: C.grey }));
     if (!b.quests.length) w.small(48, 30, '지금은 의뢰가 없다.', { color: C.grey });
@@ -176,7 +176,7 @@ export function openEquip(ui: UIScene): void {
 export function openCollector(ui: UIScene, onFight: () => void, onDone: () => void): void {
   const g = ui.g; const v = g.collectorVisit!; const l = g.ledger;
   const w = ui.win(340, 176, '벨마르 대금고 집행관 — ' + Clock.format(g.clock.date), false);
-  w.rect(6, 6, 44, 56, C.panelLight); w.small(10, 26, '토비아스\n애플가드', { color: C.grey });
+  w.portrait(6, 6, 44, 56, 'tobias', '토비아스');
   let line: string; let color: string = C.paper;
   if (v.short) { line = '"상환액 ' + fmt(l.minRepayment) + '골이 없으시군요. 뒤에 호위대 ' + v.escortLevel + '단계가 있습니다. 싸워 이기면 이번 주는 봐 드리죠. 아니면 계약대로 가산금 ' + fmt(BALANCE.missedPenalty) + '골입니다."'; color = C.red; }
   else if (v.fought === 'victory') line = '"…졌군요. 좋습니다, 이번 주는 미룹니다. 다음엔 더 센 사람들을 데려오죠."';

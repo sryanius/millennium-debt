@@ -8,7 +8,7 @@ import { KIND_LABEL, hasMarket, isTown } from '../../core/world';
 import { GameClock as Clock } from '../../core/clock';
 import { Window, makeButton } from '../Window';
 import { clearSave, hasSave, loadGame, saveGame } from '../save';
-import { C, H, REGION_COLOR, TEXT, TEXT_SMALL, W } from '../theme';
+import { C, H, K, REGION_COLOR, TEXT, TEXT_SMALL, W, portraitKey } from '../theme';
 import type { MapScene } from './MapScene';
 import type { BattleScene } from './BattleScene';
 import { openCollector as openCollector2, openContract, openEquip, openHospital, openMilitary as openMilitary2, openRoster, openShop } from '../windows2';
@@ -43,10 +43,11 @@ export class UIScene extends Phaser.Scene {
   create(): void {
     this.g = this.registry.get('game') as Game;
     this.map = this.scene.get('map') as MapScene;
+    this.cameras.main.setZoom(K).centerOn(W / 2, H / 2); // 설계 좌표 480×270 그대로, 캔버스는 ×K
     this.map.inputBlocked = () => this.modal !== null || this.g.battle !== null;
     this.scene.launch('battle'); this.battleScene = this.scene.get('battle') as BattleScene;
     this.battleScene.onResultClosed = () => { this.battleActive = false; if (!this.g.ending && !this.g.collectorVisit && this.g.clock.speed === 0) this.g.clock.speed = 1; };
-    this.map.uiHit = (x, y) => this.panels.some(r => r.contains(x, y));
+    this.map.uiHit = (x, y) => this.panels.some(r => r.contains(x / K, y / K));
     this.map.events.on('site-click', (id: string) => this.openSite(id));
     this.map.events.on('squad-click', (i: number) => { this.g.selected = i; });
     this.buildMinimap(); this.buildTopRight(); this.buildClock(); this.buildFinance(); this.buildSquadBar(); this.buildTicker();
@@ -77,9 +78,9 @@ export class UIScene extends Phaser.Scene {
     const gfx = this.add.graphics(); this.miniGfx = gfx; this.drawMini();
     this.miniView = this.add.rectangle(4, 4, 10, 10, 0xffffff, 0).setOrigin(0).setStrokeStyle(1, 0xffffff);
     const hit = this.add.rectangle(4, 4, w, h, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
-    hit.on('pointerup', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => {
+    hit.on('pointerup', (_p: Phaser.Input.Pointer, lx: number, ly: number, ev: Phaser.Types.Input.EventData) => {
       ev.stopPropagation(); if (this.modal) return;
-      const wx = (p.x - 4) / sc, wy = (p.y - 4) / sc;
+      const wx = lx / sc, wy = ly / sc;
       let best: string | null = null, bd = Infinity;
       for (const r of this.g.world.regions.values()) { const b = this.g.world.regionBounds(r.id); const d = Math.hypot(wx - (b.minX + b.maxX) / 2, wy - (b.minY + b.maxY) / 2); if (d < bd) { bd = d; best = r.id; } }
       if (best) this.map.showRegion(best);
@@ -156,7 +157,7 @@ export class UIScene extends Phaser.Scene {
 
   private openIntro(): void {
     const w = this.win(300, 120, '제국력 1000년 봄 — 샹파르');
-    w.rect(6, 6, 40, 48, C.panelLight); w.small(8, 46, '초상', { color: C.grey });
+    w.portrait(6, 6, 40, 48, 'kael', '카엘');
     w.text(52, 6, '아버지가 남긴 빚은 ' + fmt(BALANCE.startDebt) + '골.', { wordWrap: { width: 240 } });
     w.text(52, 22, '벨마르 대금고는 매달 7·14·21·28일에\n최소 ' + fmt(BALANCE.minRepayment) + '골씩 받아 간다.', { wordWrap: { width: 240 } });
     w.small(52, 54, '거점을 눌러 이동하고, 성에 들어가 교역소·민사게시판에서 돈을 벌자.\n화면 아래 1~6번이 부대장. 지도는 끌어서 움직이고 휠로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
@@ -259,7 +260,7 @@ export class UIScene extends Phaser.Scene {
     const render = () => {
       w.clearBody();
       const b = this.g.board(siteId)!; const sq = this.g.squad;
-      w.rect(6, 4, 36, 36, C.panelLight); w.small(10, 16, '게시판\n관리인', { color: C.grey });
+      w.portrait(6, 4, 36, 44, 'clerk', '관리인');
       w.small(48, 4, '"' + sq.leader.name + ' 부대장님, 오늘 들어온 의뢰는 이렇습니다."', { color: C.paperDark });
       const cols = [48, 90, 180, 220, 290, 340];
       ['일', '목적지', '기간', '의뢰인', '보수', ''].forEach((h, i) => w.small(cols[i], 18, h, { color: C.grey }));
@@ -328,7 +329,7 @@ export class UIScene extends Phaser.Scene {
   private openSquad(i: number): void {
     const sq = this.g.squads[i]; const st = sq.leader.stats;
     const w = this.win(300, 150, sq.name + ' — ' + sq.leader.race + ' · ' + sq.leader.role);
-    w.rect(6, 4, 40, 48, C.panelLight); w.small(10, 22, '초상', { color: C.grey });
+    w.portrait(6, 4, 40, 48, sq.id, sq.leader.name);
     w.small(52, 4, 'HP ' + st.hp + '/' + st.maxHp + '  E ' + st.e + '  F ' + st.f + '  S ' + st.s + '  D ' + st.d + '  T ' + st.t + '  P ' + st.p + '  B ' + st.b);
     w.small(52, 16, '대원 ' + sq.members.length + '/8 · 급료 ' + fmt(sq.wages) + '/월 · 전투력 ' + Math.round(sq.power) + ' · 대열 ' + sq.formation, { color: C.grey });
     const cargo = Object.entries(sq.cargo); w.small(52, 30, '짐 ' + sq.load + '/' + sq.capacity + ': ' + (cargo.length ? cargo.map(([g, n]) => goodName(g) + ' ' + n).join(', ') : '없음'), { wordWrap: { width: 240 } });
@@ -365,7 +366,7 @@ export class UIScene extends Phaser.Scene {
       { label: '새 게임', onClick: () => { clearSave(); location.reload(); } },
       { label: '닫기', onClick: () => w.close() },
     ]);
-    w.small(6, 72, '1단계 시제품 · 480×270 ×' + this.game.scale.zoom + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
+    w.small(6, 72, '시제품 · 설계 480×270 · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
   }
   private toastText?: Phaser.GameObjects.Text;
   toast(s: string): void {

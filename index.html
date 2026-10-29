@@ -16,7 +16,7 @@
     body { display: flex; align-items: center; justify-content: center; touch-action: none; -webkit-user-select: none; user-select: none; }
     canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
     #rotate { display: none; position: fixed; inset: 0; color: #ddd; font: 16px sans-serif; align-items: center; justify-content: center; background: #101010; text-align: center; }
-    @media (orientation: portrait) and (max-width: 700px) { #rotate { display: flex; } }
+    @media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) { #rotate { display: flex; } }
   </style>
 </head>
 <body>

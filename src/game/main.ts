@@ -4,7 +4,7 @@ import { BootScene } from './scenes/BootScene';
 import { MapScene } from './scenes/MapScene';
 import { UIScene } from './scenes/UIScene';
 import { BattleScene } from './scenes/BattleScene';
-import { H, W } from './theme';
+import { H, K, W } from './theme';
 
 /**
  * 논리 해상도 480×270 을 정수 배율로 띄운다(GDD §7). 세로 모드는 index.html 에서 막는다.
@@ -17,12 +17,12 @@ const game = new Phaser.Game({
   ...(bg ? ({ disableVisibilityChange: true } as object) : {}),
   type: Phaser.AUTO,
   parent: 'game',
-  width: W,
-  height: H,
+  width: W * K,
+  height: H * K,
   pixelArt: true,
-  roundPixels: true,
+  roundPixels: false,
   backgroundColor: '#101010',
-  scale: { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 3 },
   scene: [BootScene, MapScene, UIScene, BattleScene],
 });
@@ -31,14 +31,8 @@ const game = new Phaser.Game({
  * 정수 배율은 "기기 픽셀" 기준으로 잡는다. PC(DPR 1)는 ×1·×2·×3…,
  * 폰(DPR 3, 가로 812×375 CSS px)은 CSS ×1.33 = 기기 ×4 로 화면을 거의 채운다. 도트는 여전히 또렷하다.
  */
-function fit(): void {
-  const dpr = Math.max(1, Math.round(window.devicePixelRatio || 1));
-  const deviceZoom = Math.max(1, Math.floor(Math.min(window.innerWidth / W, window.innerHeight / H) * dpr));
-  game.scale.setZoom(deviceZoom / dpr);
-}
-window.addEventListener('resize', fit);
-window.addEventListener('orientationchange', () => setTimeout(fit, 100));
-fit();
+// HD(1440×810) 캔버스를 화면에 맞춰 띄운다(Scale.FIT). 채색 지도·그림 초상이 선명하고, 도트 글꼴·UI 는 ×3 정수 배율이다.
+window.addEventListener('orientationchange', () => setTimeout(() => game.scale.refresh(), 100));
 
 (window as any).__game = game;
 

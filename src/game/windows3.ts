@@ -12,7 +12,7 @@ export function openTavern(ui: UIScene, siteId: string): void {
   let line = '"어서 오게. 소문을 듣겠나, 한 곡 뽑겠나?"'; let color: string = C.paperDark;
   const render = () => {
     w.clearBody(); const g = ui.g; const sq = g.squad; const site = g.world.site(siteId);
-    w.rect(6, 4, 40, 48, C.panelLight); w.small(10, 22, '술집\n주인', { color: C.grey });
+    w.portrait(6, 4, 40, 48, 'innkeeper', '술집 주인');
     w.text(52, 4, line, { wordWrap: { width: 280 }, color });
     const can = g.canPerform(g.selected); const need = site.size * BALANCE.showFailPowerPerSize;
     w.small(52, 52, sq.name + ' 공연력 ' + sq.performSkill + '  /  이 술집 손님 눈높이 ' + need + '  /  실패 위약금 ' + fmt(site.size * BALANCE.showFailPenaltyPerSize), { color: sq.performSkill >= need ? C.gold : C.red, wordWrap: { width: 280 } });
@@ -30,7 +30,7 @@ export function openBuild(ui: UIScene, siteId: string): void {
   const w = ui.win(400, 180, ui.g.world.site(siteId).name + ' 건축 길드');
   const render = () => {
     w.clearBody(); const g = ui.g; const sq = g.squad; const jobs = g.buildJobsAt(siteId) ?? [];
-    w.rect(6, 4, 36, 36, C.panelLight); w.small(10, 16, '길드장', { color: C.grey });
+    w.portrait(6, 4, 36, 44, 'guildmaster', '길드장');
     w.small(48, 4, '"' + sq.name + ' 건축력 ' + sq.buildSkill + '/일. 맡기면 그 자리에서 끝날 때까지 일한다."', { color: C.paperDark, wordWrap: { width: 340 } });
     ['공사', '장소', '작업량(예상 일수)', '보수', ''].forEach((h, i) => w.small([48, 170, 230, 320, 356][i], 24, h, { color: C.grey }));
     if (!jobs.length) w.small(48, 36, '지금은 공사가 없다.', { color: C.grey });

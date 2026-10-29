@@ -3,7 +3,7 @@ import { ARENA, type Battle, type BattleUnit } from '../../core/battle';
 import { ATTACK_MODE_LABEL, FORMATIONS } from '../../core/formation';
 import type { Game } from '../../core/game';
 import { Window, makeButton } from '../Window';
-import { C, H, TEXT, TEXT_SMALL, W } from '../theme';
+import { C, H, K, TEXT, TEXT_SMALL, W, unitFrame } from '../theme';
 
 /**
  * 전투 화면(GDD §7.3): 별도 화면이 아니라 지도 위에 타원 전장이 겹쳐 뜬다.
@@ -24,6 +24,7 @@ export class BattleScene extends Phaser.Scene {
   constructor() { super('battle'); }
   create(): void {
     this.g = this.registry.get('game') as Game;
+    this.cameras.main.setZoom(K).centerOn(W / 2, H / 2);
     this.gfx = this.add.graphics();
     this.enemyPanel = this.add.text(4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } });
     this.allyPanel = this.add.text(W - 4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } }).setOrigin(1, 0);
@@ -45,12 +46,18 @@ export class BattleScene extends Phaser.Scene {
   private makeDot(u: BattleUnit): void {
     const c = this.add.container(0, 0);
     const ally = u.side === 'ally';
-    const body = u.wall
+    const sprite = this.textures.exists('units') && !u.wall;
+    const leaderId = u.isLeader ? this.battle!.squad.id : u.person?.job === 'golem' ? 'golem' : undefined;
+    const body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = u.wall
       ? this.add.rectangle(0, 0, 10, 70, 0x6a6a6a).setStrokeStyle(1, 0x222222)
-      : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
-    const bar = this.add.rectangle(u.wall ? -5 : -4, u.wall ? -38 : -8, u.wall ? 10 : 8, 2, 0x44cc44).setOrigin(0, 0.5);
-    const mark = this.add.text(0, 0, u.range > 0 ? '↑' : '', { ...TEXT_SMALL, color: '#000' }).setOrigin(0.5);
-    c.add([body, bar, mark]); c.setDepth(5);
+      : sprite
+        ? this.add.image(0, -4, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5).setFlipX(!ally)
+        : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
+    if (sprite && (u.job === '두목' || u.job === '대장')) (body as Phaser.GameObjects.Image).setScale(1.25);
+    const shadow = this.add.ellipse(0, 4, 9, 3, 0x000000, 0.4).setVisible(!u.wall);
+    const bar = this.add.rectangle(u.wall ? -5 : -4, u.wall ? -38 : -14, u.wall ? 10 : 8, 2, 0x44cc44).setOrigin(0, 0.5);
+    const mark = this.add.text(0, 0, !sprite && u.range > 0 ? '↑' : '', { ...TEXT_SMALL, color: '#000' }).setOrigin(0.5);
+    c.add([shadow, body, bar, mark]); c.setDepth(5);
     body.setInteractive({ useHandCursor: true });
     body.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); if (this.battle && !this.battle.result) this.openUnit(u); });
     (c as any).body = body; (c as any).bar = bar;
@@ -115,14 +122,17 @@ export class BattleScene extends Phaser.Scene {
     const gfx = this.gfx; gfx.clear();
     // 타원 전장(지형별 바닥은 6단계) + 반투명 어둠
     gfx.fillStyle(0x000000, 0.25).fillRect(0, 0, W, H);
-    gfx.fillStyle(0x8a7a52, 0.95).fillEllipse(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy);
+    gfx.fillStyle(0x8a6a3c, 0.96).fillEllipse(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy);
+    gfx.fillStyle(0xc9a66b, 0.9).fillEllipse(this.cx, this.cy - 2, ARENA.rx * 2 * this.sx - 6, ARENA.ry * 2 * this.sy - 8);
+    gfx.fillStyle(0xb08a52, 0.6); for (let i = 0; i < 90; i++) { const a = (i * 137.5) % 360 * Math.PI / 180, r = ((i * 53) % 97) / 100; gfx.fillRect(Math.round(this.cx + Math.cos(a) * r * ARENA.rx * this.sx * 0.95), Math.round(this.cy + Math.sin(a) * r * ARENA.ry * this.sy * 0.9), 2, 1); }
     gfx.lineStyle(2, C.border, 1).strokeEllipse(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy);
     gfx.lineStyle(1, 0x6a5a3a, 0.6).lineBetween(this.cx, this.cy - ARENA.ry * this.sy, this.cx, this.cy + ARENA.ry * this.sy);
     for (const u of b.units) {
       const c = this.dots.get(u.id)!; const p = this.toScreen(u);
       c.setPosition(Math.round(p.x), Math.round(p.y)).setVisible(u.state !== 'fled');
-      const body = (c as any).body as Phaser.GameObjects.Rectangle; const bar = (c as any).bar as Phaser.GameObjects.Rectangle;
-      body.setAlpha(u.state === 'dead' ? 0.35 : 1);
+      const body = (c as any).body as Phaser.GameObjects.Image; const bar = (c as any).bar as Phaser.GameObjects.Rectangle;
+      body.setAlpha(u.state === 'dead' ? 0.35 : 1); if (u.state === 'dead' && body.angle === 0 && !u.wall) body.setAngle(u.side === 'ally' ? 90 : -90);
+      c.setDepth(5 + p.y / 1000);
       bar.width = Math.max(0, (u.wall ? 10 : 8) * u.hp / u.maxHp); bar.setFillStyle(u.hp / u.maxHp > 0.5 ? 0x44cc44 : u.hp / u.maxHp > 0.25 ? 0xd0b040 : 0xd04040);
       // 공격 섬광·피격 표시
       if (u.flash < 0.12 && u.targetId) {

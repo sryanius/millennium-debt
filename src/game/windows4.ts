@@ -4,7 +4,7 @@ import { ENDING_POEM, EPILOGUES } from '../core/events';
 import { fmt } from '../core/game';
 import { INCOME_LABEL, INCOME_SOURCES } from '../core/ledger';
 import { clearSave } from './save';
-import { C } from './theme';
+import { C, portraitKey } from './theme';
 import type { UIScene } from './scenes/UIScene';
 
 /** 4·5단계 창: 이벤트 대화, 엔딩 카드(부대장마다 1장 + 시). */
@@ -14,7 +14,7 @@ export function openEvent(ui: UIScene): void {
   const g = ui.g; const e = g.event; if (!e) return;
   const h = 150 + Math.min(3, Math.max(0, e.choices.length - 2)) * 18;
   const w = ui.win(360, h, e.title, false);
-  w.rect(6, 6, 48, 56, C.panelLight); w.small(8, 26, e.portrait.slice(0, 7), { color: C.grey, wordWrap: { width: 44 } });
+  w.portrait(6, 6, 48, 56, portraitKey(e.portrait), e.portrait.slice(0, 7));
   w.text(62, 6, e.text, { wordWrap: { width: 290 } });
   e.choices.forEach((c, i) => {
     const y = h - 30 - (e.choices.length - 1 - i) * 18;
@@ -35,13 +35,13 @@ export function openEnding(ui: UIScene): void {
       w.small(6, 66, '번 돈', { color: C.grey });
       INCOME_SOURCES.forEach((s, i) => w.small(6, 76 + i * 10, INCOME_LABEL[s] + '으로 번 돈  ' + fmt(l.earned[s]), { color: s === ending ? C.gold : C.paper }));
       w.small(6, 130, '미룬 상환 ' + g.deferrals + '회 · 미납 ' + l.missed + '회 · 탈환한 점령지 ' + (9 - g.enemyHeld.size) + '곳 · 이벤트 ' + g.firedEvents.size + '건', { color: C.paperDark });
-      w.rect(240, 22, 130, 110, C.panelLight); w.small(262, 70, '여섯 부대장\n단체 그림', { color: C.grey });
+      ['kael', 'brok', 'phoebe', 'ella', 'liesel', 'durin'].forEach((k, i) => w.portrait(240 + (i % 3) * 44, 22 + Math.floor(i / 3) * 56, 42, 52, k, k));
     } else if (page <= 6) {
       const sq = g.squads[page - 1]; const lead = sq.leader;
       w.text(6, 4, lead.name + ' — ' + sq.name, { color: C.gold });
       w.small(6, 18, lead.race + ' · ' + lead.role + ' · E ' + lead.stats.e + ' · 대원 ' + sq.members.length, { color: C.grey });
       w.text(6, 34, EPILOGUES[lead.id]?.[ending] ?? '…', { wordWrap: { width: 220 } });
-      w.rect(240, 4, 130, 180, C.panelLight); w.small(262, 86, '전신 일러스트\n(6단계)', { color: C.grey });
+      w.portrait(240, 4, 130, 180, sq.id, lead.name);
     } else {
       w.text(60, 20, ENDING_POEM, { color: C.white, align: 'center', wordWrap: { width: 260 } });
       w.small(6, 150, '— 끝. 플레이해 주셔서 고맙습니다. (가칭 《천 년의 빚》 · 《균열의 시대》 세계관) —', { color: C.grey });

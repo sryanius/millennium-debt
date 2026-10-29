@@ -57,6 +57,21 @@ export class Window extends Phaser.GameObjects.Container {
   button(x: number, y: number, label: string, onClick: () => void, o: ButtonOpts = {}): Phaser.GameObjects.Container {
     const b = makeButton(this.scene, x, y, label, onClick, o); this.content.add(b); return b;
   }
+  /** 초상(그림이 있으면 그림, 없으면 네모 + 이름). key 는 theme.portraitKey 로 고른다 */
+  portrait(x: number, y: number, w: number, h: number, key: string | null, fallback = ''): void {
+    // 작은 칸은 48×56, 큰 칸(엔딩 카드)은 96×112 도트. 정수 배율이 아니어도 NEAREST 라 도트가 유지된다
+    const tex = key ? (w >= 80 && this.scene.textures.exists('P_' + key) ? 'P_' : 'p_') + key : '';
+    if (tex && this.scene.textures.exists(tex)) {
+      const img = this.scene.add.image(x + w / 2, y + h / 2, tex);
+      const sc = Math.max(w / img.width, h / img.height); img.setScale(sc);
+      img.setCrop((img.width - w / sc) / 2, (img.height - h / sc) / 2, w / sc, h / sc);
+      this.content.add(img);
+      const f = this.scene.add.rectangle(x, y, w, h, 0, 0).setOrigin(0).setStrokeStyle(1, C.border); this.content.add(f);
+      return;
+    }
+    this.rect(x, y, w, h, C.panelLight);
+    if (fallback) this.small(x + 2, y + h / 2 - 5, fallback, { color: C.grey, wordWrap: { width: w - 4 } });
+  }
   rect(x: number, y: number, w: number, h: number, color: number, alpha = 1): Phaser.GameObjects.Rectangle {
     const r = this.scene.add.rectangle(x, y, w, h, color, alpha).setOrigin(0); this.content.add(r); return r;
   }
