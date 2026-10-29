@@ -15,6 +15,7 @@ import { openCollector as openCollector2, openContract, openEquip, openHospital,
 import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
 import { buttonKey, hasSkin, nine } from '../skin';
+import { AUDIO } from '../audio';
 
 /**
  * 네 귀퉁이 UI(GDD §7.1) + 하단 부대 6칸 + 지도 위 창들.
@@ -38,6 +39,7 @@ export class UIScene extends Phaser.Scene {
   private autosaveAt = 0;
   private endingShown = false;
   private lastTicker = '';
+  private lastCash: number | null = null; private bellRung = false; private lastEvent: string | null = null;
 
   constructor() { super('ui'); }
 
@@ -365,14 +367,16 @@ export class UIScene extends Phaser.Scene {
     this.g.unread = 0;
   }
   private openSystem(): void {
-    const w = this.win(200, 130, '시스템');
+    const w = this.win(200, 160, '시스템');
     w.menu([
       { label: '저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
       { label: '불러오기', disabled: !hasSave(), onClick: () => { const g = loadGame(this.g.world); if (g) { this.registry.set('game', g); location.reload(); } } },
       { label: '새 게임', onClick: () => { clearSave(); location.reload(); } },
+      { label: '음악 ' + (AUDIO.musicOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setMusic(!AUDIO.musicOn); w.close(); this.openSystem(); } },
+      { label: '효과음 ' + (AUDIO.sfxOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setSfx(!AUDIO.sfxOn); w.close(); this.openSystem(); } },
       { label: '닫기', onClick: () => w.close() },
     ]);
-    w.small(6, 72, '시제품 · 설계 480×270 · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
+    w.small(6, 104, '시제품 · 설계 480×270 · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
   }
   private toastText?: Phaser.GameObjects.Text;
   toast(s: string): void {
@@ -420,6 +424,11 @@ export class UIScene extends Phaser.Scene {
     // 축소 지도의 현재 화면 틀
     const cam = this.map.cameras.main; const sc = this.miniScale;
     this.miniView.setPosition(4 + cam.worldView.x * sc, 4 + cam.worldView.y * sc).setSize(Math.max(2, cam.worldView.width * sc), Math.max(2, cam.worldView.height * sc));
+    // 소리: 곡 고르기, 돈 들고 남, 집행관·이벤트 알림
+    AUDIO.play(g.ending ? 'ending' : g.battle ? 'battle' : 'field');
+    const cash = g.ledger.cash; if (this.lastCash !== null && cash !== this.lastCash) AUDIO.sfx(cash > this.lastCash ? 'coin' : 'pay', 0.15); this.lastCash = cash;
+    if (g.collectorVisit && !this.bellRung) { this.bellRung = true; AUDIO.sfx('bell'); } if (!g.collectorVisit) this.bellRung = false;
+    const ev = g.event?.id ?? null; if (ev && ev !== this.lastEvent) AUDIO.sfx('event'); this.lastEvent = ev;
     // 전투 시작·진행
     if (g.battle && (!this.battleActive || this.battleScene.current !== g.battle)) { this.battleActive = true; this.modal?.close(); this.battleScene.scene.wake(); this.battleScene.begin(g.battle); }
     // 집행관·엔딩

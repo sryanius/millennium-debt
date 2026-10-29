@@ -35,6 +35,7 @@ const game = new Phaser.Game({
 window.addEventListener('orientationchange', () => setTimeout(() => game.scale.refresh(), 100));
 
 (window as any).__game = game;
+import('./audio').then(m => { (window as any).__audio = m.AUDIO; (window as any).__renderSong = m.renderSongWav; });
 
 // PWA(7단계): 배포 빌드에서만 서비스 워커를 등록한다(개발 서버에선 HMR 과 충돌)
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

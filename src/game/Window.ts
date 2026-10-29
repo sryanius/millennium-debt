@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { C, FONT, FONT_SMALL, TEXT, TEXT_SMALL } from './theme';
 import { buttonKey, hasSkin, nine } from './skin';
+import { AUDIO } from './audio';
 
 export interface ButtonOpts { w?: number; h?: number; color?: number; textColor?: string; small?: boolean; disabled?: boolean }
 
@@ -21,7 +22,7 @@ export function makeButton(scene: Phaser.Scene, x: number, y: number, label: str
     bg.on('pointerover', () => skin ? bg.setTexture(buttonKey(scene, base, 'h')) : bg.setFillStyle(0x6a5a3a));
     bg.on('pointerout', () => skin ? bg.setTexture(buttonKey(scene, base, 'n')) : bg.setFillStyle(o.color ?? C.panelLight));
     bg.on('pointerdown', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); });
-    bg.on('pointerup', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onClick(); });
+    bg.on('pointerup', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); AUDIO.sfx('click'); onClick(); });
   }
   (c as any).label = t; (c as any).bg = bg;
   return c;

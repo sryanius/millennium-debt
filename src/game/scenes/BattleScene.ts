@@ -3,6 +3,7 @@ import { ARENA, type Battle, type BattleUnit } from '../../core/battle';
 import { ATTACK_MODE_LABEL, FORMATIONS } from '../../core/formation';
 import type { Game } from '../../core/game';
 import { Window, makeButton } from '../Window';
+import { AUDIO } from '../audio';
 import { C, H, K, TEXT, TEXT_SMALL, W, unitFrame } from '../theme';
 
 /**
@@ -106,7 +107,7 @@ export class BattleScene extends Phaser.Scene {
   private hint(s: string): void { this.hintText?.destroy(); this.hintText = this.add.text(W / 2, 8, s, { ...TEXT, backgroundColor: '#000a', padding: { x: 4, y: 2 } }).setOrigin(0.5, 0).setDepth(60); this.time.delayedCall(1500, () => this.hintText?.destroy()); }
 
   private openResult(): void {
-    const b = this.battle!; this.resultShown = true;
+    const b = this.battle!; this.resultShown = true; AUDIO.sfx(b.result === 'victory' ? 'win' : 'lose', 1);
     const w = this.openPopup(240, 110, b.result === 'victory' ? '승리' : b.result === 'retreat' ? '퇴각' : '패배');
     w.text(6, 4, b.squad.name + ' 대 ' + b.enemyName, { color: C.gold });
     const dead = b.dead.length ? '전사 ' + b.dead.map(p => p.name).join(', ') : '전사자 없음';
@@ -139,6 +140,7 @@ export class BattleScene extends Phaser.Scene {
         const t = b.unit(u.targetId); if (t) { const q = this.toScreen(t); gfx.lineStyle(1, u.range > 0 ? 0xfff0a0 : 0xffffff, 1 - u.flash / 0.12).lineBetween(p.x, p.y, q.x, q.y); }
       }
       if (u.hitFlash < 0.15) gfx.fillStyle(0xff4040, 0.8).fillRect(p.x - 3, p.y - 3, 6, 6);
+      if (u.hitFlash < 0.03) AUDIO.sfx('hit', 0.07); else if (u.flash < 0.03 && u.range > 0) AUDIO.sfx('shoot', 0.09);
     }
     const line = (u: BattleUnit) => (u.isLeader ? '★' : ' ') + u.name.slice(0, 6).padEnd(6, ' ') + ' ' + (u.state === 'dead' ? '전사' : u.state === 'fled' ? '이탈' : Math.max(0, Math.round(u.hp)) + '/' + u.maxHp);
     this.enemyPanel.setText(b.enemyName + (b.kind === 'siege' ? ' [공성전]' : '') + '\n' + b.enemies.map(line).join('\n'));
