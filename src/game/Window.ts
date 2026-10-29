@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { C, FONT, FONT_SMALL, TEXT, TEXT_SMALL } from './theme';
+import { buttonKey, hasSkin, nine } from './skin';
 
 export interface ButtonOpts { w?: number; h?: number; color?: number; textColor?: string; small?: boolean; disabled?: boolean }
 
@@ -7,14 +8,18 @@ export interface ButtonOpts { w?: number; h?: number; color?: number; textColor?
 export function makeButton(scene: Phaser.Scene, x: number, y: number, label: string, onClick: () => void, o: ButtonOpts = {}): Phaser.GameObjects.Container {
   const w = o.w ?? 60, h = o.h ?? 14;
   const c = scene.add.container(x, y);
-  const bg = scene.add.rectangle(0, 0, w, h, o.disabled ? 0x3a3a3a : (o.color ?? C.panelLight)).setOrigin(0).setStrokeStyle(1, o.disabled ? 0x555555 : C.border);
-  const t = scene.add.text(w / 2, h / 2, label, { ...(o.small ? TEXT_SMALL : TEXT), color: o.disabled ? '#777' : (o.textColor ?? C.paper) }).setOrigin(0.5);
+  const base = o.color ?? 0x5a4630;
+  const skin = hasSkin(scene);
+  const bg: any = skin
+    ? nine(scene, 0, 0, w, h, buttonKey(scene, base, o.disabled ? 'd' : 'n'), 3)
+    : scene.add.rectangle(0, 0, w, h, o.disabled ? 0x3a3a3a : (o.color ?? C.panelLight)).setOrigin(0).setStrokeStyle(1, o.disabled ? 0x555555 : C.border);
+  const t = scene.add.text(w / 2, h / 2 + (skin ? 0.5 : 0), label, { ...(o.small ? TEXT_SMALL : TEXT), color: o.disabled ? '#777' : (o.textColor ?? C.paper) }).setOrigin(0.5);
   c.add([bg, t]);
   c.setSize(w, h);
   if (!o.disabled) {
     bg.setInteractive({ useHandCursor: true });
-    bg.on('pointerover', () => bg.setFillStyle(0x6a5a3a));
-    bg.on('pointerout', () => bg.setFillStyle(o.color ?? C.panelLight));
+    bg.on('pointerover', () => skin ? bg.setTexture(buttonKey(scene, base, 'h')) : bg.setFillStyle(0x6a5a3a));
+    bg.on('pointerout', () => skin ? bg.setTexture(buttonKey(scene, base, 'n')) : bg.setFillStyle(o.color ?? C.panelLight));
     bg.on('pointerdown', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); });
     bg.on('pointerup', (p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); onClick(); });
   }
@@ -33,18 +38,21 @@ export class Window extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, w: number, h: number, title: string, opts: { closable?: boolean } = {}) {
     super(scene, x, y);
     this.bw = w; this.bh = h;
-    const shadow = scene.add.rectangle(2, 2, w, h, C.shadow, 0.5).setOrigin(0);
-    const bg = scene.add.rectangle(0, 0, w, h, C.panel).setOrigin(0).setStrokeStyle(1, C.border);
+    const shadow = scene.add.rectangle(3, 3, w, h, C.shadow, 0.55).setOrigin(0);
+    const skin = hasSkin(scene);
+    const bg = scene.add.rectangle(0, 0, w, h, C.panel, skin ? 0.001 : 1).setOrigin(0);
+    if (!skin) bg.setStrokeStyle(1, C.border);
+    const frame = skin ? nine(scene, 0, 0, w, h, 'sk_win', 6) : null;
     bg.setInteractive(); // 입력 삼키기
     bg.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
-    const titleBar = scene.add.rectangle(1, 1, w - 2, 12, 0x8a6a1c).setOrigin(0);
+    const titleBar: any = skin ? scene.add.image(3, 2, 'sk_title').setOrigin(0).setDisplaySize(w - 6, 12) : scene.add.rectangle(1, 1, w - 2, 12, 0x8a6a1c).setOrigin(0);
     const titleText = scene.add.text(4, 7, title, { ...TEXT, color: C.white }).setOrigin(0, 0.5);
-    this.add([shadow, bg, titleBar, titleText]);
+    this.add(frame ? [shadow, frame, bg, titleBar, titleText] : [shadow, bg, titleBar, titleText]);
     if (opts.closable !== false) {
-      const x = makeButton(scene, w - 13, 1, '×', () => this.close(), { w: 12, h: 12, color: 0xb4302a });
+      const x = makeButton(scene, w - 15, 2, '×', () => this.close(), { w: 12, h: 12, color: 0xa0302a });
       this.add(x);
     }
-    this.content = scene.add.container(0, 14);
+    this.content = scene.add.container(skin ? 2 : 0, 15);
     this.add(this.content);
     scene.add.existing(this as unknown as Phaser.GameObjects.GameObject);
   }

@@ -3,6 +3,7 @@ import { Game } from '../../core/game';
 import { World } from '../../core/world';
 import { WORLD_DATA } from '../../data/world';
 import { loadGame } from '../save';
+import { makeSkin } from '../skin';
 import { FONT, FONT_SMALL, PORTRAIT_KEYS, TEXT, W, H } from '../theme';
 
 /** 글꼴을 기다렸다가 게임 상태를 만들고(저장이 있으면 복원) 지도·UI 장면을 띄운다. */
@@ -21,6 +22,7 @@ export class BootScene extends Phaser.Scene {
     try {
       await Promise.all([document.fonts.load('11px ' + FONT), document.fonts.load('9px ' + FONT_SMALL)]);
     } catch { /* 글꼴이 없으면 기본 글꼴로 간다 */ }
+    makeSkin(this);
     const world = new World(WORLD_DATA);
     // ?new : 저장을 무시하고 새로 시작(검증용)
     const fresh = new URLSearchParams(location.search).has('new');

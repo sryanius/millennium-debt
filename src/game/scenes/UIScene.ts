@@ -14,6 +14,7 @@ import type { BattleScene } from './BattleScene';
 import { openCollector as openCollector2, openContract, openEquip, openHospital, openMilitary as openMilitary2, openRoster, openShop } from '../windows2';
 import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
+import { buttonKey, hasSkin, nine } from '../skin';
 
 /**
  * 네 귀퉁이 UI(GDD §7.1) + 하단 부대 6칸 + 지도 위 창들.
@@ -31,7 +32,7 @@ export class UIScene extends Phaser.Scene {
   private dateText!: Phaser.GameObjects.Text; private dueText!: Phaser.GameObjects.Text; private clockGfx!: Phaser.GameObjects.Graphics;
   private debtText!: Phaser.GameObjects.Text; private cashText!: Phaser.GameObjects.Text; private regionText!: Phaser.GameObjects.Text;
   private speedBtn!: Phaser.GameObjects.Container; private msgText!: Phaser.GameObjects.Text; private msgBg!: Phaser.GameObjects.Rectangle;
-  private slots: { bg: Phaser.GameObjects.Rectangle; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text }[] = [];
+  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text }[] = [];
   private miniView!: Phaser.GameObjects.Rectangle; private miniScale = 0.2125;
   private lastSlotTap = { i: -1, t: 0 };
   private autosaveAt = 0;
@@ -58,7 +59,9 @@ export class UIScene extends Phaser.Scene {
   // ───── 패널들 ─────
   private panel(x: number, y: number, w: number, h: number): Phaser.GameObjects.Rectangle {
     this.panels.push(new Phaser.Geom.Rectangle(x, y, w, h));
-    const r = this.add.rectangle(x, y, w, h, C.panel, 0.92).setOrigin(0).setStrokeStyle(1, C.border);
+    if (hasSkin(this)) nine(this, x, y, w, h, 'sk_panel', 6);
+    const r = this.add.rectangle(x, y, w, h, C.panel, hasSkin(this) ? 0.001 : 0.92).setOrigin(0);
+    if (!hasSkin(this)) r.setStrokeStyle(1, C.border);
     r.setInteractive(); r.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
     return r;
   }
@@ -115,7 +118,9 @@ export class UIScene extends Phaser.Scene {
     this.panels.push(new Phaser.Geom.Rectangle(x0 - 2, H - 26, total + 4, 26));
     this.g.squads.forEach((sq, i) => {
       const x = x0 + i * (sw + gap);
-      const bg = this.add.rectangle(x, H - 24, sw, 22, C.panel, 0.92).setOrigin(0).setStrokeStyle(1, C.border).setInteractive({ useHandCursor: true });
+      const frame = hasSkin(this) ? nine(this, x, H - 24, sw, 22, buttonKey(this, 0x2e241c, 'n'), 3) : null;
+      const bg = this.add.rectangle(x, H - 24, sw, 22, C.panel, frame ? 0.001 : 0.92).setOrigin(0).setInteractive({ useHandCursor: true });
+      if (!frame) bg.setStrokeStyle(1, C.border);
       const num = this.add.text(x + 2, H - 23, String(i + 1), { ...TEXT_SMALL, color: C.gold });
       const name = this.add.text(x + 9, H - 23, sq.leader.name.split(' ')[0], TEXT_SMALL);
       const state = this.add.text(x + 2, H - 13, '', { ...TEXT_SMALL, color: C.paperDark });
@@ -125,11 +130,12 @@ export class UIScene extends Phaser.Scene {
         if (this.lastSlotTap.i === i && now - this.lastSlotTap.t < 400) this.map.focusSquad(i);
         this.lastSlotTap = { i, t: now }; this.g.selected = i;
       });
-      this.slots.push({ bg, name, state }); void num;
+      this.slots.push({ bg, frame, name, state }); void num;
     });
   }
   private buildTicker(): void {
-    this.msgBg = this.add.rectangle(102, H - 44, W - 222, 12, C.panel, 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
+    if (hasSkin(this)) nine(this, 102, H - 45, W - 222, 14, buttonKey(this, 0x1e1812, 'n'), 3);
+    this.msgBg = this.add.rectangle(102, H - 44, W - 222, 12, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
     this.msgText = this.add.text(105, H - 43, '', { ...TEXT_SMALL, color: C.white });
     this.msgBg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLog(); });
     this.panels.push(new Phaser.Geom.Rectangle(102, H - 44, W - 222, 12));
@@ -397,7 +403,8 @@ export class UIScene extends Phaser.Scene {
     // 부대 바
     g.squads.forEach((sq, i) => {
       const s = this.slots[i];
-      s.bg.setStrokeStyle(1, i === g.selected ? C.flagSel : C.border).setFillStyle(i === g.selected ? 0x4a3b2a : C.panel, 0.92);
+      if (s.frame) { const k = buttonKey(this, i === g.selected ? 0x6a5020 : 0x2e241c, i === g.selected ? 'h' : 'n'); if (s.frame.texture.key !== k) s.frame.setTexture(k); }
+      else s.bg.setStrokeStyle(1, i === g.selected ? C.flagSel : C.border).setFillStyle(i === g.selected ? 0x4a3b2a : C.panel, 0.92);
       const dest = sq.destination;
       const where = sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, 4) : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, 4) : '…');
       s.state.setText((sq.order === 'stay' ? '체재 ' : sq.order === 'build' ? '공사 ' : '') + where);
