@@ -160,7 +160,7 @@ export class Game {
     for (let i = 0; i < days; i++) this.onNewDay();
   }
   protected onNewDay(): void {
-    if (this.clock.month !== this.lastMonth) { this.lastMonth = this.clock.month; this.fireEvents({ monthStart: true }); }
+    if (this.clock.month !== this.lastMonth) { this.lastMonth = this.clock.month; this.fireEvents({ monthStart: true }); this.lordsRetake(); }
     // 피로·회복·건축
     for (const s of this.squads) {
       const resting = s.order !== 'move' && s.order !== 'build' && s.siteId && isTown(this.world.site(s.siteId));
@@ -479,7 +479,7 @@ export class Game {
     if (this.elapsed < BALANCE.rebelStartDay || this.flags.has('rebels_broken')) return;
     // 새 전투단
     const rebels = this.bands.filter(b => b.kind === 'rebel');
-    if (rebels.length < BALANCE.rebelMaxBands) {
+    if (rebels.length < BALANCE.rebelMaxBands && this.enemyHeld.size < BALANCE.rebelMaxHeld) {
       for (const held of this.enemyHeld) {
         const h = this.world.site(held); if (h.kind !== 'castle' || this.blocked.has(h.region)) continue;
         if (this.rng.next() > BALANCE.rebelSpawnChance) continue;
@@ -513,6 +513,14 @@ export class Game {
           this.say('fort', '⚑ ' + site.name + '이(가) 잿빛 교단에 함락되었다! 길이 막혔다. 탈환하면 보수가 있다.');
         }
       }
+    }
+  }
+  /** 달마다 영주들이 점령지 일부를 되찾는다(플레이어가 안 해도 세상이 굴러간다). 처음 점령지(역사)는 역사 이벤트가 맡는다 */
+  private lordsRetake(): void {
+    const k = this.flags.has('rebels_broken') ? 3 : 1;
+    for (const id of [...this.enemyHeld]) {
+      const s = this.world.site(id); if (s.owner === REBEL_FACTION && !this.flags.has('rebels_broken')) continue;
+      if (this.rng.next() < BALANCE.lordRetakeChance * k * (s.kind === 'castle' ? 0.5 : 1)) { this.enemyHeld.delete(id); this.forts.set(id, Math.round(fortMax(s) * 0.4)); this.say('fort', '소식: ' + (this.world.factions.get(s.owner ?? '')?.name ?? '영주') + '가 ' + s.name + '을(를) 되찾았다.'); }
     }
   }
   private nearestFortFrom(held: string): string | null {

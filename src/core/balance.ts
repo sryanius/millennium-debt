@@ -21,11 +21,13 @@ export const BALANCE = {
 
   // 교역
   carryPerMember: 50, // 1인당 적재 단위(짐수레 포함)
-  buySpread: 1.1,
-  sellSpread: 0.9,
+  buySpread: 1.15,
+  sellSpread: 0.85,
   tradeSkillMax: 100, // T 100이면 양쪽 가격 ×0.5 (원작의 "상업력이 높으면 이익이 준다")
-  stockRegenPerDay: 0.1, // 재고가 기준치로 하루에 돌아가는 비율
+  stockRegenPerDay: 0.05, // 재고가 기준치로 하루에 돌아가는 비율
   priceNoise: 0.08,
+  homePriceMul: 0.72, // 특산지 값(기준가 대비)
+  hopPriceMul: 0.17, // 지역 하나 멀어질 때마다 값 +
   siteVariance: 0.15, // 같은 지역 안 거점끼리의 고정 가격 차(지역 안 왕복 교역의 근거)
 
   // 민사 게시판
@@ -63,7 +65,7 @@ export const BALANCE = {
 
   // 3단계: 공연(술집)
   showCooldownDays: 3,
-  showIncomePerPower: 12, // 수입 = 공연력 × 성 규모 × 이 값
+  showIncomePerPower: 6, // 수입 = 공연력 × 성 규모 × 이 값
   showFailPowerPerSize: 18, // 공연력 < 규모 × 이 값이면 실패
   showFailPenaltyPerSize: 600, // 실패 위약금 = 규모 × 이 값(원작: 위약금 큼)
 
@@ -76,10 +78,12 @@ export const BALANCE = {
 
   // 잿빛 교단(반란군)
   rebelStartDay: 12,
-  rebelSpawnChance: 0.05, // 점령 성마다 하루 확률
-  rebelMaxBands: 3,
+  rebelSpawnChance: 0.015, // 점령 성마다 하루 확률
+  rebelMaxBands: 2,
+  rebelMaxHeld: 16, // 점령지가 이만큼이면 더 나서지 않는다
   rebelMoveDays: 2, // 간선 하나 지나는 데
-  rebelSiegeDamage: 8, // 하루 내구 피해
+  rebelSiegeDamage: 5, // 하루 내구 피해
+  lordRetakeChance: 0.06, // 달마다 점령지 하나당 영주가 되찾을 확률(교단 와해 뒤 ×3)
   liberateRewardCastle: 150_000,
   liberateRewardMinor: 40_000,
 

@@ -39,6 +39,9 @@ export class Battle {
   attackMode: AttackMode;
   events: BattleEvent[] = [];
   private seq = 0;
+  /** 마지막으로 피해가 오간 시각. 오래 조용하면 교착으로 보고 양쪽을 앞으로 밀어낸다 */
+  private lastHit = 0;
+  get stalled(): boolean { return this.time - this.lastHit > 12; }
 
   constructor(public readonly squad: Squad, enemies: EnemyDef[], public readonly enemyName: string, private rng: Rng, public readonly kind: 'bandits' | 'escort' | 'siege' | 'other' = 'bandits', allies: EnemyDef[] = []) {
     this.formation = FORMATION_BY_ID.get(squad.formation) ?? FORMATION_BY_ID.get('line')!;
@@ -135,10 +138,10 @@ export class Battle {
     const reach = u.range > 0 ? u.range : MELEE_RANGE;
     u.cd -= dt;
     if (d <= reach) { if (u.cd <= 0) { u.cd = u.cooldown; this.attack(u, foe); } return; }
-    // 성벽 뒤 수비대는 성벽이 설 동안 나오지 않는다
-    if (u.side === 'enemy' && this.wallAlive && d > reach) return;
-    // 이동: 사격 부대가 "사격" 방식이면 자리를 지키고 적이 오길 기다린다
-    const hold = u.side === 'ally' && u.range > 0 && this.attackMode === 'ranged';
+    // 성벽 뒤 수비대는 성벽이 설 동안 나오지 않는다(교착이면 나온다)
+    if (u.side === 'enemy' && this.wallAlive && d > reach && !this.stalled) return;
+    // 이동: 사격 부대가 "사격" 방식이면 자리를 지키고 적이 오길 기다린다(공성전·교착에서는 다가간다)
+    const hold = u.side === 'ally' && u.range > 0 && this.attackMode === 'ranged' && this.kind !== 'siege' && !this.stalled;
     const tx = hold ? u.homeX : foe.x, ty = hold ? u.homeY : foe.y;
     const dd = Math.hypot(tx - u.x, ty - u.y);
     if (dd > 1) {
@@ -155,7 +158,7 @@ export class Battle {
     if (this.rng.next() > hit) return;
     const fAtk = f ? f.atk : 1; const fDef = v.side === 'ally' ? this.formation.def * (v.isLeader && this.formation.id === 'guard' ? 1.3 : 1) : (this.wallAlive && !v.wall ? 1.5 : 1);
     const raw = u.atk * (0.75 + this.rng.next() * 0.5) * fAtk - v.def * 0.5 * fDef;
-    let dmg = Math.max(1, Math.round(raw));
+    let dmg = Math.max(1, Math.round(raw)); this.lastHit = this.time;
     if (v.wall) dmg = this.attackMode === 'siege' ? dmg * 3 : Math.max(1, Math.round(dmg * 0.5)); // 공성 방식이면 성벽에 ×3, 아니면 ×0.5
     v.hp -= dmg; v.hitFlash = 0;
     if (v.hp <= 0) {
@@ -165,6 +168,8 @@ export class Battle {
     }
   }
   private checkEnd(): void {
+    // 안전장치: 4분(전투 시간)이 지나도 안 끝나면 아군이 물러난다
+    if (this.time > 240 && !this.result) { this.say('날이 저물어 양쪽이 물러났다.'); for (const u of this.allies) if (u.state === 'fight') u.state = 'fled'; this.result = 'retreat'; this.applyToPersons(); return; }
     const alive = (s: 'ally' | 'enemy') => this.units.some(u => u.side === s && u.state === 'fight');
     const retreating = this.allies.some(u => u.state === 'retreat');
     if (!alive('enemy') && !this.enemies.some(u => u.state === 'retreat')) { this.result = 'victory'; this.say('승리!'); }

@@ -32,8 +32,10 @@ export class Market {
       // 특산이 아닌 상품은 이웃 지역 것이거나, 큰 성(5)에서는 2홉까지 취급
       if (!isHome && hops > 1 && site.size < 5) continue;
       if (!isHome && hops > 2) continue;
-      const baseStock = isHome ? 30 * sizeMul : 6 * sizeMul;
-      const mult = isHome ? 0.6 : 1 + 0.25 * hops;
+      // 비싼 상품일수록 재고가 적다(미스릴·진주를 한 번에 50개씩 쓸어 담지 못하게) — 2026-10-29 밸런스 시뮬
+      const rarity = clamp(150 / g.base, 0.08, 1.4);
+      const baseStock = Math.max(3, Math.round((isHome ? 30 : 6) * sizeMul * rarity));
+      const mult = isHome ? BALANCE.homePriceMul : 1 + BALANCE.hopPriceMul * hops;
       // 거점 고유 편차: 같은 지역 안에서도 거점마다 값이 달라 지역 안 왕복 교역이 성립한다
       const siteMul = 1 + (new Rng(hash(site.id + ':' + g.id)).next() - 0.5) * 2 * BALANCE.siteVariance;
       const price = Math.max(1, Math.round(g.base * mult * siteMul * (1 + (rng.next() - 0.5) * 2 * BALANCE.priceNoise)));
@@ -59,8 +61,10 @@ export class Market {
   }
   private stockFactor(l: MarketLine): number {
     if (l.baseStock <= 0) return 1;
+    // 재고에 따른 값 변화는 사고팔 때 차액(×1.15 / ×0.85)보다 작게 묶는다.
+    // 그래야 "팔아서 값을 떨어뜨린 곳에서 다시 사 가는" 왕복 차익이 생기지 않는다(2026-10-29 밸런스 시뮬에서 발견).
     const r = Math.max(0.1, l.stock / l.baseStock);
-    return clamp(Math.pow(r, -0.4), 0.6, 2.0);
+    return clamp(Math.pow(r, -0.25), 0.9, 1.2);
   }
   /** T(상업력)는 사는 값·파는 값을 둘 다 내린다(GDD §2.4). */
   static skillMod(tradeSkill: number): number { return 1 - 0.5 * clamp(tradeSkill, 0, BALANCE.tradeSkillMax) / BALANCE.tradeSkillMax; }
