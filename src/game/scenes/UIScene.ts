@@ -16,6 +16,7 @@ import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
 import { buttonKey, hasSkin, nine } from '../skin';
 import { AUDIO } from '../audio';
+import { Tutorial } from '../tutorial';
 
 /**
  * 네 귀퉁이 UI(GDD §7.1) + 하단 부대 6칸 + 지도 위 창들.
@@ -33,7 +34,8 @@ export class UIScene extends Phaser.Scene {
   private dateText!: Phaser.GameObjects.Text; private dueText!: Phaser.GameObjects.Text; private clockGfx!: Phaser.GameObjects.Graphics;
   private debtText!: Phaser.GameObjects.Text; private cashText!: Phaser.GameObjects.Text; private regionText!: Phaser.GameObjects.Text;
   private speedBtn!: Phaser.GameObjects.Container; private msgText!: Phaser.GameObjects.Text; private msgBg!: Phaser.GameObjects.Rectangle;
-  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number }[] = [];
+  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number; barKey: string }[] = [];
+  private clockKey = -1;
   private miniView!: Phaser.GameObjects.Rectangle; private miniScale = 0.2125;
   private lastSlotTap = { i: -1, t: 0 };
   private autosaveAt = 0;
@@ -54,6 +56,7 @@ export class UIScene extends Phaser.Scene {
     this.map.events.on('site-click', (id: string) => this.openSite(id));
     this.map.events.on('squad-click', (i: number) => { this.g.selected = i; });
     this.buildMinimap(); this.buildTopRight(); this.buildClock(); this.buildFinance(); this.buildSquadBar(); this.buildTicker();
+    this.tutorial = new Tutorial(this, this.miniW + 10, W - 62);
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(this.g); });
     (window as unknown as { __saveNow?: () => boolean }).__saveNow = () => saveGame(this.g); // 앱(APK)이 백그라운드로 갈 때 부른다
     if (this.g.messages.length <= 1) this.openIntro();
@@ -155,19 +158,23 @@ export class UIScene extends Phaser.Scene {
         if (this.lastSlotTap.i === i && now - this.lastSlotTap.t < 400) this.map.focusSquad(i);
         this.lastSlotTap = { i, t: now }; this.g.selected = i;
       });
-      this.slots.push({ bg, frame, name, state, face, bars, lock, x, y });
+      this.slots.push({ bg, frame, name, state, face, bars, lock, x, y, barKey: '-' });
     });
   }
   /** 상단 가운데: 소식 한 줄 */
   private buildTicker(): void {
     const x = this.miniW + 10, w = W - x - 62;
-    if (hasSkin(this)) nine(this, x, 2, w, 13, buttonKey(this, 0x1e1812, 'n'), 3);
+    if (hasSkin(this)) this.tickerFrame = nine(this, x, 2, w, 13, buttonKey(this, 0x1e1812, 'n'), 3);
     this.msgBg = this.add.rectangle(x, 2, w, 13, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
     this.msgText = this.add.text(x + 4, 4, '', { ...TEXT_SMALL, color: C.white });
     this.msgBg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLog(); });
     this.panels.push(new Phaser.Geom.Rectangle(x, 2, w, 13)); this.tickerW = w - 10;
   }
   private tickerW = 200;
+  tutorial!: Tutorial;
+  /** 튜토리얼 상자가 소식 줄 자리를 쓰는 동안 숨긴다 */
+  setTickerVisible(v: boolean): void { if (this.msgText.visible !== v) { this.msgText.setVisible(v); this.msgBg.setVisible(v); this.tickerFrame?.setVisible(v); } }
+  private tickerFrame: Phaser.GameObjects.NineSlice | null = null;
 
   private cycleSpeed(): void {
     if (this.modal || this.g.ending) return;
@@ -194,7 +201,7 @@ export class UIScene extends Phaser.Scene {
     w.portrait(6, 6, 40, 48, 'kael', '카엘');
     w.text(52, 6, '아버지가 남긴 빚은 ' + fmt(BALANCE.startDebt) + '골.', { wordWrap: { width: 240 } });
     w.text(52, 22, '벨마르 대금고는 매달 7·14·21·28일에\n최소 ' + fmt(BALANCE.minRepayment) + '골씩 받아 간다.', { wordWrap: { width: 240 } });
-    w.small(52, 54, '지금은 카엘 혼자다. 성을 눌러 용병을 고용하고, 교역소·게시판에서 돈을 벌자. 남서 곡창의 성들을 돌면 다른 부대장들을 만난다. 지도는 끌어서 움직이고 휠로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
+    w.small(52, 54, (this.g.tutorial === 0 ? '지금은 카엘 혼자다. 처음이라면 위쪽 노란 안내를 따라가 보자(언제든 건너뛸 수 있다). ' : '지금은 카엘 혼자다. ') + '지도는 끌어서 움직이고, 휠이나 두 손가락으로 확대.', { color: C.paperDark, wordWrap: { width: 240 } });
     w.button(230, 106, '시작', () => w.close(), { w: 60, h: 16 });
   }
 
@@ -416,13 +423,15 @@ export class UIScene extends Phaser.Scene {
   // ───── 매 프레임 ─────
   update(time: number): void {
     const g = this.g; const c = g.clock;
+    this.tutorial.update(time);
     // 시계: 반원 황금 시계 + 바늘(원작 좌하)
+    const clockKey = Math.round(c.frac * 64); if (clockKey !== this.clockKey) { this.clockKey = clockKey;
     const gfx = this.clockGfx; gfx.clear();
     const cx = 15, cy = H - 7, R = 11;
     gfx.fillStyle(0x3a2e1a).slice(cx, cy, R, Math.PI, 0, false).fillPath();
     gfx.lineStyle(1, C.border).beginPath().arc(cx, cy, R, Math.PI, 0, false).strokePath();
     for (let i = 0; i <= 4; i++) { const a = Math.PI + (Math.PI * i) / 4; gfx.lineStyle(1, 0xe0b23c).lineBetween(cx + Math.cos(a) * (R - 3), cy + Math.sin(a) * (R - 3), cx + Math.cos(a) * R, cy + Math.sin(a) * R); }
-    const a = Math.PI + Math.PI * c.frac; gfx.lineStyle(1, 0xffffff).lineBetween(cx, cy, cx + Math.cos(a) * (R - 2), cy + Math.sin(a) * (R - 2));
+    const a = Math.PI + Math.PI * c.frac; gfx.lineStyle(1, 0xffffff).lineBetween(cx, cy, cx + Math.cos(a) * (R - 2), cy + Math.sin(a) * (R - 2)); }
     this.dateText.setText(GameClock.format(c.date));
     const due = c.daysToRepayment;
     this.dueText.setText(due === 0 ? '오늘 상환일!' : '상환까지 ' + due + '일').setColor(due <= 1 ? C.red : C.paperDark);
@@ -436,12 +445,13 @@ export class UIScene extends Phaser.Scene {
       const s = this.slots[i]; const on = g.isActive(i);
       s.lock.setVisible(!on); s.name.setVisible(on); s.state.setVisible(on); s.face?.setVisible(on);
       if (s.frame) { const k = buttonKey(this, !on ? 0x1e1a16 : i === g.selected ? 0x6a5020 : 0x2e241c, on && i === g.selected ? 'h' : 'n'); if (s.frame.texture.key !== k) s.frame.setTexture(k); }
-      s.bars.clear(); if (!on) return;
+      if (!on) { if (s.barKey !== '') { s.bars.clear(); s.barKey = ''; } return; }
       const dest = sq.destination;
       const nl = this.slotW >= 50 ? 4 : 3; const where = g.battleSquad === i ? '교전' : sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, nl - 1) : sq.order === 'build' ? '공사' : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, nl) : '…');
       if (s.state.text !== where) s.state.setText(where).setColor(g.battleSquad === i ? C.red : C.paperDark);
       const hp = sq.people.reduce((t, p) => t + p.stats.hp, 0) / Math.max(1, sq.people.reduce((t, p) => t + p.stats.maxHp, 0));
       const tx = this.slotW >= 50 ? 26 : 19; const bw = this.slotW - tx - 3; const bx = s.x + tx, by = s.y + 22;
+      const barKey = Math.round(bw * hp) + ':' + sq.members.length; if (barKey === s.barKey) return; s.barKey = barKey; s.bars.clear();
       s.bars.fillStyle(0x1a1c2c).fillRect(bx, by, bw, 2).fillStyle(hp > 0.5 ? 0x5f9a3c : hp > 0.25 ? 0xd0b040 : 0xd04040).fillRect(bx, by, Math.round(bw * hp), 2);
       s.bars.fillStyle(0x1a1c2c).fillRect(bx, by + 3, bw, 1).fillStyle(0xe0b23c).fillRect(bx, by + 3, Math.round(bw * Math.min(1, sq.members.length / 8)), 1);
     });

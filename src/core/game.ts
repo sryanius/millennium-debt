@@ -41,6 +41,7 @@ export interface GameJSON {
   forts: Record<string, number>; enemyHeld: string[]; lastShow: Record<string, number>; buildJobs: { siteId: string; day: number; jobs: BuildJob[] }[]; reports: FortReport[]; roamNext: number; rng: number;
   flags: string[]; firedEvents: string[]; jointTarget: string | null; lastMonth: number; startDay: number;
   recruited?: string[];
+  tutorial?: number;
 }
 
 export const START_SITE = 'C028'; // 샹파르(GDD §4.1)
@@ -114,7 +115,9 @@ export class Game {
 
   get day(): number { return this.clock.dayIndex; }
   /** 새 게임: 카엘 하임 부대만으로 시작 */
-  startStory(): void { this.recruited = new Set(['kael']); this.selected = 0; }
+  /** 튜토리얼 단계(화면 쪽 tutorial.ts). -1 = 안 함(테스트·옛 저장), 99 = 끝남 */
+  tutorial = -1;
+  startStory(): void { this.recruited = new Set(['kael']); this.selected = 0; this.tutorial = 0; }
   isActive(i: number): boolean { return this.recruited.has(this.squads[i].id); }
   /** 부대장 합류: 그 거점에 부대가 생긴다 */
   recruit(id: string, siteId: string): void {
@@ -735,7 +738,7 @@ export class Game {
       forts: Object.fromEntries(this.forts), enemyHeld: [...this.enemyHeld], lastShow: { ...this.lastShow },
       buildJobs: [...this.buildJobs.entries()].map(([siteId, e]) => ({ siteId, day: e.day, jobs: e.jobs })), reports: this.reports.slice(-20), roamNext: this.roamNext, rng: this.rng.state,
       flags: [...this.flags], firedEvents: [...this.firedEvents], jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
-      recruited: [...this.recruited],
+      recruited: [...this.recruited], tutorial: this.tutorial,
     };
   }
   static fromJSON(world: World | WorldData, j: GameJSON): Game {
@@ -754,6 +757,7 @@ export class Game {
     if (j.rng) g.rng = new Rng(j.rng);
     if (j.startDay !== undefined) g.startDay = j.startDay;
     if (j.recruited) g.recruited = new Set(j.recruited);
+    g.tutorial = j.tutorial ?? -1;
     g.flags = new Set(j.flags ?? []); g.firedEvents = new Set(j.firedEvents ?? []); g.jointTarget = j.jointTarget ?? null; g.lastMonth = j.lastMonth ?? g.clock.month;
     g.blocked = new Set(j.blocked); g.messages = j.messages; g.unread = 0; g.ending = j.ending; g.selected = j.selected;
     return g;

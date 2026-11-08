@@ -37,23 +37,7 @@ export class MapScene extends Phaser.Scene {
     this.game_ = this.registry.get('game') as Game;
     const world = this.game_.world;
     this.drawTerrain();
-    // 도로
-    const roads = this.add.graphics();
-    const dashed = (ax: number, ay: number, bx: number, by: number, step: number, w: number, col: number, al: number) => {
-      const n = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / step));
-      for (let k = 0; k < n; k += 2) { const t0 = k / n, t1 = Math.min(1, (k + 1.2) / n); roads.lineStyle(w, col, al).lineBetween(ax + (bx - ax) * t0, ay + (by - ay) * t0, ax + (bx - ax) * t1, ay + (by - ay) * t1); }
-    };
-    for (const e of world.edges) {
-      if (e.sea) continue;
-      const a = world.site(e.a), b = world.site(e.b);
-      dashed(a.x, a.y + 0.25, b.x, b.y + 0.25, 1.6, 0.6, 0x2a1e14, 0.45);
-      dashed(a.x, a.y, b.x, b.y, 1.6, 0.4, 0xf0dca8, 0.8);
-    }
-    // 항로(점선, 4단계)
-    for (const e of world.seaEdges) {
-      const a = world.site(e.a), b = world.site(e.b); const n = Math.max(2, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / 4));
-      for (let k = 0; k < n; k += 2) { const t0 = k / n, t1 = Math.min(1, (k + 1) / n); roads.lineStyle(0.5, 0xcfe8ff, 0.6).lineBetween(a.x + (b.x - a.x) * t0, a.y + (b.y - a.y) * t0, a.x + (b.x - a.x) * t1, a.y + (b.y - a.y) * t1); }
-    }
+    this.drawRoads();
     this.pathGfx = this.add.graphics();
     // 거점
     for (const s of world.sites.values()) this.makeSiteMarker(s);
@@ -98,6 +82,56 @@ export class MapScene extends Phaser.Scene {
     this.showRegion(startRegion);
   }
 
+  /**
+   * 길·항로 점선. 처음 한 번만 캔버스 그림(지도 1칸 = 6px)으로 구워 이미지 하나로 얹는다.
+   * Graphics 로 두면 선 조각 수천 개를 매 프레임 다시 계산해서 폰에서 버벅였다(2026-11-08 측정).
+   */
+  private drawRoads(): void {
+    const world = this.game_.world; const m = world.map; if (!m) return;
+    const S = 6; const key = 'roads';
+    if (!this.textures.exists(key)) {
+      // 그림판은 CPU 캔버스로(willReadFrequently). GPU 가속 캔버스를 그대로 텍스처로 올리면
+      // 안드로이드 WebView 에서 두 번째 실행부터 화면 전체가 검게 나왔다(2026-11-08 에뮬레이터 확인)
+      const cv = document.createElement('canvas'); cv.width = m.width * S; cv.height = m.height * S;
+      const ctx = cv.getContext('2d', { willReadFrequently: true })!;
+      ctx.lineCap = 'butt';
+      const line = (ax: number, ay: number, bx: number, by: number, w: number, color: string, dash: number[]) => {
+        ctx.beginPath(); ctx.setLineDash(dash.map(d => d * S)); ctx.lineWidth = w * S; ctx.strokeStyle = color;
+        ctx.moveTo(ax * S, ay * S); ctx.lineTo(bx * S, by * S); ctx.stroke();
+      };
+      for (const e of world.edges) {
+        if (e.sea) continue;
+        const a = world.site(e.a), b = world.site(e.b);
+        line(a.x, a.y + 0.25, b.x, b.y + 0.25, 0.6, 'rgba(42,30,20,0.45)', [1.9, 1.3]);
+        line(a.x, a.y, b.x, b.y, 0.4, 'rgba(240,220,168,0.8)', [1.9, 1.3]);
+      }
+      for (const e of world.seaEdges) {
+        const a = world.site(e.a), b = world.site(e.b);
+        line(a.x, a.y, b.x, b.y, 0.5, 'rgba(207,232,255,0.6)', [4, 4]);
+      }
+      this.textures.addCanvas(key, cv)!.setFilter(Phaser.Textures.FilterMode.LINEAR);
+    }
+    this.add.image(0, 0, key).setOrigin(0).setDisplaySize(m.width, m.height).setDepth(-9);
+  }
+
+  /**
+   * 화면 밖 거점 표식은 그리지 않는다(거점 150여 개 × 그림·이름·깃발). 폰에서 가장 무거운 부분이었다.
+   * siteWant = 배율로 정한 "보여야 함", 실제 visible = siteWant && 화면 안.
+   */
+  private siteWant = new Map<string, boolean>();
+  private cullKey = '';
+  private cullSites(force = false): void {
+    const cam = this.cameras.main; const v = cam.worldView;
+    const key = Math.round(v.x * 4) + ',' + Math.round(v.y * 4) + ',' + Math.round(cam.zoom * 100);
+    if (!force && key === this.cullKey) return; this.cullKey = key;
+    const mx = 26 * this.inv, my = 30 * this.inv; // 표식 크기(설계 px)만큼 여유
+    for (const [id, c] of this.siteMarkers) {
+      const st = this.game_.world.site(id);
+      const on = (this.siteWant.get(id) ?? true) && st.x > v.x - mx && st.x < v.right + mx && st.y > v.y - my && st.y < v.bottom + my;
+      if (c.visible !== on) c.setVisible(on);
+    }
+  }
+
   private drawTerrain(): void {
     const m = this.game_.world.map;
     if (!m) return;
@@ -126,7 +160,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private makeSiteMarker(s: Site): void {
-    const c = this.add.container(s.x, s.y).setDepth(10);
+    const c = this.add.container(s.x, s.y).setDepth(s.kind === 'castle' ? 11 : 10); // 겹친 거점은 성이 위(눌리는 쪽)
     const size = s.kind === 'castle' ? 5 + s.size : s.kind === 'gate' ? 5 : 4;
     const color = SITE_COLOR[s.kind] ?? 0xffffff;
     const owner = s.owner ? this.game_.world.factions.get(s.owner) : undefined;
@@ -210,7 +244,8 @@ export class MapScene extends Phaser.Scene {
     for (const [id, l] of this.siteLabels) { const k = this.game_.world.site(id).kind; l.setVisible(!worldish && (k === 'castle' || k === 'gate' || k === 'rift' || z >= 4.5 * K)); }
     for (const c of this.regionLabels) c.setVisible(worldish);
     // 세계 지도에선 성만 보인다
-    for (const [id, c] of this.siteMarkers) c.setVisible(!worldish || this.game_.world.site(id).kind === 'castle');
+    for (const id of this.siteMarkers.keys()) this.siteWant.set(id, !worldish || this.game_.world.site(id).kind === 'castle');
+    this.cullSites(true);
     this.events.emit('zoom', z);
   }
 
@@ -244,6 +279,7 @@ export class MapScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     const g = this.game_;
     g.tick(Math.min(delta, 100) / 1000);
+    this.cullSites();
     // 부대 위치·선택 표시
     g.squads.forEach((sq, i) => {
       const c = this.squadMarkers[i];

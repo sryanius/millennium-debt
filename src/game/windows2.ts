@@ -32,7 +32,7 @@ export function openContract(ui: UIScene, siteId: string): void {
     w.portrait(6, 2, 36, 24, 'shopkeeper', '계약소');
     w.small(48, 4, '"' + sq.leader.name + ' 부대장, 쓸 만한 사람들입니다. 급료는 매달 1일."', { color: C.paperDark });
     w.small(48, 14, '소지금 ' + fmt(g.ledger.cash) + '골   부대 급료 합계 ' + fmt(sq.wages) + '/월', { color: C.gold });
-    const cols = [6, 70, 100, 134, 258, 300];
+    const cols = [6, 70, 100, 134, 246, 286]; // 고용 단추(286~320)가 오른쪽 부대원 칸(326~)과 겹치지 않게
     ['직업 / 이름', 'HP', '급료', '능력치 S D T P B', '고용비', ''].forEach((h, i) => w.small(cols[i], 28, h, { color: C.grey }));
     if (!cands.length) w.small(6, 40, '지금은 사람이 없다. 며칠 뒤에.', { color: C.grey });
     cands.slice(0, 8).forEach((c, i) => {

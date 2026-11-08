@@ -34,11 +34,11 @@ export function makeButton(scene: Phaser.Scene, x: number, y: number, label: str
  */
 export class Window extends Phaser.GameObjects.Container {
   readonly content: Phaser.GameObjects.Container;
-  readonly bw: number; readonly bh: number;
+  readonly bw: number; readonly bh: number; readonly titleStr: string; readonly closable: boolean;
   onClose?: () => void;
   constructor(scene: Phaser.Scene, x: number, y: number, w: number, h: number, title: string, opts: { closable?: boolean } = {}) {
     super(scene, x, y);
-    this.bw = w; this.bh = h;
+    this.bw = w; this.bh = h; this.titleStr = title; this.closable = opts.closable !== false;
     const skin = hasSkin(scene);
     // 금테(6px) 만큼 아래로 늘려 그린다: 창마다 "bh - 24" 같은 아래쪽 글이 테두리에 잘리지 않게
     const fh = skin ? h + 8 : h;

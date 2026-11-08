@@ -66,7 +66,8 @@ public class MainActivity extends Activity {
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onConsoleMessage(ConsoleMessage m) { Log.i("MDGame", m.messageLevel() + " " + m.message() + " @" + m.sourceId() + ":" + m.lineNumber()); return true; }
         });
-        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true);
+        String dq = getIntent() != null ? getIntent().getStringExtra("q") : null; // 개발용: -e q debug 면 크롬 개발자 도구로 들여다볼 수 있게
+        if (dq != null && dq.contains("debug")) WebView.setWebContentsDebuggingEnabled(true);
         setContentView(web);
         hideBars();
         if (state != null) web.restoreState(state);
