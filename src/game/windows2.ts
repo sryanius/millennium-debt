@@ -1,17 +1,16 @@
 import { BALANCE } from '../core/balance';
 import { GameClock as Clock } from '../core/clock';
 import { ARMOR_BY_ID, POTION_BY_ID, WEAPON_BY_ID, itemName, itemPrice, SELLBACK, type Armor, type Potion, type Tool, type Weapon } from '../core/equipment';
-import { drawFormation, formationMods } from './formationView';
+import { KIND_LABEL, KIND_TEXT, drawFormation, formationMods, jobName, kindOf } from './formationView';
 import { FORMATIONS, FORMATION_BY_ID, STANCE_LABEL, ATTACK_MODE_LABEL } from '../core/formation';
 import { fmt, JOB_BY_ID } from '../core/game';
-import { MAX_MEMBERS, type Person } from '../core/squad';
+import { MAX_MEMBERS, attackOf, defenseOf, isRanged, type Person } from '../core/squad';
 import { FULL_W, type Window } from './Window';
 import { C } from './theme';
 import type { UIScene } from './scenes/UIScene';
 
 /** 2단계 창들(계약소·상점·병원·군사 게시판·부대원/병기 편성·호위대 집행관). UIScene 에서 호출. */
 
-const statLine = (p: Person) => 'HP ' + p.stats.hp + '/' + p.stats.maxHp + ' E' + p.stats.e + ' F' + p.stats.f + ' S' + p.stats.s + ' D' + p.stats.d + ' T' + p.stats.t + ' P' + p.stats.p + ' B' + p.stats.b;
 
 /**
  * 오른쪽 부대원 칸(원작 상점 창 공통): 3×3 큰 칸, 칸마다 이름과 한 줄 정보.
@@ -148,46 +147,91 @@ export function openMilitary(ui: UIScene, siteId: string): void {
  * 부대원 편성(원작: 6열 × 9칸 격자). 폰에 맞춰: 위 부대 단추로 볼 부대를 고르고, 가운데 3×3 칸에서 대원을 누르면
  * 오른쪽에 정보와 «→ 옮길 부대» 단추가 뜬다. 같은 거점의 부대끼리만 옮긴다. 아래는 대열·태세·공격 방식.
  */
-export function openRoster(ui: UIScene): void {
+export function openRoster(ui: UIScene, keepPicked: string | null = null): void {
   const w = ui.full('부대원 편성');
-  let picked: string | null = null;
+  let picked: string | null = keepPicked;
   const render = () => {
-    w.clearBody(); const g = ui.g; const here = g.squad.siteId; const sq = g.squad;
+    w.clearBody(); const g = ui.g; const here = g.squad.siteId; const sq = g.squad; const people = sq.people;
     g.squads.forEach((s, si) => {
       const same = s.siteId === here && g.isActive(si);
       w.button(4 + si * 77, 0, (si + 1) + ' ' + (g.isActive(si) ? s.leader.name.slice(0, 3) : '???'), () => { g.selected = si; picked = null; render(); }, { w: 74, h: 22, selected: si === g.selected, disabled: !same });
     });
-    w.small(6, 26, sq.name + ' — 대원을 누르면 능력치·장비를 보고 다른 부대로 옮길 수 있다', { color: C.grey });
+    // 고르기·자리 바꾸기: 고른 대원이 있을 때 다른 번호를 누르면 두 대원의 자리를 바꾼다(부대장은 1번 고정)
+    const pick = (i: number) => {
+      const t = people[i];
+      if (!t) { if (picked) ui.toast('빈 자리 — 대원은 1번부터 차례로 선다'); return; }
+      if (!picked || picked === t.id) { picked = picked === t.id ? null : t.id; render(); return; }
+      const j = people.findIndex(x => x.id === picked);
+      if (j <= 0 || i === 0) { picked = t.id; ui.toast('부대장은 늘 1번 자리다'); render(); return; }
+      const m = sq.members; [m[j - 1], m[i - 1]] = [m[i - 1], m[j - 1]];
+      ui.toast(people[j].name + ' ↔ ' + t.name + ' 자리를 바꿨다'); picked = null; render();
+    };
+    // 왼쪽: 대원 칸 3×3 (번호 = 대열 그림의 번호)
     for (let r = 0; r < 9; r++) {
-      const p = sq.people[r]; const x = 4 + (r % 3) * 76, y = 38 + Math.floor(r / 3) * 34;
-      if (p) w.button(x, y, (p.isLeader ? '★' : '') + p.name.slice(0, 5) + '\nHP ' + p.stats.hp + '/' + p.stats.maxHp, () => { picked = picked === p.id ? null : p.id; render(); }, { w: 72, h: 30, small: true, selected: picked === p.id, color: p.isLeader ? 0x4a3b2a : undefined });
-      else w.rect(x, y, 72, 30, C.panelLight, 0.25);
+      const p = people[r]; const x = 4 + (r % 3) * 78, y = 26 + Math.floor(r / 3) * 38;
+      if (!p) { w.rect(x, y, 75, 36, C.panelLight, 0.2); w.small(x + 4, y + 3, String(r + 1), { color: '#6a5a44' }); continue; }
+      const k = kindOf(p);
+      w.button(x, y, '', () => pick(r), { w: 75, h: 36, selected: picked === p.id });
+      w.small(x + 4, y + 2, (r + 1) + ' ' + p.name.slice(0, 5), { color: k === 'leader' ? C.gold : C.white });
+      w.small(x + 4, y + 13, jobName(p).slice(0, 4) + ' · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k], { color: KIND_TEXT[k] });
+      w.small(x + 4, y + 24, 'HP ' + p.stats.hp + '/' + p.stats.maxHp, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paperDark });
     }
-    const p = picked ? sq.people.find(x => x.id === picked) : undefined;
-    const RX = 240;
-    if (p) {
-      w.small(RX, 38, p.name + ' (' + p.race + ' ' + (JOB_BY_ID.get(p.job)?.name ?? p.role) + ')', { color: C.white });
-      w.small(RX, 50, statLine(p), { color: C.paperDark, wordWrap: { width: 220 } });
-      w.small(RX, 72, '무기 ' + itemName(p.weapon) + ' · 갑옷 ' + itemName(p.armor) + ' · 약 ' + (p.potion ? itemName(p.potion) + '×' + p.potions : '-') + ' · 급료 ' + fmt(p.wage), { color: C.paperDark, wordWrap: { width: 220 } });
-      const targets = g.squads.map((s, si) => ({ s, si })).filter(({ s, si }) => si !== g.selected && g.isActive(si) && s.siteId === here);
-      if (p.isLeader) w.small(RX, 100, '부대장은 옮길 수 없다.', { color: C.grey });
-      else if (!targets.length) w.small(RX, 100, '같은 거점에 다른 부대가 없다.', { color: C.grey });
-      else {
-        w.small(RX, 96, '옮길 부대:', { color: C.gold });
-        targets.forEach(({ s, si }, i) => w.button(RX + (i % 3) * 74, 108 + Math.floor(i / 3) * 24, '→ ' + (si + 1) + ' ' + s.leader.name.slice(0, 2), () => { if (!g.transfer(g.selected, p.id, si)) ui.toast('옮길 수 없다(가득 또는 다른 거점)'); picked = null; render(); }, { w: 70, h: 20 }));
-      }
-    }
+    // 오른쪽: 대열 그림(같은 번호)
     const f = FORMATION_BY_ID.get(sq.formation)!;
-    if (!p) { drawFormation(w, RX, 38, 222, 84, f, sq.people.length); formationMods(w, RX, 125, f); }
-    w.small(6, 144, '대열 ' + f.name + ' — ' + f.desc, { color: C.gold, wordWrap: { width: 456 } });
-    FORMATIONS.forEach((fo, i) => w.button(4 + i * 57, 160, fo.name, () => { sq.formation = fo.id; picked = null; render(); }, { w: 55, h: 22, small: true, selected: sq.formation === fo.id }));
-    w.small(6, 194, '태세', { color: C.grey });
-    (['alert', 'normal', 'search'] as const).forEach((st, i) => w.button(34 + i * 64, 188, STANCE_LABEL[st], () => { sq.stance = st; render(); }, { w: 60, h: 22, selected: sq.stance === st }));
-    w.small(240, 194, '공격', { color: C.grey });
-    (['melee', 'ranged'] as const).forEach((m, i) => w.button(268 + i * 64, 188, ATTACK_MODE_LABEL[m], () => { sq.attackMode = m; render(); }, { w: 60, h: 22, selected: sq.attackMode === m }));
-    w.small(6, 218, '위 부대 단추: 볼 부대 고르기(다른 거점에 있는 부대는 흐리게).', { color: C.grey });
+    drawFormation(w, 240, 26, 226, 112, f, people, { picked, onSlot: pick });
+    // 고른 대원 한 줄 + 자세히
+    const p = picked ? people.find(x => x.id === picked) : undefined;
+    if (p) {
+      w.small(6, 142, p.name + ' · ' + p.race + ' ' + jobName(p) + ' · 무기 ' + itemName(p.weapon) + ' · 갑옷 ' + itemName(p.armor), { color: C.white });
+      w.small(6, 153, p.isLeader ? '부대장은 1번 자리에 선다.' : '그림이나 칸의 다른 번호를 누르면 그 대원과 자리를 바꾼다.', { color: C.grey });
+      w.button(388, 141, '자세히 →', () => openMember(ui, p.id), { w: 78, h: 22 });
+    } else {
+      w.small(6, 142, '대원(또는 그림의 번호)을 누르면 고른다.', { color: C.grey });
+      w.small(6, 153, '고른 뒤 다른 번호를 누르면 두 대원의 자리를 바꾼다.', { color: C.grey });
+      w.button(358, 141, '자동 배치', () => { autoArrange(sq); ui.toast('백병은 앞, 사격은 뒤에 세웠다'); render(); }, { w: 108, h: 22 });
+    }
+    // 대열·태세·공격
+    const dt = w.small(6, 167, '대열 ' + f.name + ' — ' + f.desc, { color: C.gold });
+    formationMods(w, 6 + dt.width + 10, 167, f);
+    FORMATIONS.forEach((fo, i) => w.button(4 + i * 58, 180, fo.name, () => { if (sq.formation === fo.id) return; sq.formation = fo.id; autoArrange(sq); picked = null; render(); }, { w: 56, h: 22, small: true, selected: sq.formation === fo.id }));
+    w.small(6, 212, '태세', { color: C.grey });
+    (['alert', 'normal', 'search'] as const).forEach((st, i) => w.button(34 + i * 64, 206, STANCE_LABEL[st], () => { sq.stance = st; render(); }, { w: 60, h: 22, selected: sq.stance === st }));
+    w.small(240, 212, '공격', { color: C.grey });
+    (['melee', 'ranged'] as const).forEach((m, i) => w.button(268 + i * 64, 206, ATTACK_MODE_LABEL[m], () => { sq.attackMode = m; render(); }, { w: 60, h: 22, selected: sq.attackMode === m }));
   };
   render();
+}
+
+/** 백병 대원은 앞쪽 자리부터, 사격 대원은 뒤쪽 자리부터 채운다(지금 대열 기준). 같은 종류끼리는 순서 유지 */
+function autoArrange(sq: { formation: string; members: Person[] }): void {
+  const f = FORMATION_BY_ID.get(sq.formation)!; const n = sq.members.length;
+  const slots = Array.from({ length: n }, (_, k) => k + 1).sort((a, b) => f.slots[a][0] - f.slots[b][0]);
+  const order = [...sq.members.filter(m => kindOf(m) !== 'ranged'), ...sq.members.filter(m => kindOf(m) === 'ranged')];
+  const next: Person[] = new Array(n); slots.forEach((si, k) => { next[si - 1] = order[k]; }); sq.members = next;
+}
+
+/** 대원 한 명 자세히: 능력치(뜻 붙여서)·장비·다른 부대로 옮기기 */
+function openMember(ui: UIScene, id: string): void {
+  const g = ui.g; const sq = g.squad; const here = sq.siteId;
+  const idx = sq.people.findIndex(x => x.id === id); const p = sq.people[idx]; if (!p) { openRoster(ui); return; }
+  const w = ui.win(400, 190, p.name + ' — ' + p.race + ' ' + jobName(p));
+  const k = kindOf(p);
+  w.small(6, 4, (idx + 1) + '번 자리 · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k] + (p.isLeader ? '' : ' · 급료 ' + fmt(p.wage) + '/월'), { color: KIND_TEXT[k] });
+  const st = p.stats; const atk = attackOf(p), def = defenseOf(p);
+  const cells: [string, string][] = [
+    ['HP', st.hp + '/' + st.maxHp], ['공격', atk + (atk !== st.s ? ' (' + st.s + '+무기)' : '')], ['방어', def + (def !== st.d ? ' (' + st.d + '+갑옷)' : '')], ['경험', String(st.e)],
+    ['피로', st.f + '/100'], ['상업', String(st.t)], ['공연', String(st.p)], ['건축', String(st.b)],
+  ];
+  cells.forEach(([lb, v], i) => { const x = 6 + (i % 4) * 96, y = 20 + Math.floor(i / 4) * 14; w.small(x, y, lb, { color: C.grey }); w.small(x + 26, y, v, { color: C.white }); });
+  w.small(6, 52, '무기 ' + itemName(p.weapon) + ' · 갑옷 ' + itemName(p.armor) + ' · 약 ' + (p.potion ? itemName(p.potion) + '×' + p.potions : '-') + ' · 도구 ' + (p.tool ? itemName(p.tool) : '-'), { color: C.paperDark, wordWrap: { width: 380 } });
+  const targets = g.squads.map((s, si) => ({ s, si })).filter(({ s, si }) => si !== g.selected && g.isActive(si) && s.siteId === here);
+  if (p.isLeader) w.small(6, 78, '부대장은 다른 부대로 옮길 수 없다.', { color: C.grey });
+  else if (!targets.length) w.small(6, 78, '같은 거점에 다른 부대가 없어서 옮길 수 없다.', { color: C.grey });
+  else {
+    w.small(6, 76, '다른 부대로 옮기기:', { color: C.gold });
+    targets.forEach(({ s, si }, i) => w.button(6 + (i % 4) * 96, 90 + Math.floor(i / 4) * 26, '→ ' + (si + 1) + ' ' + s.leader.name.slice(0, 3), () => { if (!g.transfer(g.selected, p.id, si)) { ui.toast('옮길 수 없다(가득 또는 다른 거점)'); return; } ui.toast(p.name + '을(를) ' + s.name + '로 옮겼다'); openRoster(ui); }, { w: 92, h: 22 }));
+  }
+  w.button(6, w.bodyH - 28, '← 편성으로', () => openRoster(ui, p.id), { w: 110, h: 24 });
 }
 
 /** 병기 편성: 선택 부대 대원별 장비 보기·되팔기 */
