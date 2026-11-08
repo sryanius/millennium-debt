@@ -46,3 +46,28 @@ document.addEventListener('pointerdown', function once() {
   document.removeEventListener('pointerdown', once);
   const so = (screen as any).orientation; if (so && so.lock && matchMedia('(pointer: coarse)').matches) so.lock('landscape').catch(() => {});
 });
+
+// ?perf : 3초마다 프레임 수·한 프레임 걸린 시간(계산/그리기)을 콘솔에 찍는다. 앱(APK)에서는 adb 로 `am start ... -e q perf`.
+if (new URLSearchParams(location.search).has('perf')) {
+  const T = { upd: 0, ren: 0, n: 0 }; const dts: number[] = []; let last = performance.now();
+  game.events.once('ready', () => {
+    // 실험: ?perf&exp=noroads,nosites,noui — 하나씩 끄고 재 본다
+    const exp = (new URLSearchParams(location.search).get('exp') ?? '').split(',');
+    setTimeout(() => {
+      const map = game.scene.getScene('map'); const ui = game.scene.getScene('ui');
+      if (exp.includes('noroads')) map.children.list.filter(o => o.type === 'Graphics').forEach(o => (o as Phaser.GameObjects.Graphics).setVisible(false));
+      if (exp.includes('nosites')) map.children.list.filter(o => o.type === 'Container').forEach(o => (o as Phaser.GameObjects.Container).setVisible(false));
+      if (exp.includes('noui')) ui.sys.setVisible(false);
+      console.log('[perf] 실험 ' + exp.join(','));
+    }, 3000);
+    const step = game.step.bind(game);
+    game.step = (time: number, delta: number) => { const t0 = performance.now(); step(time, delta); T.upd += performance.now() - t0; T.n++; dts.push(time - last); last = time; };
+    const r = game.renderer as unknown as { render: (...a: unknown[]) => void }; const render = r.render.bind(r);
+    r.render = (...a: unknown[]) => { const t0 = performance.now(); render(...a); T.ren += performance.now() - t0; };
+    setInterval(() => {
+      if (!T.n) return; const s = dts.slice().sort((a, b) => a - b);
+      console.log(`[perf] fps ${game.loop.actualFps.toFixed(1)} · 프레임 간격 중앙 ${s[s.length >> 1].toFixed(1)}ms·95% ${s[Math.floor(s.length * 0.95)].toFixed(1)}ms · 한 프레임 JS ${(T.upd / T.n).toFixed(2)}ms(그중 그리기 ${(T.ren / T.n).toFixed(2)}ms) · 캔버스 ${game.canvas.width}×${game.canvas.height} · dpr ${devicePixelRatio}`);
+      T.upd = T.ren = T.n = 0; dts.length = 0;
+    }, 3000);
+  });
+}

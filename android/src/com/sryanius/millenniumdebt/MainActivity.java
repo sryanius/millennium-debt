@@ -70,7 +70,10 @@ public class MainActivity extends Activity {
         setContentView(web);
         hideBars();
         if (state != null) web.restoreState(state);
-        else web.loadUrl("https://" + HOST + "/index.html");
+        else {
+            String q = getIntent() != null ? getIntent().getStringExtra("q") : null; // 개발용: adb shell am start ... -e q perf
+            web.loadUrl("https://" + HOST + "/index.html" + (q != null && q.matches("[a-z&=0-9,]+") ? "?" + q : ""));
+        }
     }
 
     private static String mime(String p) {
