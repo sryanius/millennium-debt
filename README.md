@@ -74,7 +74,14 @@ npm run build      # dist/  — main 에 올리면 GitHub Actions 가 Pages 로 
 - 헤드리스: `game.autoEvents = true` 면 이벤트를 자동으로 넘긴다(테스트·밸런스 시뮬).
 
 ## 7단계(모바일) 현재
-PWA manifest·서비스 워커(배포 빌드에서만)·아이콘(임시 도트), 가로 고정 시도, 기기 픽셀 기준 정수 배율, 자동 저장. **실제 폰 미확인**. 11px 작은 버튼은 터치에 빠듯해 6단계 아트 교체 때 44px 기준으로 다시 잡아야 한다. `npm run build` → `dist/` 를 아무 정적 서버에 올리면 된다.
+PWA manifest·서비스 워커(배포 빌드에서만)·아이콘(임시 도트), 가로 고정 시도, 기기 픽셀 기준 정수 배율, 자동 저장.
+
+**안드로이드 APK** (2026-11-08): `bash tools/build-apk.sh` → `dist-apk/millennium-debt.apk` (약 4MB).
+- 그레이들 없이 안드로이드 SDK 도구(aapt2·d8·zipalign·apksigner)만 쓴다. 필요: JDK 17, SDK `platforms;android-35`·`build-tools;35.0.0`(`%LOCALAPPDATA%/Android/Sdk`).
+- `android/` 는 WebView 껍데기. 웹 빌드를 앱 안 `assets/web` 에 넣고 `https://appassets.androidplatform.net/` 주소로 가로채 돌려준다(가로·전체 화면·화면 꺼짐 막음, 뒤로 가기는 게임을 끄지 않고 내림).
+- 앱이 뒤로 가면 바로 저장한다. 게임 콘솔 글은 logcat 꼬리표 `MDGame` 으로 나온다.
+- 서명 키는 저장소 밖 `../.secrets/mercenary-release.jks`. **지우면 폰에서 덮어 설치가 안 된다**(지우고 새로 깔아야 하고 저장도 날아간다). 버전을 올릴 땐 `android/AndroidManifest.xml` 의 `versionCode` 를 늘린다.
+- 에뮬레이터(Pixel 6, 안드로이드 14)에서 켜짐·터치·백그라운드 후 강제 종료해도 저장 유지까지 확인. 실제 폰은 아직. 11px 작은 버튼은 터치에 빠듯해 6단계 아트 교체 때 44px 기준으로 다시 잡아야 한다. `npm run build` → `dist/` 를 아무 정적 서버에 올리면 된다.
 
 ## 다음
 6단계 도트 아트·음악(네모 → 도트), 7단계 실기기 검증, 밸런스(상환 1,000만까지의 수입 곡선).

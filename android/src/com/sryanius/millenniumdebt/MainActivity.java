@@ -6,6 +6,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -60,6 +63,10 @@ public class MainActivity extends Activity {
                 return !HOST.equals(req.getUrl().getHost()); // 바깥 주소로는 나가지 않는다
             }
         });
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage m) { Log.i("MDGame", m.messageLevel() + " " + m.message() + " @" + m.sourceId() + ":" + m.lineNumber()); return true; }
+        });
+        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true);
         setContentView(web);
         hideBars();
         if (state != null) web.restoreState(state);
