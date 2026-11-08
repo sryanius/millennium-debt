@@ -84,5 +84,10 @@ export const REGION_COLOR: Record<string, number> = {
 };
 
 /** 글자는 렌더 배율(K)만큼 고해상도로 굽는다. 1 이면 11px 로 구운 뒤 늘려서 계단이 고르지 않다 */
-export const TEXT = { fontFamily: FONT, fontSize: '11px', color: C.paper, resolution: K } as const;
-export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: '9px', color: C.paper, resolution: K } as const;
+/**
+ * 글씨 높이(윗선·아랫선)를 PC 크롬에서 잰 값으로 못 박는다(2026-11-08).
+ * Phaser 는 글자를 그려 보고 픽셀을 훑어 높이를 재는데, 안드로이드 웹뷰는 1~2px 크게 재서
+ * 글씨가 아래로 밀려 소식 줄·창 제목 테두리 밖으로 삐져나갔다.
+ */
+export const TEXT = { fontFamily: FONT, fontSize: '11px', color: C.paper, resolution: K, metrics: { ascent: 13, descent: 2, fontSize: 15 } } as const;
+export const TEXT_SMALL = { fontFamily: FONT_SMALL, fontSize: '9px', color: C.paper, resolution: K, metrics: { ascent: 10, descent: 1, fontSize: 11 } } as const;

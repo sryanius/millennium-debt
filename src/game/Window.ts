@@ -48,8 +48,9 @@ export class Window extends Phaser.GameObjects.Container {
     const frame = skin ? nine(scene, 0, 0, w, fh, 'sk_win', 6) : null;
     bg.setInteractive(); // 입력 삼키기
     bg.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
-    const titleBar: any = skin ? scene.add.image(3, 2, 'sk_title').setOrigin(0).setDisplaySize(w - 6, 12) : scene.add.rectangle(1, 1, w - 2, 12, 0x8a6a1c).setOrigin(0);
-    const titleText = scene.add.text(4, 7, title, { ...TEXT, color: C.white }).setOrigin(0, 0.5);
+    const titleBar: any = skin ? scene.add.image(3, 2, 'sk_title').setOrigin(0).setDisplaySize(w - 6, 13) : scene.add.rectangle(1, 1, w - 2, 13, 0x8a6a1c).setOrigin(0);
+    // 제목 글씨(11px)가 띠 위 테두리에 닿지 않게 띠를 1px 키우고 글씨를 1px 내린다
+    const titleText = scene.add.text(4, 8, title, { ...TEXT, color: C.white }).setOrigin(0, 0.5);
     this.add(frame ? [shadow, frame, bg, titleBar, titleText] : [shadow, bg, titleBar, titleText]);
     if (opts.closable !== false) {
       const x = makeButton(scene, w - 15, 2, '×', () => this.close(), { w: 12, h: 12, color: 0xa0302a });

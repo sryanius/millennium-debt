@@ -40,6 +40,8 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setAllowFileAccess(false);
+        s.setTextZoom(100); // 폰 "글자 크기" 설정이 게임 글씨(캔버스)까지 키워 칸을 넘치게 해서 고정한다
+
         s.setUserAgentString(s.getUserAgentString() + " MillenniumDebtApp");
         web.setWebViewClient(new WebViewClient() {
             @Override

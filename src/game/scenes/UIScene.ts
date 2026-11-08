@@ -17,6 +17,8 @@ import { openEnding as openEnding4, openEvent } from '../windows4';
 import { buttonKey, hasSkin, nine } from '../skin';
 import { AUDIO } from '../audio';
 import { Tutorial } from '../tutorial';
+/** 위 오른쪽 «의뢰» 단추 폭(+틈 1) */
+const QBTN = 25;
 
 /**
  * 네 귀퉁이 UI(GDD §7.1) + 하단 부대 6칸 + 지도 위 창들.
@@ -34,7 +36,7 @@ export class UIScene extends Phaser.Scene {
   private dateText!: Phaser.GameObjects.Text; private dueText!: Phaser.GameObjects.Text; private clockGfx!: Phaser.GameObjects.Graphics;
   private debtText!: Phaser.GameObjects.Text; private cashText!: Phaser.GameObjects.Text; private regionText!: Phaser.GameObjects.Text;
   private speedBtn!: Phaser.GameObjects.Container; private msgText!: Phaser.GameObjects.Text; private msgBg!: Phaser.GameObjects.Rectangle;
-  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number; barKey: string }[] = [];
+  private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number; barKey: string; stateKey?: string }[] = [];
   private clockKey = -1;
   private miniView!: Phaser.GameObjects.Rectangle; private miniScale = 0.2125;
   private lastSlotTap = { i: -1, t: 0 };
@@ -56,7 +58,7 @@ export class UIScene extends Phaser.Scene {
     this.map.events.on('site-click', (id: string) => this.openSite(id));
     this.map.events.on('squad-click', (i: number) => { this.g.selected = i; });
     this.buildMinimap(); this.buildTopRight(); this.buildClock(); this.buildFinance(); this.buildSquadBar(); this.buildTicker();
-    this.tutorial = new Tutorial(this, this.miniW + 10, W - 62);
+    this.tutorial = new Tutorial(this, this.miniW + 10, W - 62 - QBTN);
     try { if (localStorage.getItem('md-perf')) this.setPerf(true); } catch { /* 없으면 꺼 둔다 */ }
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(this.g); });
     (window as unknown as { __saveNow?: () => boolean }).__saveNow = () => saveGame(this.g); // 앱(APK)이 백그라운드로 갈 때 부른다
@@ -117,6 +119,9 @@ export class UIScene extends Phaser.Scene {
     this.speedBtn = makeButton(this, x0, 2, '▶1', () => this.cycleSpeed(), { w: 17, h: 13, small: true });
     makeButton(this, x0 + 18, 2, '⚑', () => this.openSquads(), { w: 17, h: 13, small: true });
     makeButton(this, x0 + 36, 2, '⚙', () => this.openSystem(), { w: 17, h: 13, small: true });
+    // 맡은 의뢰 모아 보기(속도 단추 왼쪽). 튜토리얼이 속도 단추 자리를 가리키므로 그 자리는 그대로 둔다
+    this.panels.push(new Phaser.Geom.Rectangle(x0 - QBTN, 2, QBTN - 1, 14));
+    makeButton(this, x0 - QBTN, 2, '의뢰', () => { if (!this.modal) this.openQuests(); }, { w: QBTN - 1, h: 13, small: true });
   }
   /** 좌하: 반원 시계 + 날짜 */
   private buildClock(): void {
@@ -164,7 +169,7 @@ export class UIScene extends Phaser.Scene {
   }
   /** 상단 가운데: 소식 한 줄 */
   private buildTicker(): void {
-    const x = this.miniW + 10, w = W - x - 62;
+    const x = this.miniW + 10, w = W - x - 62 - QBTN;
     if (hasSkin(this)) this.tickerFrame = nine(this, x, 2, w, 13, buttonKey(this, 0x1e1812, 'n'), 3);
     this.msgBg = this.add.rectangle(x, 2, w, 13, C.panel, 0.8).setOrigin(0).setInteractive({ useHandCursor: true }); if (hasSkin(this)) this.msgBg.setFillStyle();
     this.msgText = this.add.text(x + 4, 4, '', { ...TEXT_SMALL, color: C.white });
@@ -359,6 +364,29 @@ export class UIScene extends Phaser.Scene {
     w.button(w.bw - 100, w.bh - 34, '새 게임', () => startNewGame(), { w: 94, h: 16 });
   }
 
+  /** 맡은 의뢰 전부(민사: 부대별 · 군사: 토벌). 줄마다 «보기»로 목적지를 지도에서 보여 준다 */
+  openQuests(): void {
+    const g = this.g; type Row = { who: string; what: string; where: string; left: string; red: boolean; reward: number; site: string };
+    const rows: Row[] = [];
+    g.squads.forEach((sq, i) => { if (!g.isActive(i)) return; for (const id of sq.quests) { const q = g.activeQuests.get(id); if (!q) continue; const d = q.deadline - g.day; const to = g.world.site(q.to);
+      rows.push({ who: sq.leader.name.split(' ')[0], what: CIVIL_JOB_LABEL[q.job], where: to.name + '(' + (g.world.regions.get(to.region)?.name ?? '').slice(0, 2) + ')', left: d >= 0 ? d + '일' : '지남', red: d < 2, reward: q.reward, site: q.to }); } });
+    for (const q of g.activeMilitary.values()) { const band = g.bands.find(b => b.questId === q.id); const at = band?.site ?? q.target;
+      rows.push({ who: '토벌', what: '도적단', where: g.world.site(at).name, left: '-', red: false, reward: q.reward, site: at }); }
+    const shown = rows.slice(0, 10);
+    const w = this.win(330, Math.max(90, 46 + shown.length * 13 + 22), '맡은 의뢰 ' + rows.length + '개');
+    const cols = [6, 46, 86, 186, 222, 280];
+    ['누가', '일', '목적지', '기한', '보수', ''].forEach((h, i) => w.small(cols[i], 4, h, { color: C.grey }));
+    if (!rows.length) w.small(6, 18, '맡은 의뢰가 없다. 성의 «민사게시판»·«군사게시판»에서 «수락»하자.', { color: C.grey, wordWrap: { width: 310 } });
+    shown.forEach((r, i) => {
+      const y = 17 + i * 13;
+      w.small(cols[0], y, r.who, { color: C.gold }); w.small(cols[1], y, r.what); w.small(cols[2], y, r.where);
+      w.small(cols[3], y, r.left, { color: r.red ? '#e2a08a' : C.paper }); w.small(cols[4], y, fmt(r.reward), { color: C.gold });
+      w.button(cols[5], y - 1, '보기', () => { w.close(); this.map.focusSite(r.site); }, { w: 36, h: 11, small: true });
+    });
+    if (rows.length > shown.length) w.small(6, 17 + shown.length * 13, '… 외 ' + (rows.length - shown.length) + '개', { color: C.grey });
+    w.small(6, w.bh - 24, '목적지에 도착하면 보수를 받는다. 기한을 넘기면 절반만.', { color: C.grey });
+  }
+
   private openSquads(): void {
     if (this.g.ending) return;
     const w = this.win(300, 130, '부대');
@@ -483,7 +511,11 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
       if (!on) { if (s.barKey !== '') { s.bars.clear(); s.barKey = ''; } return; }
       const dest = sq.destination;
       const nl = this.slotW >= 50 ? 4 : 3; const where = g.battleSquad === i ? '교전' : sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, nl - 1) : sq.order === 'build' ? '공사' : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, nl) : '…');
-      if (s.state.text !== where) s.state.setText(where).setColor(g.battleSquad === i ? C.red : C.paperDark);
+      if (s.stateKey !== where) { // 칸 폭에 맞춰 뒤를 자른다(이름이 칸 테두리를 넘지 않게)
+        s.stateKey = where; const room = this.slotW - (this.slotW >= 50 ? 26 : 19) - 2; let t = where; s.state.setText(t);
+        while (s.state.width > room && t.length > 1) { t = t.slice(0, -1); s.state.setText(t); }
+        s.state.setColor(g.battleSquad === i ? C.red : C.paperDark);
+      }
       const hp = sq.people.reduce((t, p) => t + p.stats.hp, 0) / Math.max(1, sq.people.reduce((t, p) => t + p.stats.maxHp, 0));
       const tx = this.slotW >= 50 ? 26 : 19; const bw = this.slotW - tx - 3; const bx = s.x + tx, by = s.y + 22;
       const barKey = Math.round(bw * hp) + ':' + sq.members.length; if (barKey === s.barKey) return; s.barKey = barKey; s.bars.clear();
