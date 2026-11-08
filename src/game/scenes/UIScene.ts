@@ -57,6 +57,7 @@ export class UIScene extends Phaser.Scene {
     this.map.events.on('squad-click', (i: number) => { this.g.selected = i; });
     this.buildMinimap(); this.buildTopRight(); this.buildClock(); this.buildFinance(); this.buildSquadBar(); this.buildTicker();
     this.tutorial = new Tutorial(this, this.miniW + 10, W - 62);
+    try { if (localStorage.getItem('md-perf')) this.setPerf(true); } catch { /* 없으면 꺼 둔다 */ }
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(this.g); });
     (window as unknown as { __saveNow?: () => boolean }).__saveNow = () => saveGame(this.g); // 앱(APK)이 백그라운드로 갈 때 부른다
     if (this.g.messages.length <= 1) this.openIntro();
@@ -67,7 +68,7 @@ export class UIScene extends Phaser.Scene {
     this.panels.push(new Phaser.Geom.Rectangle(x, y, w, h));
     if (hasSkin(this)) nine(this, x, y, w, h, 'sk_panel', 6);
     const r = this.add.rectangle(x, y, w, h, C.panel, hasSkin(this) ? 0.001 : 0.92).setOrigin(0);
-    if (!hasSkin(this)) r.setStrokeStyle(1, C.border);
+    if (!hasSkin(this)) r.setStrokeStyle(1, C.border); else r.setFillStyle(); // 칠하지 않으면 그리지도 않는다(누르기만 받는 판). 투명하게 칠하면 그리기 명령이 나간다
     r.setInteractive(); r.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
     return r;
   }
@@ -98,7 +99,7 @@ export class UIScene extends Phaser.Scene {
     }
     const gfx = this.add.graphics(); this.miniGfx = gfx; this.drawMini();
     this.miniView = this.add.rectangle(4, 4, 10, 10, 0xffffff, 0).setOrigin(0).setStrokeStyle(1, 0xfbf6e8, 0.9);
-    const hit = this.add.rectangle(4, 4, w, h, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+    const hit = this.add.rectangle(4, 4, w, h).setOrigin(0).setInteractive({ useHandCursor: true });
     hit.on('pointerup', (_p: Phaser.Input.Pointer, lx: number, ly: number, ev: Phaser.Types.Input.EventData) => {
       ev.stopPropagation(); if (this.modal) return;
       const wx = lx / sc, wy = ly / sc;
@@ -130,7 +131,7 @@ export class UIScene extends Phaser.Scene {
     this.debtText = this.add.text(W - w + 4, H - 27, '', { ...TEXT_SMALL, color: '#e2a08a' });
     this.cashText = this.add.text(W - w + 4, H - 17, '', { ...TEXT_SMALL, color: C.white });
     this.regionText = this.add.text(W - 4, 4 + 16, '', { ...TEXT_SMALL, color: C.gold, stroke: '#1a1c2c', strokeThickness: 2 }).setOrigin(1, 0);
-    const hit = this.add.rectangle(W - w - 2, H - 30, w, 28, 0, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+    const hit = this.add.rectangle(W - w - 2, H - 30, w, 28).setOrigin(0).setInteractive({ useHandCursor: true });
     hit.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLedger(); });
   }
   /** 하단 가운데: 부대장 카드 6장(초상 + 이름 + HP·피로 막대). 아직 합류 안 한 칸은 자물쇠 */
@@ -142,7 +143,7 @@ export class UIScene extends Phaser.Scene {
     this.g.squads.forEach((sq, i) => {
       const x = x0 + i * (sw + gap), y = H - 30;
       const frame = hasSkin(this) ? nine(this, x, y, sw, 28, buttonKey(this, 0x2e241c, 'n'), 3) : null;
-      const bg = this.add.rectangle(x, y, sw, 28, C.panel, frame ? 0.001 : 0.92).setOrigin(0).setInteractive({ useHandCursor: true });
+      const bg = this.add.rectangle(x, y, sw, 28, C.panel, 0.92).setOrigin(0).setInteractive({ useHandCursor: true }); if (frame) bg.setFillStyle();
       // 초상: 얼굴 부분만(48×56 도트에서 위쪽 가운데)
       let face: Phaser.GameObjects.Image | null = null;
       const fs_ = sw >= 50 ? 0.73 : 0.54; const tx = sw >= 50 ? 26 : 19;
@@ -165,7 +166,7 @@ export class UIScene extends Phaser.Scene {
   private buildTicker(): void {
     const x = this.miniW + 10, w = W - x - 62;
     if (hasSkin(this)) this.tickerFrame = nine(this, x, 2, w, 13, buttonKey(this, 0x1e1812, 'n'), 3);
-    this.msgBg = this.add.rectangle(x, 2, w, 13, C.panel, hasSkin(this) ? 0.001 : 0.8).setOrigin(0).setInteractive({ useHandCursor: true });
+    this.msgBg = this.add.rectangle(x, 2, w, 13, C.panel, 0.8).setOrigin(0).setInteractive({ useHandCursor: true }); if (hasSkin(this)) this.msgBg.setFillStyle();
     this.msgText = this.add.text(x + 4, 4, '', { ...TEXT_SMALL, color: C.white });
     this.msgBg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); this.openLog(); });
     this.panels.push(new Phaser.Geom.Rectangle(x, 2, w, 13)); this.tickerW = w - 10;
@@ -402,16 +403,47 @@ export class UIScene extends Phaser.Scene {
     this.g.unread = 0;
   }
   private openSystem(): void {
-    const w = this.win(200, 160, '시스템');
+    const w = this.win(200, 176, '시스템');
     w.menu([
       { label: '저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
       { label: '불러오기', disabled: !hasSave(), onClick: () => { const g = loadGame(this.g.world); if (g) { this.registry.set('game', g); location.reload(); } } },
       { label: '새 게임', onClick: () => startNewGame() },
       { label: '음악 ' + (AUDIO.musicOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setMusic(!AUDIO.musicOn); w.close(); this.openSystem(); } },
       { label: '효과음 ' + (AUDIO.sfxOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setSfx(!AUDIO.sfxOn); w.close(); this.openSystem(); } },
+      { label: '속도 측정 ' + (this.perfOn ? '끄기' : '켜기'), onClick: () => { this.setPerf(!this.perfOn); w.close(); this.openSystem(); } },
       { label: '닫기', onClick: () => w.close() },
     ]);
-    w.small(6, 104, '시제품 · 설계 ' + W + '×' + H + ' · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
+    w.small(6, 120, '시제품 · 설계 ' + W + '×' + H + ' · 렌더 ×' + K + '\n자동 저장: 탭을 숨길 때, 30초마다', { color: C.grey });
+  }
+  /**
+   * 속도 측정(시스템 창에서 켬): 왼쪽에 1초당 화면 수·한 화면 계산 시간·그래픽 칩 이름을 띄운다.
+   * 실제 폰에서 어디가 느린지 사용자가 숫자로 알려 줄 수 있게(2026-11-08).
+   */
+  perfOn = false;
+  private perfText?: Phaser.GameObjects.Text;
+  private perfAcc = { n: 0, js: 0, worst: 0, last: 0, t0: 0 };
+  private gpuName = '';
+  setPerf(on: boolean): void {
+    this.perfOn = on; try { localStorage.setItem('md-perf', on ? '1' : ''); } catch { /* 저장 못 해도 이번 판엔 켜진다 */ }
+    if (!on) { this.perfText?.destroy(); this.perfText = undefined; return; }
+    if (this.perfText) return;
+    this.perfText = this.add.text(2, H - 33, '측정 중…', { ...TEXT_SMALL, color: '#7cff7c', backgroundColor: '#000c', padding: { x: 2, y: 1 } }).setOrigin(0, 1).setDepth(500);
+    // game.step 은 시작할 때 묶여 버려 바꿔 끼워도 소용없다 → 엔진의 단계 신호로 잰다
+    const acc = this.perfAcc; const game = this.game as Phaser.Game & { __perfHooked?: boolean };
+    if (!game.__perfHooked) {
+      game.__perfHooked = true; let t0 = 0;
+      game.events.on(Phaser.Core.Events.PRE_STEP, (time: number) => { t0 = performance.now(); if (acc.last) acc.worst = Math.max(acc.worst, time - acc.last); acc.last = time; });
+      game.events.on(Phaser.Core.Events.POST_RENDER, () => { if (t0) { acc.n++; acc.js += performance.now() - t0; } });
+    }
+    acc.t0 = performance.now(); acc.n = acc.js = acc.worst = 0;
+    try { const gl = (this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer).gl; const ext = gl?.getExtension('WEBGL_debug_renderer_info'); this.gpuName = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)).slice(0, 40) : ''; } catch { this.gpuName = ''; }
+  }
+  private perfTick(): void {
+    if (!this.perfText) return; const a = this.perfAcc; const now = performance.now(); if (now - a.t0 < 1000 || !a.n) return;
+    const webgl = this.game.renderer.type === Phaser.WEBGL;
+    this.perfText.setText(`${(a.n * 1000 / (now - a.t0)).toFixed(0)}화면/초 · 계산 ${(a.js / a.n).toFixed(1)}ms · 가장 긴 틈 ${a.worst.toFixed(0)}ms
+${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.height}` + (this.gpuName ? ' · ' + this.gpuName : ''));
+    a.t0 = now; a.n = a.js = a.worst = 0;
   }
   private toastText?: Phaser.GameObjects.Text;
   toast(s: string): void {
@@ -424,6 +456,7 @@ export class UIScene extends Phaser.Scene {
   update(time: number): void {
     const g = this.g; const c = g.clock;
     this.tutorial.update(time);
+    this.perfTick();
     // 시계: 반원 황금 시계 + 바늘(원작 좌하)
     const clockKey = Math.round(c.frac * 64); if (clockKey !== this.clockKey) { this.clockKey = clockKey;
     const gfx = this.clockGfx; gfx.clear();
@@ -434,7 +467,9 @@ export class UIScene extends Phaser.Scene {
     const a = Math.PI + Math.PI * c.frac; gfx.lineStyle(1, 0xffffff).lineBetween(cx, cy, cx + Math.cos(a) * (R - 2), cy + Math.sin(a) * (R - 2)); }
     this.dateText.setText(GameClock.format(c.date));
     const due = c.daysToRepayment;
-    this.dueText.setText(due === 0 ? '오늘 상환일!' : '상환까지 ' + due + '일').setColor(due <= 1 ? C.red : C.paperDark);
+    // setColor 는 같은 색이어도 글자 그림을 새로 만들어 그래픽 칩에 다시 올린다 → 바뀔 때만(폰 버벅임 원인, 2026-11-08)
+    const dueCol = due <= 1 ? C.red : C.paperDark;
+    this.dueText.setText(due === 0 ? '오늘 상환일!' : '상환까지 ' + due + '일'); if (this.dueText.style.color !== dueCol) this.dueText.setColor(dueCol);
     this.speedBtn.getAt<Phaser.GameObjects.Text>(1).setText(c.speed === 0 ? '⏸' : '▶' + c.speed);
     // 재정
     this.regionText.setText(g.world.regions.get(this.map.regionId)?.name ?? '');

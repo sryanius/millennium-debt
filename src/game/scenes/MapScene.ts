@@ -18,14 +18,17 @@ export class MapScene extends Phaser.Scene {
   game_!: Game;
   mode: 'region' | 'world' = 'region';
   regionId = 'reg_r06';
-  private siteMarkers = new Map<string, Phaser.GameObjects.Container>();
-  private siteLabels = new Map<string, Phaser.GameObjects.Text>();
+  private siteMarkers = new Map<string, Marker>();
+  private siteLabels = new Map<string, Part>();
   private squadMarkers: Phaser.GameObjects.Container[] = [];
   private regionLabels: Phaser.GameObjects.Container[] = [];
   private bandMarkers = new Map<string, Phaser.GameObjects.Container>();
-  private heldFlags = new Map<string, Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image>();
+  private heldFlags = new Map<string, Part>();
   private pathGfx!: Phaser.GameObjects.Graphics;
   private drag: { x: number; y: number; sx: number; sy: number; moved: boolean } | null = null;
+  private vel = { x: 0, y: 0, t: 0, px: 0, py: 0 };
+  /** 손을 뗀 뒤 미끄러지는 속도(세계 단위/ms) */
+  private fling: { x: number; y: number } | null = null;
   /** UI 장면이 창을 띄웠을 때 지도 입력을 막는다 */
   inputBlocked = () => false;
   private inv = 1;
@@ -40,13 +43,14 @@ export class MapScene extends Phaser.Scene {
     this.drawRoads();
     this.pathGfx = this.add.graphics();
     // 거점
+    this.bakeLabels([...world.sites.values()]);
     for (const s of world.sites.values()) this.makeSiteMarker(s);
     // 지역 이름(세계 지도용)
     for (const r of world.regions.values()) {
       const b = world.regionBounds(r.id);
       const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
       const c = this.add.container(cx, cy);
-      const bg = this.add.rectangle(0, 0, 66, 13, 0x1e1812, 0.78).setStrokeStyle(1, REGION_COLOR[r.id] ?? C.border);
+      const bg = this.add.image(0, 0, this.tagTex(REGION_COLOR[r.id] ?? C.border)).setDisplaySize(66, 13);
       const t = this.add.text(0, 0, r.name, TEXT).setOrigin(0.5);
       c.add([bg, t]); c.setDepth(20); (c as any).regionId = r.id; (c as any).label = t;
       bg.setInteractive({ useHandCursor: true });
@@ -59,7 +63,7 @@ export class MapScene extends Phaser.Scene {
     this.game_.squads.forEach((sq, i) => {
       const c = this.add.container(0, 0).setDepth(30);
       if (this.textures.exists('units')) {
-        const shadow = this.add.ellipse(0, 0, 8, 3, 0x000000, 0.45);
+        const shadow = this.shadow(0, 0, 8, 3, 0.45);
         const body = this.add.image(0, -7, 'units', UNIT_FRAME[sq.id] ?? 0).setOrigin(0.5);
         const flag = this.add.image(5, -18, 'icons', ICON.flagBlue).setOrigin(0, 0.5);
         const num = this.add.text(9, -18.5, String(i + 1), { ...TEXT_SMALL, color: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5);
@@ -115,6 +119,35 @@ export class MapScene extends Phaser.Scene {
   }
 
   /**
+   * 지도 위 표식은 그림·글자로만 만든다(도형을 섞지 않는다).
+   * 그림자 타원을 도형(Ellipse)으로 그리면 거점마다 "도형 그리기 ↔ 그림 그리기"를 오가며
+   * 그래픽 칩에 명령이 거점당 2~3번씩, 한 화면에 100번 가까이 나갔다. 그림끼리는 한 번에 몰아 그린다(2026-11-08).
+   * 캔버스는 CPU 캔버스로(drawRoads 주석 참고).
+   */
+  private shadow(x: number, y: number, w: number, h: number, alpha: number): Phaser.GameObjects.Image {
+    const key = 'mshadow';
+    if (!this.textures.exists(key)) {
+      const cv = document.createElement('canvas'); cv.width = 36; cv.height = 12;
+      const ctx = cv.getContext('2d', { willReadFrequently: true })!;
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(18, 6, 18, 6, 0, 0, Math.PI * 2); ctx.fill();
+      this.textures.addCanvas(key, cv);
+    }
+    return this.add.image(x, y, key).setDisplaySize(w, h).setAlpha(alpha);
+  }
+  /** 세계 지도의 지역 이름표 바탕(어두운 판 + 지역색 테두리) */
+  private tagTex(color: number): string {
+    const key = 'mtag' + color.toString(16);
+    if (!this.textures.exists(key)) {
+      const S = K; const cv = document.createElement('canvas'); cv.width = 66 * S; cv.height = 13 * S;
+      const ctx = cv.getContext('2d', { willReadFrequently: true })!;
+      ctx.fillStyle = 'rgba(30,24,18,0.78)'; ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.strokeStyle = '#' + color.toString(16).padStart(6, '0'); ctx.lineWidth = S; ctx.strokeRect(S / 2, S / 2, cv.width - S, cv.height - S);
+      this.textures.addCanvas(key, cv);
+    }
+    return key;
+  }
+
+  /**
    * 화면 밖 거점 표식은 그리지 않는다(거점 150여 개 × 그림·이름·깃발). 폰에서 가장 무거운 부분이었다.
    * siteWant = 배율로 정한 "보여야 함", 실제 visible = siteWant && 화면 안.
    */
@@ -159,48 +192,87 @@ export class MapScene extends Phaser.Scene {
     this.add.image(0, 0, 'terrain').setOrigin(0).setDepth(-10);
   }
 
+  /**
+   * 거점 이름을 처음 한 번 그림 한 장(글자 모음판)에 모아 굽는다. 이름마다 따로 된 글자 그림이면
+   * 폰(엔진이 한 번에 그림 한 장만 묶는다)에서 이름 하나당 그리기 명령이 하나씩 나간다(2026-11-08).
+   */
+  private bakeLabels(sites: Site[]): void {
+    const key = 'mlabels'; if (this.textures.exists(key)) return;
+    const tmp = sites.map(s => this.make.text({ x: 0, y: 0, text: s.name, style: { ...TEXT_SMALL, color: s.kind === 'castle' ? '#fbf3dc' : '#e4d6b4', stroke: '#21180f', strokeThickness: 2 }, add: false }));
+    const AW = 2048; let x = 0, y = 0, rowH = 0; const pos: [number, number, number, number][] = [];
+    for (const t of tmp) {
+      const cw = t.canvas.width, ch = t.canvas.height;
+      if (x + cw > AW) { x = 0; y += rowH + 2; rowH = 0; }
+      pos.push([x, y, cw, ch]); x += cw + 2; rowH = Math.max(rowH, ch);
+    }
+    const cv = document.createElement('canvas'); cv.width = AW; cv.height = Math.max(1, y + rowH);
+    const ctx = cv.getContext('2d', { willReadFrequently: true })!; // CPU 캔버스(drawRoads 주석)
+    tmp.forEach((t, i) => ctx.drawImage(t.canvas, pos[i][0], pos[i][1]));
+    const tex = this.textures.addCanvas(key, cv)!;
+    sites.forEach((s, i) => tex.add(s.id, 0, ...pos[i]));
+    tmp.forEach(t => t.destroy());
+  }
+
+  /**
+   * 거점 표식 = 그림자·그림·깃발·이름. 거점마다 한 덩어리(Container)로 두지 않고 종류별 층(depth)으로 나눠
+   * "그림자 전부 → 거점 그림 전부 → 깃발 → 이름 전부" 순으로 그린다. 같은 그림끼리 붙어 있어야 몰아 그린다.
+   * 깊이: 그림자 9.6 · 거점 10.5(성 10.6, 겹치면 성이 눌림) · 깃발 10.7 · 이름 10.8 — 부대(30)·지역 이름표(20) 아래.
+   */
   private makeSiteMarker(s: Site): void {
-    const c = this.add.container(s.x, s.y).setDepth(s.kind === 'castle' ? 11 : 10); // 겹친 거점은 성이 위(눌리는 쪽)
+    const m = new Marker(s.x, s.y);
     const size = s.kind === 'castle' ? 5 + s.size : s.kind === 'gate' ? 5 : 4;
     const color = SITE_COLOR[s.kind] ?? 0xffffff;
     const owner = s.owner ? this.game_.world.factions.get(s.owner) : undefined;
     const ownerColor = owner?.color ? Phaser.Display.Color.HexStringToColor(owner.color).color : 0x333333;
     const sprite = this.textures.exists('icons');
-    const ring = sprite ? this.add.ellipse(0, 1, 12, 4, 0x000000, 0.35) : this.add.rectangle(0, 0, size + 4, size + 4, ownerColor, 0.9).setOrigin(0.5);
+    m.add(sprite ? this.shadow(0, 1, 12, 4, 0.35) : this.add.rectangle(0, 0, size + 4, size + 4, ownerColor, 0.9).setOrigin(0.5), 9.6);
     const box: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = sprite
       ? (this.textures.exists('sites')
         ? this.add.image(0, 3, 'sites', siteIcon(s.kind, s.size)).setOrigin(0.5, 1).setScale(s.kind !== 'castle' ? 0.31 : s.size >= 5 ? 0.46 : s.size >= 3 ? 0.39 : 0.34)
         : this.add.image(0, -5, 'icons', siteIcon(s.kind, s.size)).setOrigin(0.5))
       : this.add.rectangle(0, 0, size, size, color).setOrigin(0.5).setStrokeStyle(1, 0x111111);
+    m.add(box, s.kind === 'castle' ? 10.6 : 10.5);
     // 잿빛 교단 점령지는 빨간 깃발(GDD §7.1). 함락·탈환에 따라 켜고 끈다
     const f = sprite
-      ? this.add.image(7, -14, 'icons', ICON.flagRed).setOrigin(0.5).setVisible(this.game_.enemyHeld.has(s.id))
-      : this.add.rectangle(size / 2 + 1, -size / 2 - 3, 5, 4, C.enemy).setOrigin(0, 0).setVisible(this.game_.enemyHeld.has(s.id));
-    this.heldFlags.set(s.id, f as Phaser.GameObjects.Rectangle);
-    const label = this.add.text(0, sprite ? 3 : size / 2 + 2, s.name, { ...TEXT_SMALL, color: s.kind === 'castle' ? '#fbf3dc' : '#e4d6b4', stroke: '#21180f', strokeThickness: 2 }).setOrigin(0.5, 0);
-    c.add([ring, box, f, label]);
+      ? this.add.image(7, -14, 'icons', ICON.flagRed).setOrigin(0.5)
+      : this.add.rectangle(size / 2 + 1, -size / 2 - 3, 5, 4, C.enemy).setOrigin(0, 0);
+    const flag = m.add(f, 10.7, this.game_.enemyHeld.has(s.id));
+    this.heldFlags.set(s.id, flag);
+    const label = m.add(this.add.image(0, sprite ? 3 : size / 2 + 2, 'mlabels', s.id).setOrigin(0.5, 0).setScale(1 / K), 10.8);
     const big = box instanceof Phaser.GameObjects.Image && box.texture.key === 'sites';
     if (sprite) box.setInteractive({ hitArea: big ? new Phaser.Geom.Rectangle(-8, 0, 64, 80) : new Phaser.Geom.Rectangle(-6, -2, 28, 30), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
     else box.setInteractive({ useHandCursor: true });
     box.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => {
       if (this.drag?.moved) return; ev.stopPropagation(); this.events.emit('site-click', s.id);
     });
-    this.siteMarkers.set(s.id, c); this.siteLabels.set(s.id, label);
+    this.siteMarkers.set(s.id, m); this.siteLabels.set(s.id, label);
   }
 
   private setupInput(): void {
     const cam = this.cameras.main;
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this.fling = null; // 미끄러지던 지도는 손가락을 대면 멈춘다
       if (this.inputBlocked() || this.uiHit(p.x, p.y)) return;
       this.drag = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, moved: false };
+      this.vel = { x: 0, y: 0, t: performance.now(), px: p.x, py: p.y };
     });
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (!this.drag || !p.isDown) return;
       const dx = p.x - this.drag.x, dy = p.y - this.drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 4) this.drag.moved = true;
       if (this.drag.moved) { cam.scrollX = this.drag.sx - dx / cam.zoom; cam.scrollY = this.drag.sy - dy / cam.zoom; this.clampCamera(); }
+      // 손가락 속도(화면 px/ms, 최근 움직임에 무게)
+      const now = performance.now(), v = this.vel, dt = Math.max(1, now - v.t);
+      const k = Math.min(1, dt / 50);
+      v.x = v.x * (1 - k) + ((p.x - v.px) / dt) * k; v.y = v.y * (1 - k) + ((p.y - v.py) / dt) * k;
+      v.t = now; v.px = p.x; v.py = p.y;
     });
-    this.input.on('pointerup', () => { const d = this.drag; this.time.delayedCall(0, () => { if (this.drag === d) this.drag = null; }); });
+    this.input.on('pointerup', () => {
+      const d = this.drag; this.time.delayedCall(0, () => { if (this.drag === d) this.drag = null; });
+      // 휙 밀고 놓으면 조금 더 미끄러진다(폰 지도처럼). 멈췄다 놓으면(80ms) 그대로
+      const v = this.vel;
+      if (d?.moved && performance.now() - v.t < 80 && Math.hypot(v.x, v.y) > 0.25) this.fling = { x: -v.x / cam.zoom, y: -v.y / cam.zoom };
+    });
     this.input.on('wheel', (p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
       if (this.inputBlocked()) return;
       const before = cam.getWorldPoint(p.x, p.y);
@@ -231,7 +303,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   setZoom(z: number): void {
-    const cam = this.cameras.main; cam.setZoom(z);
+    const cam = this.cameras.main; cam.setZoom(z); this.fling = null;
     const inv = K / z; // 표식은 화면에서 항상 같은 크기(설계 px × K)
     for (const c of this.siteMarkers.values()) c.setScale(inv);
     for (const c of this.squadMarkers) c.setScale(inv * 0.8);
@@ -241,7 +313,7 @@ export class MapScene extends Phaser.Scene {
     const worldish = z < 2.2 * K;
     this.mode = worldish ? 'world' : 'region';
     // 작은 거점(광산·항구·사원·교역소) 이름은 많이 확대했을 때만
-    for (const [id, l] of this.siteLabels) { const k = this.game_.world.site(id).kind; l.setVisible(!worldish && (k === 'castle' || k === 'gate' || k === 'rift' || z >= 4.5 * K)); }
+    for (const [id, l] of this.siteLabels) { const k = this.game_.world.site(id).kind; l.m.setOn(l, !worldish && (k === 'castle' || k === 'gate' || k === 'rift' || z >= 4.5 * K)); }
     for (const c of this.regionLabels) c.setVisible(worldish);
     // 세계 지도에선 성만 보인다
     for (const id of this.siteMarkers.keys()) this.siteWant.set(id, !worldish || this.game_.world.site(id).kind === 'castle');
@@ -263,6 +335,7 @@ export class MapScene extends Phaser.Scene {
     this.setZoom(WORLD_ZOOM); this.cameras.main.centerOn(m.width / 2, m.height / 2); this.clampCamera();
   }
   focusSquad(i: number): void {
+    this.fling = null;
     const sq = this.game_.squads[i];
     const p = sq.position(id => this.game_.world.site(id));
     const r = this.game_.world.site(sq.siteId ?? (sq.pos as any).to).region;
@@ -270,6 +343,7 @@ export class MapScene extends Phaser.Scene {
     this.cameras.main.centerOn(p.x, p.y); this.clampCamera();
   }
   focusSite(id: string): void {
+    this.fling = null;
     const s = this.game_.world.site(id);
     if (this.mode === 'world') { this.setZoom(REGION_ZOOM); }
     this.regionId = s.region; this.events.emit('region', s.region);
@@ -279,6 +353,14 @@ export class MapScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     const g = this.game_;
     g.tick(Math.min(delta, 100) / 1000);
+    if (this.fling) {
+      const cam = this.cameras.main; const f = this.fling; const dt = Math.min(delta, 50);
+      const bx = cam.scrollX, by = cam.scrollY;
+      cam.scrollX += f.x * dt; cam.scrollY += f.y * dt; this.clampCamera();
+      const decay = Math.exp(-dt / 220); f.x *= decay; f.y *= decay;
+      // 지도 끝에 막혔거나 거의 멈췄으면 끝
+      if ((cam.scrollX === bx && cam.scrollY === by) || Math.hypot(f.x, f.y) * cam.zoom < 0.02) this.fling = null;
+    }
     this.cullSites();
     // 부대 위치·선택 표시
     g.squads.forEach((sq, i) => {
@@ -300,14 +382,14 @@ export class MapScene extends Phaser.Scene {
     // 막힌 지역은 세계 지도에서 흐리게 + 자물쇠
     for (const c of this.regionLabels) { const rid = (c as any).regionId as string; const locked = g.blocked.has(rid); const t = (c as any).label as Phaser.GameObjects.Text; const want = (locked ? '🔒 ' : '') + (g.world.regions.get(rid)?.name ?? ''); if (t.text !== want) { t.setText(want); c.setAlpha(locked ? 0.55 : 1); } }
     // 점령지 깃발
-    for (const [id, f] of this.heldFlags) { const held = g.enemyHeld.has(id); if (f.visible !== held) f.setVisible(held); }
+    for (const [id, f] of this.heldFlags) { const held = g.enemyHeld.has(id); if (f.on !== held) f.m.setOn(f, held); }
     // 적 무리(도적단) 빨간 깃발
     for (const b of g.bands) {
       if (this.bandMarkers.has(b.id)) continue;
       const site = g.world.site(b.site);
       const c = this.add.container(site.x, site.y).setDepth(25).setScale(K / this.cameras.main.zoom);
       if (this.textures.exists('units')) {
-        const sh = this.add.ellipse(4, 0, 8, 3, 0x000000, 0.45);
+        const sh = this.shadow(4, 0, 8, 3, 0.45);
         const body = this.add.image(4, -7, 'units', b.kind === 'rebel' ? UNIT_FRAME.rebel : UNIT_FRAME.bandit).setOrigin(0.5);
         const flag = this.add.image(8, -19, 'icons', b.kind === 'rebel' ? ICON.flagPurple : ICON.flagRed).setOrigin(0, 0.5);
         c.add([sh, body, flag]);
@@ -331,6 +413,26 @@ export class MapScene extends Phaser.Scene {
       for (let k = 1; k < pts.length; k++) this.pathGfx.lineBetween(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y);
     }
   }
+}
+
+type MarkerObj = Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+interface Part { o: MarkerObj; ox: number; oy: number; sx: number; sy: number; on: boolean; m: Marker }
+/**
+ * 거점 표식 한 벌(그림자·그림·깃발·이름). Container 처럼 위치·배율·보이기를 한꺼번에 다루지만
+ * 조각들은 장면에 따로 놓여 종류별 깊이로 그려진다(makeSiteMarker 주석).
+ */
+class Marker {
+  visible = true;
+  private parts: Part[] = [];
+  constructor(readonly x: number, readonly y: number) {}
+  add(o: MarkerObj, depth: number, on = true): Part {
+    const p: Part = { o, ox: o.x, oy: o.y, sx: o.scaleX, sy: o.scaleY, on, m: this };
+    o.setDepth(depth).setPosition(this.x + p.ox, this.y + p.oy).setVisible(this.visible && on);
+    this.parts.push(p); return p;
+  }
+  setScale(inv: number): void { for (const p of this.parts) p.o.setPosition(this.x + p.ox * inv, this.y + p.oy * inv).setScale(p.sx * inv, p.sy * inv); }
+  setVisible(v: boolean): void { this.visible = v; for (const p of this.parts) { const want = v && p.on; if (p.o.visible !== want) p.o.setVisible(want); } }
+  setOn(p: Part, on: boolean): void { p.on = on; const want = this.visible && on; if (p.o.visible !== want) p.o.setVisible(want); }
 }
 
 function clamp8(v: number): number { return v < 0 ? 0 : v > 255 ? 255 : v; }

@@ -43,7 +43,7 @@ export class Window extends Phaser.GameObjects.Container {
     // 금테(6px) 만큼 아래로 늘려 그린다: 창마다 "bh - 24" 같은 아래쪽 글이 테두리에 잘리지 않게
     const fh = skin ? h + 8 : h;
     const shadow = scene.add.rectangle(3, 3, w, fh, C.shadow, 0.55).setOrigin(0);
-    const bg = scene.add.rectangle(0, 0, w, fh, C.panel, skin ? 0.001 : 1).setOrigin(0);
+    const bg = scene.add.rectangle(0, 0, w, fh, C.panel, 1).setOrigin(0); if (skin) bg.setFillStyle(); // 누르기만 받는 판(그리지 않음)
     if (!skin) bg.setStrokeStyle(1, C.border);
     const frame = skin ? nine(scene, 0, 0, w, fh, 'sk_win', 6) : null;
     bg.setInteractive(); // 입력 삼키기

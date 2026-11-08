@@ -34,6 +34,30 @@ const game = new Phaser.Game({
 // HD(1440×810) 캔버스를 화면에 맞춰 띄운다(Scale.FIT). 채색 지도·그림 초상이 선명하고, 도트 글꼴·UI 는 ×3 정수 배율이다.
 window.addEventListener('orientationchange', () => setTimeout(() => game.scale.refresh(), 100));
 
+/**
+ * 폰 손가락 끌기 가볍게(2026-11-08). Phaser 는 손가락이 움직일 때마다
+ *  ① document.elementFromPoint 로 "손가락이 캔버스 위인지" 페이지 전체를 다시 따지고
+ *  ② 지나가는 단추·거점마다 마우스 모양(canvas.style.cursor)을 바꿔 페이지 스타일을 다시 계산하게 했다.
+ * 우리 캔버스는 화면을 꽉 채우고 터치 화면엔 마우스 모양이 없으니 둘 다 뺀다.
+ */
+if (matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) { // 에뮬레이터 WebView 는 coarse 를 안 알려 줘서 손가락 수로도 본다
+  type P = Phaser.Input.Pointer & { identifier: number; touchmove: (t: Touch, e: TouchEvent) => void };
+  const im = game.input as unknown as { pointers: P[]; activePointer: P; isOver: boolean; setCursor: () => void; resetCursor: () => void; onTouchMove: (e: TouchEvent) => void; updateInputPlugins: (type: number, ps: P[]) => void };
+  im.setCursor = () => {}; im.resetCursor = () => {};
+  im.onTouchMove = function (event: TouchEvent) {
+    const changed: P[] = [];
+    for (let c = 0; c < event.changedTouches.length; c++) {
+      const t = event.changedTouches[c];
+      for (let i = 1; i < this.pointers.length; i++) {
+        const p = this.pointers[i];
+        if (p.active && p.identifier === t.identifier) { p.touchmove(t, event); this.activePointer = p; changed.push(p); break; }
+      }
+    }
+    this.isOver = true;
+    this.updateInputPlugins(Phaser.Input.TOUCH_MOVE, changed);
+  };
+}
+
 (window as any).__game = game;
 import('./audio').then(m => { (window as any).__audio = m.AUDIO; (window as any).__renderSong = m.renderSongWav; });
 
