@@ -3,6 +3,7 @@ import { ARENA, type Battle, type BattleUnit } from '../../core/battle';
 import { ATTACK_MODE_LABEL, FORMATIONS } from '../../core/formation';
 import type { Game } from '../../core/game';
 import { Window, makeButton } from '../Window';
+import { drawFormation, formationMods } from '../formationView';
 import { AUDIO } from '../audio';
 import { C, H, K, TEXT, TEXT_SMALL, W, unitFrame } from '../theme';
 
@@ -84,12 +85,14 @@ export class BattleScene extends Phaser.Scene {
   /** 전투명령 하위 메뉴(원작 미확인 → 우리 설계): 대열 8종 + 공격 방식 */
   private openOrders(): void {
     const b = this.battle!;
-    const w = this.openPopup(320, 214, '전투명령 — 대열 / 공격 방식');
+    const w = this.openPopup(470, 214, '전투명령 — 대열 / 공격 방식');
     FORMATIONS.forEach((f, i) => {
       const x = 6 + (i % 4) * 76, y = 4 + Math.floor(i / 4) * 26;
       w.button(x, y, f.name, () => { b.setFormation(f.id); this.openOrders(); }, { w: 72, h: 22, small: true, selected: b.formation.id === f.id });
     });
-    w.small(6, 58, '▶ ' + b.formation.name + ': ' + b.formation.desc + ' (공격 ×' + b.formation.atk + ' 방어 ×' + b.formation.def + ' 명중 ×' + b.formation.hit + ')', { color: C.gold, wordWrap: { width: 300 } });
+    const desc = w.small(6, 56, '▶ ' + b.formation.name + ': ' + b.formation.desc, { color: C.gold, wordWrap: { width: 300 } });
+    formationMods(w, 6, Math.min(72, 56 + desc.height), b.formation);
+    drawFormation(w, 312, 4, 148, 102, b.formation, b.allies.length);
     (['melee', 'ranged', 'siege'] as const).forEach((m, i) => w.button(6 + i * 76, 84, ATTACK_MODE_LABEL[m], () => { b.setAttackMode(m); this.openOrders(); }, { w: 72, h: 22, disabled: m === 'siege' && b.kind !== 'siege', selected: b.attackMode === m }));
     w.small(6, 112, '사격: 사격 대원이 자리를 지키며 쏜다 · 백병전: 전원 돌격 · 공성: 성벽에 피해 ×3(점령지 탈환전에서만). 성벽이 선 동안 수비대는 방어 ×1.5.', { color: C.grey, wordWrap: { width: 300 } });
     w.button(w.bw - 96, w.bodyH - 30, '전투재개', () => this.closePopup(), { w: 84, h: 24 });

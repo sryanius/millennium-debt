@@ -1,6 +1,7 @@
 import { BALANCE } from '../core/balance';
 import { GameClock as Clock } from '../core/clock';
 import { ARMOR_BY_ID, POTION_BY_ID, WEAPON_BY_ID, itemName, itemPrice, SELLBACK, type Armor, type Potion, type Tool, type Weapon } from '../core/equipment';
+import { drawFormation, formationMods } from './formationView';
 import { FORMATIONS, FORMATION_BY_ID, STANCE_LABEL, ATTACK_MODE_LABEL } from '../core/formation';
 import { fmt, JOB_BY_ID } from '../core/game';
 import { MAX_MEMBERS, type Person } from '../core/squad';
@@ -156,7 +157,7 @@ export function openRoster(ui: UIScene): void {
       const same = s.siteId === here && g.isActive(si);
       w.button(4 + si * 77, 0, (si + 1) + ' ' + (g.isActive(si) ? s.leader.name.slice(0, 3) : '???'), () => { g.selected = si; picked = null; render(); }, { w: 74, h: 22, selected: si === g.selected, disabled: !same });
     });
-    w.small(6, 26, sq.name + ' — 대원을 누르면 오른쪽에서 다른 부대로 옮길 수 있다', { color: C.grey });
+    w.small(6, 26, sq.name + ' — 대원을 누르면 능력치·장비를 보고 다른 부대로 옮길 수 있다', { color: C.grey });
     for (let r = 0; r < 9; r++) {
       const p = sq.people[r]; const x = 4 + (r % 3) * 76, y = 38 + Math.floor(r / 3) * 34;
       if (p) w.button(x, y, (p.isLeader ? '★' : '') + p.name.slice(0, 5) + '\nHP ' + p.stats.hp + '/' + p.stats.maxHp, () => { picked = picked === p.id ? null : p.id; render(); }, { w: 72, h: 30, small: true, selected: picked === p.id, color: p.isLeader ? 0x4a3b2a : undefined });
@@ -175,10 +176,11 @@ export function openRoster(ui: UIScene): void {
         w.small(RX, 96, '옮길 부대:', { color: C.gold });
         targets.forEach(({ s, si }, i) => w.button(RX + (i % 3) * 74, 108 + Math.floor(i / 3) * 24, '→ ' + (si + 1) + ' ' + s.leader.name.slice(0, 2), () => { if (!g.transfer(g.selected, p.id, si)) ui.toast('옮길 수 없다(가득 또는 다른 거점)'); picked = null; render(); }, { w: 70, h: 20 }));
       }
-    } else w.small(RX, 40, '대원을 누르면 능력치와 장비가 보인다.', { color: C.grey, wordWrap: { width: 220 } });
+    }
     const f = FORMATION_BY_ID.get(sq.formation)!;
+    if (!p) { drawFormation(w, RX, 38, 222, 84, f, sq.people.length); formationMods(w, RX, 125, f); }
     w.small(6, 144, '대열 ' + f.name + ' — ' + f.desc, { color: C.gold, wordWrap: { width: 456 } });
-    FORMATIONS.forEach((fo, i) => w.button(4 + i * 57, 160, fo.name, () => { sq.formation = fo.id; render(); }, { w: 55, h: 22, small: true, selected: sq.formation === fo.id }));
+    FORMATIONS.forEach((fo, i) => w.button(4 + i * 57, 160, fo.name, () => { sq.formation = fo.id; picked = null; render(); }, { w: 55, h: 22, small: true, selected: sq.formation === fo.id }));
     w.small(6, 194, '태세', { color: C.grey });
     (['alert', 'normal', 'search'] as const).forEach((st, i) => w.button(34 + i * 64, 188, STANCE_LABEL[st], () => { sq.stance = st; render(); }, { w: 60, h: 22, selected: sq.stance === st }));
     w.small(240, 194, '공격', { color: C.grey });
