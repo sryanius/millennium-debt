@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { FORMATION_BY_ID } from '../../core/formation';
 import { BALANCE } from '../../core/balance';
 import { CIVIL_JOB_LABEL } from '../../core/board';
 import { GameClock } from '../../core/clock';
@@ -41,7 +42,7 @@ export class UIScene extends Phaser.Scene {
   private slots: { bg: Phaser.GameObjects.Rectangle; frame: Phaser.GameObjects.NineSlice | null; name: Phaser.GameObjects.Text; state: Phaser.GameObjects.Text; face: Phaser.GameObjects.Image | null; bars: Phaser.GameObjects.Graphics; lock: Phaser.GameObjects.Text; x: number; y: number; barKey: string; stateKey?: string }[] = [];
   private clockKey = -1;
   private miniView!: Phaser.GameObjects.Rectangle; private miniScale = 0.2125;
-  private lastSlotTap = { i: -1, t: 0 };
+  private slotHints = 0;
   private autosaveAt = 0;
   private endingShown = false;
   private lastTicker = '';
@@ -165,9 +166,10 @@ export class UIScene extends Phaser.Scene {
       bg.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => {
         ev.stopPropagation(); if (this.modal) return;
         if (!this.g.isActive(i)) { this.toast('아직 합류하지 않은 부대장 — 남서 곡창의 성들을 돌아보자'); return; }
-        const now = this.time.now;
-        if (this.lastSlotTap.i === i && now - this.lastSlotTap.t < 400) this.map.focusSquad(i);
-        this.lastSlotTap = { i, t: now }; this.g.selected = i;
+        // 처음 누르면 고르고 지도를 그 부대로 옮긴다. 이미 고른 부대를 또 누르면 부대 정보 창
+        if (this.g.selected === i) { this.openSquad(i); return; }
+        this.g.selected = i; this.map.focusSquad(i);
+        if (this.slotHints < 3) { this.slotHints++; this.toast(this.g.squads[i].name + ' 부대를 골랐다 — 한 번 더 누르면 부대 정보'); }
       });
       this.slots.push({ bg, frame, name, state, face, bars, lock, x, y, barKey: '-' });
     });
@@ -421,17 +423,32 @@ export class UIScene extends Phaser.Scene {
     });
   }
   private openSquad(i: number): void {
+    if (this.modal) return;
+    this.g.selected = i;
     const sq = this.g.squads[i]; const st = sq.leader.stats;
-    const w = this.win(320, 170, sq.name + ' — ' + sq.leader.race + ' · ' + sq.leader.role);
+    const w = this.win(400, 226, sq.name + ' — ' + sq.leader.race + ' · ' + sq.leader.role);
     w.portrait(6, 4, 40, 48, sq.id, sq.leader.name);
-    w.small(52, 4, 'HP ' + st.hp + '/' + st.maxHp + '  E ' + st.e + '  F ' + st.f + '  S ' + st.s + '  D ' + st.d + '  T ' + st.t + '  P ' + st.p + '  B ' + st.b);
-    w.small(52, 16, '대원 ' + sq.members.length + '/8 · 급료 ' + fmt(sq.wages) + '/월 · 전투력 ' + Math.round(sq.power) + ' · 대열 ' + sq.formation, { color: C.grey });
-    const cargo = Object.entries(sq.cargo); w.small(52, 30, '짐 ' + sq.load + '/' + sq.capacity + ': ' + (cargo.length ? cargo.map(([g, n]) => goodName(g) + ' ' + n).join(', ') : '없음'), { wordWrap: { width: 256 } });
+    const where = sq.siteId ? this.g.world.site(sq.siteId).name : (this.g.world.site((sq.pos as any).to).name + '로 이동 중');
+    w.small(52, 4, where + '  ·  ' + (sq.order === 'move' ? '이동' : sq.order === 'stay' ? '체재' : sq.order === 'build' ? '공사' : '대기') + '  ·  대열 ' + (FORMATION_BY_ID.get(sq.formation)?.name ?? sq.formation), { color: C.gold });
+    w.small(52, 16, 'HP ' + st.hp + '/' + st.maxHp + '  E ' + st.e + '  F ' + st.f + '  S ' + st.s + '  D ' + st.d + '  T ' + st.t + '  P ' + st.p + '  B ' + st.b);
+    w.small(52, 28, '대원 ' + sq.members.length + '/8 · 급료 ' + fmt(sq.wages) + '/월 · 전투력 ' + Math.round(sq.power), { color: C.grey });
+    const cargo = Object.entries(sq.cargo);
+    let y = 40 + w.small(52, 40, '짐 ' + sq.load + '/' + sq.capacity + ': ' + (cargo.length ? cargo.map(([g, n]) => goodName(g) + ' ' + n).join(', ') : '없음'), { wordWrap: { width: 336 } }).height + 2;
     const qs = sq.quests.map(id => this.g.activeQuests.get(id)!).filter(Boolean);
-    w.small(52, 56, '의뢰: ' + (qs.length ? qs.map(q => CIVIL_JOB_LABEL[q.job] + '→' + this.g.world.site(q.to).name + '(' + (q.deadline - this.g.day) + '일)').join(', ') : '없음'), { wordWrap: { width: 256 } });
-    if (sq.work) w.small(52, 80, '건축: ' + sq.work.name + ' ' + Math.min(100, Math.round(sq.work.progress / sq.work.work * 100)) + '% (건축력 ' + sq.buildSkill + '/일)', { color: C.gold });
-    w.button(6, w.bodyH - 28, '지도에서 보기', () => { w.close(); this.map.focusSquad(i); }, { w: 110, h: 22 });
-    w.button(122, w.bodyH - 28, sq.order === 'move' ? '정지' : '대기', () => { this.g.stay(i); w.close(); }, { w: 80, h: 22 });
+    y += w.small(52, y, '의뢰: ' + (qs.length ? qs.map(q => CIVIL_JOB_LABEL[q.job] + '→' + this.g.world.site(q.to).name + '(' + (q.deadline - this.g.day) + '일)').join(', ') : '없음'), { wordWrap: { width: 336 } }).height + 2;
+    if (sq.work) y += w.small(52, y, '건축: ' + sq.work.name + ' ' + Math.min(100, Math.round(sq.work.progress / sq.work.work * 100)) + '% (건축력 ' + sq.buildSkill + '/일)', { color: C.gold }).height + 2;
+    // 대원 목록: 3줄 × 3칸 (이름 · HP · 피로)
+    y = Math.max(y + 4, 58);
+    w.small(6, y, '대원', { color: C.gold }); y += 12;
+    if (!sq.members.length) w.small(6, y, '아직 대원이 없다 — 마을의 «용병 고용»에서 뽑는다', { color: C.grey });
+    sq.members.slice(0, 8).forEach((p, k) => {
+      const hurt = p.stats.hp < p.stats.maxHp * 0.5;
+      w.small(6 + (k % 3) * 130, y + Math.floor(k / 3) * 12, p.name.slice(0, 5) + ' ' + p.role.slice(0, 3) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피로' + p.stats.f, { color: hurt ? C.red : C.paper });
+    });
+    const by = w.bodyH - 28;
+    w.button(6, by, '지도에서 보기', () => { w.close(); this.map.focusSquad(i); }, { w: 110, h: 24 });
+    w.button(122, by, sq.order === 'move' ? '정지' : '대기', () => { this.g.stay(i); w.close(); }, { w: 80, h: 24 });
+    w.button(208, by, '부대원 편성', () => { w.close(); openRoster(this); }, { w: 110, h: 24, disabled: !sq.siteId });
   }
   private openLedger(): void {
     if (this.modal) return;
