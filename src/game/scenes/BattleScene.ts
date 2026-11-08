@@ -73,49 +73,49 @@ export class BattleScene extends Phaser.Scene {
   }
   private closePopup(resume = true): void { this.popup?.destroy(); this.popup = null; if (resume && this.battle) this.battle.resume(); }
   private openCommands(): void {
-    const w = this.openPopup(150, 86, '전투 중');
+    const w = this.openPopup(180, 18 + 4 + 4 * 28 + 6, '전투 중');
     w.menu([
       { label: '전투명령', onClick: () => this.openOrders() },
       { label: '전체퇴각', onClick: () => { this.battle!.retreatAll(); this.closePopup(); } },
       { label: '개별퇴각', onClick: () => { this.closePopup(false); this.hint('후퇴시킬 대원을 클릭'); } },
       { label: '전투재개', onClick: () => this.closePopup() },
-    ]);
+    ], { h: 24 });
   }
   /** 전투명령 하위 메뉴(원작 미확인 → 우리 설계): 대열 8종 + 공격 방식 */
   private openOrders(): void {
     const b = this.battle!;
-    const w = this.openPopup(300, 150, '전투명령 — 대열 / 공격 방식');
+    const w = this.openPopup(320, 214, '전투명령 — 대열 / 공격 방식');
     FORMATIONS.forEach((f, i) => {
-      const x = 6 + (i % 4) * 72, y = 4 + Math.floor(i / 4) * 16;
-      w.button(x, y, f.name, () => { b.setFormation(f.id); this.openOrders(); }, { w: 68, h: 14, small: true, color: b.formation.id === f.id ? 0x6a5a2a : undefined });
+      const x = 6 + (i % 4) * 76, y = 4 + Math.floor(i / 4) * 26;
+      w.button(x, y, f.name, () => { b.setFormation(f.id); this.openOrders(); }, { w: 72, h: 22, small: true, selected: b.formation.id === f.id });
     });
-    w.small(6, 38, '▶ ' + b.formation.name + ': ' + b.formation.desc + ' (공격 ×' + b.formation.atk + ' 방어 ×' + b.formation.def + ' 명중 ×' + b.formation.hit + ')', { color: C.gold, wordWrap: { width: 288 } });
-    (['melee', 'ranged', 'siege'] as const).forEach((m, i) => w.button(6 + i * 70, 64, ATTACK_MODE_LABEL[m], () => { b.setAttackMode(m); this.openOrders(); }, { w: 66, h: 14, small: true, disabled: m === 'siege' && b.kind !== 'siege', color: b.attackMode === m ? 0x6a5a2a : undefined }));
-    w.small(6, 82, '사격: 사격 대원이 자리를 지키며 쏜다 · 백병전: 전원 돌격 · 공성: 성벽에 피해 ×3(점령지 탈환전에서만). 성벽이 선 동안 수비대는 방어 ×1.5.', { color: C.grey, wordWrap: { width: 288 } });
-    w.button(w.bw - 70, w.bh - 32, '전투재개', () => this.closePopup(), { w: 64, h: 14 });
+    w.small(6, 58, '▶ ' + b.formation.name + ': ' + b.formation.desc + ' (공격 ×' + b.formation.atk + ' 방어 ×' + b.formation.def + ' 명중 ×' + b.formation.hit + ')', { color: C.gold, wordWrap: { width: 300 } });
+    (['melee', 'ranged', 'siege'] as const).forEach((m, i) => w.button(6 + i * 76, 84, ATTACK_MODE_LABEL[m], () => { b.setAttackMode(m); this.openOrders(); }, { w: 72, h: 22, disabled: m === 'siege' && b.kind !== 'siege', selected: b.attackMode === m }));
+    w.small(6, 112, '사격: 사격 대원이 자리를 지키며 쏜다 · 백병전: 전원 돌격 · 공성: 성벽에 피해 ×3(점령지 탈환전에서만). 성벽이 선 동안 수비대는 방어 ×1.5.', { color: C.grey, wordWrap: { width: 300 } });
+    w.button(w.bw - 96, w.bodyH - 30, '전투재개', () => this.closePopup(), { w: 84, h: 24 });
   }
   /** 대원 정보 팝업(원작 확인: 이름·HP·능력치 + 후퇴. 적도 클릭 가능) */
   private openUnit(u: BattleUnit): void {
-    const w = this.openPopup(200, 92, u.name + ' (' + u.job + ')');
+    const w = this.openPopup(230, 120, u.name + ' (' + u.job + ')');
     w.text(6, 4, 'HP ' + Math.max(0, Math.round(u.hp)) + '/' + u.maxHp + '   공격 ' + u.atk + '   방어 ' + u.def);
     w.small(6, 20, (u.range > 0 ? '사격 사거리 ' + u.range : '백병') + '   피로 ' + u.fatigue + '   회복약 ' + u.potions + '   상태 ' + ({ fight: '교전', retreat: '후퇴 중', fled: '이탈', dead: '전사' } as const)[u.state], { color: C.paperDark });
     if (u.person) w.small(6, 32, 'E ' + u.person.stats.e + '  S ' + u.person.stats.s + '  D ' + u.person.stats.d + '  T ' + u.person.stats.t + '  P ' + u.person.stats.p + '  B ' + u.person.stats.b, { color: C.grey });
-    if (u.side === 'ally' && u.state === 'fight') w.button(6, w.bh - 32, '후퇴', () => { this.battle!.retreatUnit(u.id); this.closePopup(); }, { w: 60, h: 14, color: 0x5a3a2a });
-    w.button(w.bw - 70, w.bh - 32, '전투재개', () => this.closePopup(), { w: 64, h: 14 });
+    if (u.side === 'ally' && u.state === 'fight') w.button(6, w.bodyH - 30, '후퇴', () => { this.battle!.retreatUnit(u.id); this.closePopup(); }, { w: 70, h: 24, color: 0x5a3a2a });
+    w.button(w.bw - 96, w.bodyH - 30, '전투재개', () => this.closePopup(), { w: 84, h: 24 });
   }
   private hintText?: Phaser.GameObjects.Text;
   private hint(s: string): void { this.hintText?.destroy(); this.hintText = this.add.text(W / 2, 8, s, { ...TEXT, backgroundColor: '#000a', padding: { x: 4, y: 2 } }).setOrigin(0.5, 0).setDepth(60); this.time.delayedCall(1500, () => this.hintText?.destroy()); }
 
   private openResult(): void {
     const b = this.battle!; this.resultShown = true; AUDIO.sfx(b.result === 'victory' ? 'win' : 'lose', 1);
-    const w = this.openPopup(240, 110, b.result === 'victory' ? '승리' : b.result === 'retreat' ? '퇴각' : '패배');
+    const w = this.openPopup(260, 140, b.result === 'victory' ? '승리' : b.result === 'retreat' ? '퇴각' : '패배');
     w.text(6, 4, b.squad.name + ' 대 ' + b.enemyName, { color: C.gold });
     const dead = b.dead.length ? '전사 ' + b.dead.map(p => p.name).join(', ') : '전사자 없음';
     w.small(6, 20, dead + (b.bounty ? '   전리품 ' + b.bounty.toLocaleString('en-US') + '골' : ''));
     const kills = b.allies.filter(u => u.kills > 0).map(u => u.name + ' ' + u.kills).join(', ');
-    w.small(6, 32, '전과: ' + (kills || '없음'), { wordWrap: { width: 228 }, color: C.paperDark });
-    w.small(6, 56, b.events.slice(-2).map(e => e.text).join('\n'), { color: C.grey, wordWrap: { width: 228 } });
-    w.button(w.bw - 64, w.bh - 32, '닫기', () => { this.closePopup(false); this.battle = null; for (const d of this.dots.values()) d.destroy(); this.dots.clear(); this.scene.sleep(); this.onResultClosed?.(); }, { w: 58, h: 14 });
+    w.small(6, 32, '전과: ' + (kills || '없음'), { wordWrap: { width: 244 }, color: C.paperDark });
+    w.small(6, 56, b.events.slice(-2).map(e => e.text).join('\n'), { color: C.grey, wordWrap: { width: 244 } });
+    w.button(w.bw - 84, w.bodyH - 30, '닫기', () => { this.closePopup(false); this.battle = null; for (const d of this.dots.values()) d.destroy(); this.dots.clear(); this.scene.sleep(); this.onResultClosed?.(); }, { w: 72, h: 24 });
   }
 
   update(): void {

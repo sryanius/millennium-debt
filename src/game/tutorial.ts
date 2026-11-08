@@ -47,10 +47,10 @@ export class Tutorial {
   constructor(readonly ui: UIScene, left: number, right: number) {
     this.x0 = left; this.bw = right - left;
     this.box = ui.add.container(this.x0, 2).setDepth(250);
-    this.bg = ui.add.rectangle(0, 0, this.bw, 30, 0x1a140e, 0.96).setOrigin(0).setStrokeStyle(1, 0xe0b23c);
+    this.bg = ui.add.rectangle(0, 0, this.bw, 40, 0x1a140e, 0.96).setOrigin(0).setStrokeStyle(1, 0xe0b23c);
     this.bg.setInteractive(); this.bg.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => ev.stopPropagation());
-    this.label = ui.add.text(5, 3, '', { ...TEXT_SMALL, color: C.white, wordWrap: { width: this.bw - 56 }, lineSpacing: 1 });
-    this.skipBtn = makeButton(ui, this.bw - 47, 3, '건너뛰기', () => this.finish(), { w: 44, h: 11, small: true, color: 0x3a3028 });
+    this.label = ui.add.text(5, 3, '', { ...TEXT_SMALL, color: C.white, wordWrap: { width: this.bw - 62 }, lineSpacing: 1 });
+    this.skipBtn = makeButton(ui, this.bw - 55, 2, '건너뛰기', () => this.finish(), { w: 52, h: 16, small: true, color: 0x3a3028 });
     this.box.add([this.bg, this.label, this.skipBtn]);
     this.arrow = ui.add.graphics().setDepth(260);
     this.ring = ui.add.graphics().setDepth(259);
@@ -72,11 +72,14 @@ export class Tutorial {
   /** 열린 창 안의 점(창 본문 좌표) */
   inModal(x: number, y: number): Pt {
     const m = this.ui.modal; if (!m) return null;
-    return { x: m.x + 2 + x, y: m.y + 15 + y };
+    return { x: m.x + m.content.x + x, y: m.y + m.content.y + y };
   }
-  menuItem(i: number): Pt { const m = this.ui.modal; return m ? this.inModal(m.bw / 2 - 2, 4 + i * 16 + 7) : null; }
+  /** 창이 남긴 자리 표시(menu0…, hire0, accept0…). side 면 단추 오른쪽 끝에서 왼쪽을 가리킨다 */
+  markAt(key: string, side = false): Pt { const m = this.ui.modal; const p = m?.marks.get(key); if (!p) return null; const q = this.inModal(p.x, p.y)!; return side ? { ...q, side: true } : q; }
+  /** 거점 명령 항목 */
+  menuItem(label: string): Pt { const m = this.ui.modal; if (!m) return null; for (const k of m.marks.keys()) if (k.startsWith('menu:' + label)) return this.markAt(k); return null; }
   /** 닫기(×) 단추. 이벤트 창처럼 × 가 없으면 화살표를 안 띄운다 */
-  closeBtn(): Pt { const m = this.ui.modal; return m && m.closable ? { x: m.x + m.bw - 9, y: m.y + 8 } : null; }
+  closeBtn(): Pt { const m = this.ui.modal; return m && m.closable ? m.closeCenter() : null; }
   /** 게시판에서 가장 가까운(이동일이 짧은) 의뢰 줄 */
   nearestQuestRow(): number { const b = this.g.board(START_SITE); if (!b || !b.quests.length) return 0; let bi = 0; b.quests.forEach((q, i) => { if (q.travelDays < b.quests[bi].travelDays) bi = i; }); return bi; }
 
@@ -100,8 +103,8 @@ export class Tutorial {
       this.shown = this.step;
       this.label.setText(st.text(this));
       this.nextBtn?.destroy(); this.nextBtn = null;
-      if (st.next) { this.nextBtn = makeButton(this.ui, this.bw - 47, 16, st.next, () => this.go(this.step + 1 >= STEPS.length ? TUTORIAL_DONE : this.step + 1), { w: 44, h: 12, small: true, color: 0x6a5020 }); this.box.add(this.nextBtn); }
-      const h = Math.max(30, this.label.height + 7); this.bg.height = h; this.bg.setSize(this.bw, h);
+      if (st.next) { this.nextBtn = makeButton(this.ui, this.bw - 55, 22, st.next, () => this.go(this.step + 1 >= STEPS.length ? TUTORIAL_DONE : this.step + 1), { w: 52, h: 16, small: true, color: 0x6a5020 }); this.box.add(this.nextBtn); }
+      const h = Math.max(40, this.label.height + 7); this.bg.height = h; this.bg.setSize(this.bw, h);
     } else {
       const t = st.text(this); if (t !== this.label.text) this.label.setText(t); // 목적지 이름처럼 바뀌는 글
     }
@@ -149,14 +152,14 @@ const STEPS: Step[] = [
     done: atCastleWindow, hold: true,
   },
   { // 2
-    text: () => '맨 위 «용병 고용 (계약소)»를 누르세요. 혼자서는 도적도 못 이겨요.',
-    target: t => atCastleWindow(t) ? t.menuItem(0) : t.ui.modal ? t.closeBtn() : t.site(START_SITE),
+    text: () => '왼쪽 위 «용병 고용 (계약소)»를 누르세요. 혼자서는 도적도 못 이겨요.',
+    target: t => atCastleWindow(t) ? t.menuItem('용병 고용') : t.ui.modal ? t.closeBtn() : t.site(START_SITE),
     done: t => t.modalTitle.endsWith('계약소'),
     hold: true,
   },
   { // 3
     text: () => '«고용»을 눌러 용병을 한 명 뽑으세요. 고용비는 한 번, 급료는 매달 1일에 나가요.',
-    target: t => t.modalTitle.endsWith('계약소') ? { ...t.inModal(321, 44)!, side: true } : t.ui.modal ? t.closeBtn() : t.site(START_SITE),
+    target: t => t.modalTitle.endsWith('계약소') ? t.markAt('hire0', true) : t.ui.modal ? t.closeBtn() : t.site(START_SITE),
     done: t => t.g.squads[0].members.length > t.members0,
     hold: true,
     enter: t => { t.members0 = t.g.squads[0].members.length; },
@@ -164,8 +167,8 @@ const STEPS: Step[] = [
   { // 4
     text: t => t.modalTitle.endsWith('민사 게시판') ? '화살표가 가리키는 «수락»을 눌러 의뢰를 맡으세요. 가장 가까운 곳에 가는 일이에요.' : '잘했어요! 이제 돈을 벌 차례예요. 창을 닫고 성을 다시 눌러 «민사게시판»에서 의뢰를 하나 «수락»하세요.',
     target: t => {
-      if (t.modalTitle.endsWith('민사 게시판')) { const q = t.inModal(381, 34 + t.nearestQuestRow() * 13); return q && { ...q, side: true }; }
-      if (atCastleWindow(t)) return t.menuItem(8);
+      if (t.modalTitle.endsWith('민사 게시판')) return t.markAt('accept' + t.nearestQuestRow(), true);
+      if (atCastleWindow(t)) return t.menuItem('민사게시판');
       if (t.ui.modal) return t.closeBtn();
       return t.site(START_SITE);
     },
@@ -176,13 +179,13 @@ const STEPS: Step[] = [
     text: t => {
       const q = questOf(t); const name = q ? t.g.world.site(q.to).name : '';
       if (q && t.g.enemyHeld.has(q.to)) return '목적지 ' + ga(name) + ' 잿빛 교단에 넘어갔어요! 지금은 위험해요. 지도에서 가까운 다른 성을 눌러 «이동»해 보세요.';
-      return '의뢰를 맡았어요. 목적지 ' + ro(name) + ' 가면 보수를 받아요. ' + (t.ui.modal ? '창을 닫고 지도에서 그 거점을 눌러 «이동»하세요.' : '화살표가 가리키는 거점을 눌러 «이동»하세요.');
+      return '의뢰를 맡았어요(오른쪽 위 «의뢰»에서 다시 볼 수 있어요). 목적지 ' + ro(name) + ' 가면 보수를 받아요. ' + (t.ui.modal ? '창을 닫고 지도에서 그 거점을 눌러 «이동»하세요.' : '화살표가 가리키는 거점을 눌러 «이동»하세요.');
     },
     target: t => {
       const q = questOf(t); if (!q) return null;
-      if (t.g.enemyHeld.has(q.to)) return t.ui.modal ? (t.modalTitle.includes(' (') && !t.modalTitle.startsWith(t.startName + ' (') ? t.menuItem(0) : t.closeBtn()) : null;
+      if (t.g.enemyHeld.has(q.to)) return t.ui.modal ? (t.modalTitle.includes(' (') && !t.modalTitle.startsWith(t.startName + ' (') ? t.markAt('menu0') : t.closeBtn()) : null;
       const dest = t.g.world.site(q.to);
-      if (t.modalTitle.startsWith(dest.name + ' (')) return t.menuItem(0);
+      if (t.modalTitle.startsWith(dest.name + ' (')) return t.markAt('menu0');
       if (t.ui.modal) return t.closeBtn();
       if (!t.focused) { t.focused = true; t.ui.map.focusSite(q.to); } // 창을 닫으면 목적지로 지도를 옮긴다
       return t.site(q.to);
@@ -193,7 +196,7 @@ const STEPS: Step[] = [
   },
   { // 6
     text: () => '출발! 이동하는 동안 시간이 흘러요. 오른쪽 위 ▶ 단추를 누를 때마다 빨라지고, 한 바퀴 돌면 멈춰요(⏸).',
-    target: () => ({ x: W - 2 - 54 + 8, y: 9 }),
+    target: t => t.ui.speedBtnAt,
     next: '다음',
   },
   { // 7

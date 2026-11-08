@@ -31,12 +31,12 @@ function panelTex(scene: Phaser.Scene, key: string, fill: RGB, alpha: number): v
     for (const [cx, cy] of [[2, 2], [21, 2], [2, 21], [21, 21]]) { px(cx, cy, WHITE); px(cx + (cx < 12 ? 1 : -1), cy + (cy < 12 ? 1 : -1), GOLD0); }
   });
 }
-/** 제목 줄(8×12, 가로로 늘림): 금빛 띠 + 위 밝은 줄 + 아래 그림자 */
+/** 제목 줄(8×14, 가로로만 늘림 — 창 제목 띠 높이 TITLE_H-2 와 같다): 금빛 띠 + 위 밝은 줄 + 아래 그림자 */
 function titleTex(scene: Phaser.Scene): void {
-  canvasTex(scene, 'sk_title', 8, 12, px => {
-    for (let y = 0; y < 12; y++) for (let x = 0; x < 8; x++) {
-      const c = y === 0 ? GOLD2 : y === 11 ? INK : y >= 9 ? GOLD0 : mix([150, 108, 32], [196, 150, 52], 1 - y / 9);
-      px(x, y, (x + y) % 4 === 0 && y > 0 && y < 9 ? mix(c, WHITE, 0.08) : c);
+  canvasTex(scene, 'sk_title', 8, 14, px => {
+    for (let y = 0; y < 14; y++) for (let x = 0; x < 8; x++) {
+      const c = y === 0 ? GOLD2 : y === 13 ? INK : y >= 11 ? GOLD0 : mix([150, 108, 32], [196, 150, 52], 1 - y / 11);
+      px(x, y, (x + y) % 4 === 0 && y > 0 && y < 11 ? mix(c, WHITE, 0.08) : c);
     }
   });
 }
