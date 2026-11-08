@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import 'galmuri/dist/galmuri.css';
+import '../fonts.css'; // 쓰는 글꼴 두 개(Galmuri 11·9)만. 패키지 전체 CSS 는 글꼴 파일 50MB 를 끌고 온다
 import { BootScene } from './scenes/BootScene';
 import { MapScene } from './scenes/MapScene';
 import { UIScene } from './scenes/UIScene';
@@ -38,7 +38,7 @@ window.addEventListener('orientationchange', () => setTimeout(() => game.scale.r
 import('./audio').then(m => { (window as any).__audio = m.AUDIO; (window as any).__renderSong = m.renderSongWav; });
 
 // PWA(7단계): 배포 빌드에서만 서비스 워커를 등록한다(개발 서버에선 HMR 과 충돌)
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+if (import.meta.env.PROD && 'serviceWorker' in navigator && !navigator.userAgent.includes('MillenniumDebtApp')) { // 앱(APK)은 파일이 이미 안에 있어 캐시가 필요 없다
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => { /* 오프라인 캐시는 선택 사항 */ }); });
 }
 // 폰: 전체 화면·가로 고정 시도(지원 기기에서만)

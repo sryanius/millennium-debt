@@ -55,6 +55,7 @@ export class UIScene extends Phaser.Scene {
     this.map.events.on('squad-click', (i: number) => { this.g.selected = i; });
     this.buildMinimap(); this.buildTopRight(); this.buildClock(); this.buildFinance(); this.buildSquadBar(); this.buildTicker();
     document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(this.g); });
+    (window as unknown as { __saveNow?: () => boolean }).__saveNow = () => saveGame(this.g); // 앱(APK)이 백그라운드로 갈 때 부른다
     if (this.g.messages.length <= 1) this.openIntro();
   }
 
