@@ -47,7 +47,7 @@ export function openEnding(ui: UIScene): void {
       w.portrait(240, 4, 130, 180, sq.id, lead.name);
     } else {
       w.text(60, 20, ENDING_POEM, { color: C.white, align: 'center', wordWrap: { width: 260 } });
-      w.small(6, 150, '— 끝. 플레이해 주셔서 고맙습니다. (가칭 《천 년의 빚》 · 《균열의 시대》 세계관) —', { color: C.grey });
+      w.small(6, 150, '— 끝. 플레이해 주셔서 고맙습니다. (《제국의 마지막 용병》 · 《균열의 시대》 세계관) —', { color: C.grey });
     }
     if (page > 0) w.button(6, w.bodyH - 30, '이전', () => { page--; render(); }, { w: 70, h: 24 });
     if (page < 7) w.button(w.bw - 86, w.bodyH - 30, '다음', () => { page++; render(); }, { w: 70, h: 24 });

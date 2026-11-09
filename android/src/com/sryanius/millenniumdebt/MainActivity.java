@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 천 년의 빚 — 안드로이드 껍데기. 웹 빌드(dist)를 앱 안 assets/web 에 넣고 WebView 로 띄운다.
+ * 제국의 마지막 용병(옛 이름 천 년의 빚) — 안드로이드 껍데기. 웹 빌드(dist)를 앱 안 assets/web 에 넣고 WebView 로 띄운다.
  * file:// 은 모듈 스크립트가 막히므로 https://appassets.androidplatform.net/ 주소로 요청을 받아 assets 에서 돌려준다.
  * 저장(localStorage)은 이 주소 기준으로 앱 안에 남는다.
  */

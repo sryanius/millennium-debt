@@ -1,4 +1,6 @@
-# 천 년의 빚 (가칭)
+# 제국의 마지막 용병
+
+(개발 중 이름은 《천 년의 빚》이었고, 저장소·주소 이름 millennium-debt 는 그대로 둔다.)
 
 **▶ 바로 플레이: https://sryanius.github.io/millennium-debt/** (PC 브라우저·폰 가로 화면)
 

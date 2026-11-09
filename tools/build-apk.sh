@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 천 년의 빚 APK 만들기(그레이들 없이 안드로이드 SDK 도구만으로).
+# 제국의 마지막 용병(옛 천 년의 빚) APK 만들기(그레이들 없이 안드로이드 SDK 도구만으로).
 #   bash tools/build-apk.sh        → dist-apk/millennium-debt.apk
 # 필요: JDK 17, 안드로이드 SDK(platforms;android-35, build-tools;35.0.0) — ANDROID_HOME 또는 %LOCALAPPDATA%/Android/Sdk
 # 서명 키: 저장소 밖 ../.secrets/mercenary-release.jks (없으면 새로 만든다. 같은 키로 서명해야 폰에서 덮어 설치된다)
