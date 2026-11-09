@@ -3,7 +3,7 @@ import { FORMATION_BY_ID } from '../../core/formation';
 import { BALANCE } from '../../core/balance';
 import { CIVIL_JOB_LABEL } from '../../core/board';
 import { GameClock } from '../../core/clock';
-import { Game, fmt, goodName } from '../../core/game';
+import { Game, fmt, goodName, type GameMessage } from '../../core/game';
 import { INCOME_LABEL, INCOME_SOURCES } from '../../core/ledger';
 import { KIND_LABEL, hasMarket, isTown } from '../../core/world';
 import { attackOf, defenseOf, levelOf } from '../../core/squad';
@@ -54,7 +54,7 @@ export class UIScene extends Phaser.Scene {
   constructor() { super('ui'); }
 
   create(): void {
-    this.g = this.registry.get('game') as Game;
+    this.g = this.registry.get('game') as Game; this.seenMsgs = this.g.messages.length;
     this.map = this.scene.get('map') as MapScene;
     this.cameras.main.setZoom(K).centerOn(W / 2, H / 2); // 설계 좌표 480×270 그대로, 캔버스는 ×K
     this.map.inputBlocked = () => this.modal !== null || this.g.battle !== null;
@@ -562,6 +562,28 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
     this.toastText = this.add.text(W / 2, 30, s, { ...TEXT, backgroundColor: '#000a', padding: { x: 4, y: 2 } }).setOrigin(0.5).setDepth(200);
     this.time.delayedCall(1500, () => this.toastText?.destroy());
   }
+  /** 중요한 소식(함락·습격·급료·단계 상승 …)은 한 줄 띠로 지나가지 않고 화면 위에 잠깐 큼직하게 띄운다 */
+  private alertBox?: Phaser.GameObjects.Container; private seenMsgs = 0;
+  private alert(m: GameMessage): void {
+    this.alertBox?.destroy();
+    const red = m.kind === 'fort' || m.kind === 'warn' || m.kind === 'collector'; const gold = m.kind === 'money' || m.text.startsWith('★') || m.text.startsWith('단계');
+    const t = this.add.text(0, 0, m.text, { ...TEXT_SMALL, color: C.white, wordWrap: { width: 300 } });
+    const bw = t.width + 14, bh = t.height + 10;
+    const bg = this.add.rectangle(0, 0, bw, bh, 0x1a140e, 0.95).setOrigin(0).setStrokeStyle(1, red ? 0xd0584c : gold ? 0xe0b23c : 0x8a7a64);
+    t.setPosition(7, 5);
+    const c = this.add.container(Math.round((W - bw) / 2), 46, [bg, t]).setDepth(240).setAlpha(0);
+    this.alertBox = c;
+    this.tweens.add({ targets: c, alpha: 1, y: 44, duration: 150 });
+    this.time.delayedCall(3800, () => { if (this.alertBox === c) this.tweens.add({ targets: c, alpha: 0, duration: 300, onComplete: () => { c.destroy(); if (this.alertBox === c) this.alertBox = undefined; } }); });
+    AUDIO.sfx(red ? 'deny' : 'event', 0.3);
+  }
+  private isAlert(m: GameMessage): boolean {
+    if (m.kind === 'warn' || m.kind === 'ending') return true;
+    if (m.kind === 'fort') return /함락|되찾|진을 쳤다/.test(m.text);
+    if (m.kind === 'battle') return /덮쳤다|습격|전사:/.test(m.text);
+    if (m.kind === 'money') return /완공|탈환|토벌 완수/.test(m.text);
+    return m.text.startsWith('★') || m.text.startsWith('단계 상승');
+  }
 
   // ───── 매 프레임 ─────
   update(time: number): void {
@@ -605,6 +627,9 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
       s.bars.fillStyle(0x1a1c2c).fillRect(bx, by, bw, 2).fillStyle(hp > 0.5 ? 0x5f9a3c : hp > 0.25 ? 0xd0b040 : 0xd04040).fillRect(bx, by, Math.round(bw * hp), 2);
       s.bars.fillStyle(0x1a1c2c).fillRect(bx, by + 3, bw, 1).fillStyle(0xe0b23c).fillRect(bx, by + 3, Math.round(bw * Math.min(1, sq.members.length / 8)), 1);
     });
+    // 새 소식 가운데 중요한 것은 위에 띄운다(전투 화면·대화창이 떠 있을 때는 띄우지 않고 넘긴다)
+    if (this.seenMsgs > g.messages.length) this.seenMsgs = g.messages.length; // 200개 넘어 앞이 잘렸을 때
+    while (this.seenMsgs < g.messages.length) { const m = g.messages[this.seenMsgs++]; if (!g.battle && !g.event && this.isAlert(m)) this.alert(m); }
     // 소식 한 줄
     const last = g.messages[g.messages.length - 1];
     const full = (g.unread > 0 ? '● ' : '') + (last?.text ?? '');

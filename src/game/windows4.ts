@@ -2,7 +2,7 @@ import { BALANCE } from '../core/balance';
 import { GameClock as Clock } from '../core/clock';
 import { ENDING_POEM, EPILOGUES } from '../core/events';
 import { fmt } from '../core/game';
-import { INCOME_LABEL, INCOME_SOURCES } from '../core/ledger';
+import { INCOME_LABEL, INCOME_SOURCES, type IncomeSource } from '../core/ledger';
 import { startNewGame } from './save';
 import { C, TEXT, portraitKey } from './theme';
 import { FULL_H } from './Window';
@@ -25,9 +25,22 @@ export function openEvent(ui: UIScene): void {
   });
 }
 
+/** 나쁜 결말: 연속 미납으로 용병단 해산 */
+function openBankrupt(ui: UIScene): void {
+  const g = ui.g; const l = g.ledger;
+  const w = ui.win(390, 200, '해산 — 벨마르 대금고가 계약을 끊었다', false);
+  w.portrait(6, 6, 44, 56, 'tobias', '토비아스');
+  w.text(58, 6, '"연속 ' + BALANCE.bankruptMisses + '번, 한 푼도 못 내셨군요. 계약은 여기까지입니다. 부대는 해산하고 장비와 짐은 대금고가 가져갑니다. …아버님도 이렇게 끝나셨지요."', { wordWrap: { width: 300 } });
+  w.small(58, 70, '제국력 ' + Clock.format(g.clock.date) + ' · 남은 빚 ' + fmt(l.debt) + '골 · 갚은 돈 ' + fmt(l.repaid) + '골 · 미납 ' + l.missed + '회', { color: C.grey, wordWrap: { width: 300 } });
+  w.small(58, 96, '돈이 모자랄 때는 집행관의 호위대와 싸워 상환을 미루거나, 교역·공연·배달로 5,000골만 먼저 마련해 두자. 연속 미납이 ' + (BALANCE.bankruptMisses - 2) + '번을 넘으면 집행관이 경고한다.', { color: C.paperDark, wordWrap: { width: 300 } });
+  w.button(w.bw - 112, w.bodyH - 30, '새 게임', () => startNewGame(), { w: 96, h: 24 });
+}
+
 /** 엔딩 카드(GDD §7.1.1): 돈 내역 7줄 + 부대장 6장(이름·부대명·후일담·전신 일러스트 자리) + 마지막 시 */
 export function openEnding(ui: UIScene): void {
-  const g = ui.g; const l = g.ledger; const ending = g.ending!; let page = 0; // 0 = 결산, 1~6 = 부대장, 7 = 시
+  const g = ui.g; const l = g.ledger; let page = 0; // 0 = 결산, 1~6 = 부대장, 7 = 시
+  if (g.ending === 'bankrupt') { openBankrupt(ui); return; }
+  const ending = g.ending as IncomeSource;
   const w = ui.win(390, 246, '완납 — ' + INCOME_LABEL[ending] + ' 엔딩', false);
   const render = () => {
     w.clearBody();

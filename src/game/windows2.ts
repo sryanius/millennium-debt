@@ -259,7 +259,7 @@ export function openCollector(ui: UIScene, onFight: () => void, onDone: () => vo
   else if (v.paid > 0) line = '"기본상환 ' + fmt(v.paid) + '골, 확실히 받았습니다. 남은 빚은 ' + fmt(l.debt) + '골이군요. 더 내시겠습니까?"';
   else { line = '"계약대로 가산금 ' + fmt(v.penalty) + '골을 올립니다. 부채 ' + fmt(l.debt) + '골."'; color = C.red; }
   w.text(58, 6, line, { wordWrap: { width: 290 }, color });
-  w.small(58, 66, '소지금 ' + fmt(l.cash) + '골  /  부채 ' + fmt(l.debt) + '골  /  미룬 횟수 ' + g.deferrals, { color: C.gold });
+  w.small(58, 66, '소지금 ' + fmt(l.cash) + '골  /  부채 ' + fmt(l.debt) + '골  /  미룬 횟수 ' + g.deferrals + (l.missedStreak ? '  /  연속 미납 ' + l.missedStreak + ' (해산까지 ' + g.missesLeft + ')' : ''), { color: l.missedStreak >= BALANCE.bankruptMisses - 2 ? C.red : C.gold, wordWrap: { width: 290 } });
   if (v.short) {
     w.button(58, 82, '호위대와 싸운다 (' + g.squad.name + ')', () => { w.close(); onFight(); }, { w: 240, h: 24, color: 0x5a3a2a });
     w.button(58, 110, '가산금을 받아들인다 (+' + fmt(BALANCE.missedPenalty) + ')', () => { g.collectorAccept(); w.close(); onDone(); }, { w: 240, h: 24 });

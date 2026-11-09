@@ -13,6 +13,8 @@ import { BLACK_SPEAR_ALLIES, EVENTS, type EventCtx, type GameEvent } from './eve
 import { LEADERS, MAX_MEMBERS, Squad, type Person } from './squad';
 import { fortMax, hasMarket, isFort, isTown, World, type Site, type WorldData } from './world';
 
+/** 결말: 완납(가장 많이 번 길) 또는 해산 */
+export type Ending = IncomeSource | 'bankrupt';
 export type MessageKind = 'info' | 'money' | 'collector' | 'quest' | 'ending' | 'warn' | 'battle' | 'fort';
 export interface GameMessage { day: number; kind: MessageKind; text: string }
 
@@ -38,7 +40,7 @@ export interface ShowResult { ok: boolean; power: number; income: number; penalt
 export interface GameJSON {
   version: 3; seed: number; clock: ReturnType<GameClock['toJSON']>; ledger: ReturnType<Ledger['toJSON']>;
   squads: ReturnType<Squad['toJSON']>[]; markets: ReturnType<Market['toJSON']>[]; boards: ReturnType<Board['toJSON']>[];
-  activeQuests: CivilQuest[]; blocked: string[]; messages: GameMessage[]; ending: IncomeSource | null; selected: number;
+  activeQuests: CivilQuest[]; blocked: string[]; messages: GameMessage[]; ending: Ending | null; selected: number;
   offices: OfficeJSON[]; military: ReturnType<MilitaryBoard['toJSON']>[]; activeMilitary: MilitaryQuest[]; bands: EnemyBand[]; escortLevel: number; deferrals: number;
   forts: Record<string, number>; enemyHeld: string[]; lastShow: Record<string, number>; buildJobs: { siteId: string; day: number; jobs: BuildJob[] }[]; reports: FortReport[]; roamNext: number; rng: number;
   flags: string[]; firedEvents: string[]; jointTarget: string | null; lastMonth: number; startDay: number;
@@ -100,7 +102,7 @@ export class Game {
   battleSquad = -1;
   /** 끝난 전투(UI가 결과창을 보여 준 뒤 지운다) */
   lastBattle: Battle | null = null;
-  ending: IncomeSource | null = null;
+  ending: Ending | null = null;
   selected = 0;
   protected rng: Rng;
   private battleBand: EnemyBand | null = null;
@@ -218,7 +220,16 @@ export class Game {
     const v = this.collectorVisit; if (!v || !v.short) return;
     v.penalty = this.ledger.penalize(); v.short = false;
     this.say('collector', '가산금 ' + fmt(v.penalty) + '골. 부채 ' + fmt(this.ledger.debt) + '골.');
+    this.checkBankrupt();
   }
+  /** 연속 미납이 한도에 닿으면 용병단 해산(나쁜 결말). 가까워지면 경고 */
+  protected checkBankrupt(): void {
+    const left = BALANCE.bankruptMisses - this.ledger.missedStreak;
+    if (left <= 0 && !this.ending) { this.ending = 'bankrupt'; this.clock.speed = 0; this.say('ending', '연속 ' + BALANCE.bankruptMisses + '번 상환을 못 했다. 벨마르 대금고가 계약을 끊고 용병단은 해산되었다.'); }
+    else if (left <= 2) this.say('collector', '토비아스: "연속 ' + this.ledger.missedStreak + '번째 미납입니다. ' + left + '번만 더 밀리면 계약은 끝이고, 용병단은 해산입니다."');
+  }
+  /** 연속 미납으로 해산까지 남은 횟수 */
+  get missesLeft(): number { return Math.max(0, BALANCE.bankruptMisses - this.ledger.missedStreak); }
   /** 돈이 모자랄 때: 호위대와 싸운다. 이기면 이번 상환을 미룬다(가산금 없음), 지면 가산금. */
   /** 길 위에 있어도 싸울 수 있다(집행관은 어디든 찾아온다). 전투 중 그 부대는 제자리에 선다 */
   collectorFight(squadIdx: number): boolean {
@@ -680,7 +691,7 @@ export class Game {
       const v = this.pendingCollector!; this.pendingCollector = null;
       v.fought = b.result!;
       if (b.result === 'victory') { this.deferrals++; this.escortLevel = Math.min(BALANCE.escortMaxLevel, this.escortLevel + 1); this.say('collector', '호위대를 물리쳤다. 이번 상환은 미뤄진다. 다음 호위대는 더 강하다(' + this.escortLevel + '단계).'); v.short = false; }
-      else { v.penalty = this.ledger.penalize(); v.short = false; this.say('collector', '호위대에 졌다. 가산금 ' + fmt(v.penalty) + '골. 부채 ' + fmt(this.ledger.debt) + '골.'); }
+      else { v.penalty = this.ledger.penalize(); v.short = false; this.say('collector', '호위대에 졌다. 가산금 ' + fmt(v.penalty) + '골. 부채 ' + fmt(this.ledger.debt) + '골.'); this.checkBankrupt(); }
       this.collectorVisit = v; this.clock.speed = 0;
     }
     const idx = this.battleSquad; this.battleSquad = -1; this.battleBand = null;

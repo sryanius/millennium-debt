@@ -12,7 +12,7 @@ export interface LedgerJSON {
   cash: number; debt: number;
   earned: Record<IncomeSource, number>;
   spent: Record<SpendKind, number>;
-  repaid: number; missed: number;
+  repaid: number; missed: number; missedStreak?: number;
 }
 
 /** 소지금·부채·수입 내역. 금액은 정수 골. */
@@ -23,6 +23,8 @@ export class Ledger {
   spent: Record<SpendKind, number> = { equipment: 0, wages: 0, goods: 0, other: 0 };
   repaid = 0;
   missed = 0;
+  /** 연속 미납 횟수(갚으면 0). BALANCE.bankruptMisses 에 닿으면 용병단 해산 */
+  missedStreak = 0;
 
   get minRepayment(): number { return Math.min(BALANCE.minRepayment, this.debt); }
   get isPaidOff(): boolean { return this.debt <= 0; }
@@ -47,10 +49,10 @@ export class Ledger {
   payDue(): number {
     const due = this.minRepayment;
     if (this.cash < due) return 0;
-    this.cash -= due; this.debt -= due; this.repaid += due; return due;
+    this.cash -= due; this.debt -= due; this.repaid += due; this.missedStreak = 0; return due;
   }
   /** 미납 가산금 */
-  penalize(): number { this.missed++; this.debt += BALANCE.missedPenalty; return BALANCE.missedPenalty; }
+  penalize(): number { this.missed++; this.missedStreak++; this.debt += BALANCE.missedPenalty; return BALANCE.missedPenalty; }
   /** 집행관 대화의 추가 상환. 부채보다 많이 내지는 않는다. */
   repayExtra(amount: number): number {
     amount = Math.min(Math.floor(amount), this.cash, this.debt);
@@ -64,9 +66,9 @@ export class Ledger {
     return best;
   }
   toJSON(): LedgerJSON {
-    return { cash: this.cash, debt: this.debt, earned: { ...this.earned }, spent: { ...this.spent }, repaid: this.repaid, missed: this.missed };
+    return { cash: this.cash, debt: this.debt, earned: { ...this.earned }, spent: { ...this.spent }, repaid: this.repaid, missed: this.missed, missedStreak: this.missedStreak };
   }
   static fromJSON(j: LedgerJSON): Ledger {
-    const l = new Ledger(); Object.assign(l, j, { earned: { ...j.earned }, spent: { ...j.spent } }); return l;
+    const l = new Ledger(); Object.assign(l, j, { earned: { ...j.earned }, spent: { ...j.spent }, missedStreak: j.missedStreak ?? 0 }); return l;
   }
 }

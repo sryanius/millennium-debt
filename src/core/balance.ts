@@ -14,6 +14,7 @@ export const BALANCE = {
   startDebt: 10_000_000,
   minRepayment: 5_000,
   missedPenalty: 100_000, // 상환일에 돈이 아예 없을 때 가산
+  bankruptMisses: 6, // 연속으로 이만큼 못 갚으면(6주) 용병단 해산 — 나쁜 결말
   extraRepaymentChoices: [5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000, 5_000_000] as readonly number[],
 
   // 이동: 지도 좌표 단위/일. 샹파르→오르블랑(20단위) = 2일
