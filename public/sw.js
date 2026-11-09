@@ -1,5 +1,5 @@
 /* 오프라인용 서비스 워커(7단계). 빌드 산출물을 처음 열 때 캐시하고, 이후엔 캐시 우선·네트워크 갱신. */
-const CACHE = 'mercenary-v1';
+const CACHE = 'mercenary-v2'; // 판을 크게 바꿔 올릴 때 숫자를 올린다(옛 캐시를 지운다)
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './manifest.webmanifest']))); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
