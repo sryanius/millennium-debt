@@ -3,7 +3,7 @@ import { POTION_BY_ID } from './equipment';
 import { FORMATION_BY_ID, type AttackMode, type Formation } from './formation';
 import { JOB_BY_ID } from './jobs';
 import { Rng } from './rng';
-import { attackOf, defenseOf, isRanged, type Person, type Squad } from './squad';
+import { attackOf, autoArrange, defenseOf, isRanged, type Person, type Squad } from './squad';
 
 /** 전장: 타원 가로 ±100, 세로 ±50. 아군은 오른쪽(+x), 적은 왼쪽(−x). */
 export const ARENA = { rx: 100, ry: 50 };
@@ -58,12 +58,15 @@ export class Battle {
       };
       this.units.push(u);
     });
+    // 성벽이 있으면 수비대 사수는 성벽 바로 뒤(-30)에 서서 성벽을 치는 아군을 쏜다. 들판에서는 사수가 뒤(-57)에 선다
+    const hasWall = enemies.some(e => e.wall);
     enemies.forEach((e, i) => {
       const n = enemies.length; const y = (i - (n - 1) / 2) * 9;
+      const x = e.wall ? -20 : e.range > 0 ? (hasWall ? -30 : -57) : -45;
       this.units.push({
         id: 'e' + this.seq++, side: 'enemy', name: e.name, job: e.job, isLeader: false, wall: e.wall,
         hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0,
-        potions: 0, potionHeal: 0, bounty: e.bounty, x: e.wall ? -20 : -45 + (e.range > 0 ? -12 : 0), y: e.wall ? 0 : y, homeX: e.wall ? -20 : -45, homeY: e.wall ? 0 : y,
+        potions: 0, potionHeal: 0, bounty: e.bounty, x, y: e.wall ? 0 : y, homeX: x, homeY: e.wall ? 0 : y,
         state: 'fight', cd: this.rng.next() * 0.5, potionCd: 0, targetId: null, flash: 9, hitFlash: 9, kills: 0,
       });
     });
@@ -82,18 +85,23 @@ export class Battle {
   unit(id: string): BattleUnit | undefined { return this.units.find(u => u.id === id); }
   private say(text: string): void { this.events.push({ t: this.time, text }); if (this.events.length > 60) this.events.shift(); }
 
+  /** 자리 = 부대 명단 순서(부대장 0, 대원 1…). 전투 중 대열을 바꿔 명단 순서가 달라져도 그대로 따라간다 */
   private placeAllies(): void {
-    this.allies.filter(u => u.person).forEach((u, i) => {
+    const people = this.squad.people;
+    for (const u of this.allies) {
+      if (!u.person) continue;
+      const i = Math.max(0, people.indexOf(u.person));
       const [dx, dy] = this.formation.slots[Math.min(i, this.formation.slots.length - 1)];
       u.homeX = 45 + dx; u.homeY = dy;
       if (this.time === 0) { u.x = u.homeX; u.y = u.homeY; }
-    });
+    }
   }
 
   // ───── 명령(전투명령 / 전체퇴각 / 개별퇴각 / 전투재개) ─────
+  /** 대열 바꾸기. 편성 창과 같게 백병은 앞, 사격은 뒤로 다시 세운다 */
   setFormation(id: string): void {
     const f = FORMATION_BY_ID.get(id); if (!f) return;
-    this.formation = f; this.squad.formation = id; this.placeAllies(); this.say('대열을 ' + f.name + '(으)로 바꾼다.');
+    this.formation = f; this.squad.formation = id; autoArrange(this.squad); this.placeAllies(); this.say('대열을 ' + f.name + '(으)로 바꾼다.');
   }
   setAttackMode(m: AttackMode): void { if (m === 'siege' && this.kind !== 'siege') return; this.attackMode = m; this.squad.attackMode = m === 'siege' ? 'melee' : m; }
   get wallAlive(): boolean { return this.units.some(u => u.wall && u.state === 'fight'); }

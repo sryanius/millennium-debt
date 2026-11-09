@@ -215,9 +215,10 @@ export class Game {
     this.say('collector', '가산금 ' + fmt(v.penalty) + '골. 부채 ' + fmt(this.ledger.debt) + '골.');
   }
   /** 돈이 모자랄 때: 호위대와 싸운다. 이기면 이번 상환을 미룬다(가산금 없음), 지면 가산금. */
+  /** 길 위에 있어도 싸울 수 있다(집행관은 어디든 찾아온다). 전투 중 그 부대는 제자리에 선다 */
   collectorFight(squadIdx: number): boolean {
     const v = this.collectorVisit; if (!v || !v.short || this.battle) return false;
-    const s = this.squads[squadIdx]; if (!s.siteId) return false;
+    if (!this.isActive(squadIdx)) return false;
     this.collectorVisit = null; // 전투가 끝나면 다시 만든다
     this.startBattle(squadIdx, makeEscort(this.escortLevel), '집행관 호위대 ' + this.escortLevel + '단계', 'escort');
     this.clock.speed = 1;
@@ -264,7 +265,7 @@ export class Game {
         const step = Math.min(left, p.length - p.traveled); p.traveled += step; left -= step;
         if (p.traveled >= p.length) {
           s.pos = { kind: 'at', site: p.to };
-          if (this.onArrive(s, i, p.to)) break;
+          if (this.onArrive(s, i, p.to, p.from)) break;
           if (s.path.length === 0) { s.order = 'idle'; this.onStop(s); break; }
         }
       }
@@ -275,13 +276,20 @@ export class Game {
     if (s.work && s.siteId === s.work.site) { s.order = 'build'; this.say('info', s.name + '가 ' + s.work.name + ' 작업을 시작했다(건축력 ' + s.buildSkill + '/일, 남은 작업 ' + (s.work.work - s.work.progress) + ').'); }
   }
   /** 도착 처리. 전투가 시작되면 true(그 자리에 멈춘다). */
-  protected onArrive(s: Squad, idx: number, siteId: string): boolean {
+  protected onArrive(s: Squad, idx: number, siteId: string, from: string | null = null): boolean {
     const site = this.world.site(siteId);
+    // 다른 부대가 교전 중이면 적이 있는 곳에는 들어가지 않고 한 거점 앞에서 멈춘다(전투는 한 번에 하나)
+    if (this.battle && from && (this.bands.some(b => b.site === siteId) || this.enemyHeld.has(siteId))) {
+      s.pos = { kind: 'at', site: from }; s.path = []; s.order = 'idle';
+      this.say('warn', s.name + ': 다른 부대가 교전 중이라 ' + site.name + ' 앞 ' + this.world.site(from).name + '에서 멈췄다. 끝나면 다시 가자.');
+      return true;
+    }
     if (s.path.length === 0) this.say('info', s.name + '가 ' + site.name + '에 도착했다.');
     // 민사 의뢰 배달
     for (const qid of [...s.quests]) {
       const q = this.activeQuests.get(qid); if (!q || q.to !== siteId) continue;
       s.quests = s.quests.filter(x => x !== qid); this.activeQuests.delete(qid);
+      this.bands = this.bands.filter(b => b.id !== 'R' + q.id); // 호송길에 매복한 도적은 배달이 끝나면 흩어진다
       const late = this.day > q.deadline;
       const pay = late ? Math.round(q.reward * BALANCE.civilLatePenaltyRate) : q.reward;
       this.ledger.earn('civil', pay);
@@ -419,6 +427,7 @@ export class Game {
     if (s.buildSkill <= 0) return { ok: false, reason: '건축력이 있는 사람이 없다' };
     if (s.work) return { ok: false, reason: '이미 작업을 맡았다' };
     const j = this.buildJobsAt(siteId)?.find(x => x.id === jobId); if (!j) return { ok: false, reason: '없는 의뢰' };
+    if (s.siteId !== j.site && !this.eta(squadIdx, j.site)) return { ok: false, reason: '그곳까지 길이 없다' };
     s.work = { jobId: j.id, site: j.site, name: j.name, work: Math.round(j.work), progress: 0, reward: j.reward };
     if (s.siteId === j.site) { s.order = 'build'; this.say('info', s.name + '가 ' + j.name + ' 작업을 시작했다(건축력 ' + s.buildSkill + '/일).'); }
     else { this.move(squadIdx, j.site); this.say('info', s.name + '가 ' + j.name + ' 작업을 맡아 ' + this.world.site(j.site).name + '으로 간다.'); }
@@ -737,7 +746,8 @@ export class Game {
       escortLevel: this.escortLevel, deferrals: this.deferrals,
       forts: Object.fromEntries(this.forts), enemyHeld: [...this.enemyHeld], lastShow: { ...this.lastShow },
       buildJobs: [...this.buildJobs.entries()].map(([siteId, e]) => ({ siteId, day: e.day, jobs: e.jobs })), reports: this.reports.slice(-20), roamNext: this.roamNext, rng: this.rng.state,
-      flags: [...this.flags], firedEvents: [...this.firedEvents], jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
+      // 아직 고르지 않은 대화(큐)는 저장되지 않으므로 "나왔다"로 치지 않는다. 그래야 저장 뒤 다시 켰을 때 다시 나온다(합류·관문 같은 한 번뿐인 사건이 사라지던 문제)
+      flags: [...this.flags], firedEvents: [...this.firedEvents].filter(id => !this.eventQueue.some(e => e.id === id)), jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
       recruited: [...this.recruited], tutorial: this.tutorial,
     };
   }
@@ -762,7 +772,10 @@ export class Game {
     g.blocked = new Set(j.blocked); g.messages = j.messages; g.unread = 0; g.ending = j.ending; g.selected = j.selected;
     return g;
   }
-  /** 거점 한 줄 상태(정보 창용) */
+  /** 불러온 뒤: 거점에 서 있는 부대마다 도착 사건을 다시 살핀다(저장 때 열려 있던 대화를 되살린다) */
+  refireArrivals(): void {
+    this.squads.forEach((s, i) => { if (this.isActive(i) && s.siteId && !this.bandAt(s.siteId) && !this.enemyHeld.has(s.siteId)) this.fireEvents({ site: s.siteId, squadIdx: i }); });
+  }
   /** 지역 진입 가능 여부(세계 지도 표시용) */
   regionOpen(regionId: string): boolean { return !this.blocked.has(regionId); }
   siteStatus(site: Site): string {

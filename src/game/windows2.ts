@@ -4,7 +4,7 @@ import { ARMOR_BY_ID, POTION_BY_ID, WEAPON_BY_ID, itemName, itemPrice, SELLBACK,
 import { KIND_LABEL, KIND_TEXT, drawFormation, formationMods, jobName, kindOf } from './formationView';
 import { FORMATIONS, FORMATION_BY_ID, STANCE_LABEL, ATTACK_MODE_LABEL } from '../core/formation';
 import { fmt, JOB_BY_ID } from '../core/game';
-import { MAX_MEMBERS, attackOf, defenseOf, isRanged, type Person } from '../core/squad';
+import { MAX_MEMBERS, attackOf, autoArrange, defenseOf, isRanged, type Person } from '../core/squad';
 import { FULL_W, type Window } from './Window';
 import { C } from './theme';
 import type { UIScene } from './scenes/UIScene';
@@ -37,7 +37,7 @@ export function openContract(ui: UIScene, siteId: string): void {
     w.small(42, 3, '"' + sq.leader.name + ' 부대장, 쓸 만한 사람들입니다. 급료는 매달 1일."', { color: C.paperDark });
     w.small(42, 15, '소지금 ' + fmt(g.ledger.cash) + '골   부대 급료 합계 ' + fmt(sq.wages) + '/월', { color: C.gold });
     const cols = [8, 96, 122, 156, 222];
-    ['직업 / 이름', 'HP', '급료', 'S D T P B', '고용비'].forEach((h, i) => w.small(cols[i], 30, h, { color: C.grey }));
+    ['직업 / 이름', 'HP', '급료', '공·방·상·연·건', '고용비'].forEach((h, i) => w.small(cols[i], 30, h, { color: C.grey }));
     if (!cands.length) w.small(8, LY + 4, '지금은 사람이 없다. 며칠 뒤에.', { color: C.grey });
     off = Math.min(off, Math.max(0, cands.length - VIS));
     cands.slice(off, off + VIS).forEach((c, k) => {
@@ -56,11 +56,11 @@ export function openContract(ui: UIScene, siteId: string): void {
     const gy = memberGrid(ui, w, 312, LY, picked, id => { picked = picked === id ? null : id; render(); }, p => p.isLeader ? '부대장' : '급료' + p.wage);
     const p = picked ? sq.people.find(x => x.id === picked) : undefined;
     if (p && !p.isLeader) {
-      const refund = p.hire + [p.weapon, p.armor].reduce((a, it) => a + (it ? Math.round(itemPrice(it) * SELLBACK) : 0), 0);
+      const refund = p.hire + [p.weapon, p.armor, p.tool].reduce((a, it) => a + (it ? Math.round(itemPrice(it) * SELLBACK) : 0), 0);
       w.small(312, gy + 2, p.name + ' · ' + p.role + ' · HP ' + p.stats.maxHp, { color: C.white });
       w.button(312, gy + 16, '해고 (환급 ' + fmt(refund) + ')', () => { g.fire(g.selected, p.id); picked = null; render(); }, { w: 150, h: 22, color: 0x5a3a2a });
     } else w.small(312, gy + 4, '대원을 누르면 해고할 수 있다.', { color: C.grey, wordWrap: { width: 150 } });
-    w.small(6, LY + VIS * ROWH + 6, '해고하면 고용비를 그대로 돌려받는다(원작). 급료를 못 주면 장비 든 대원이 도망간다. 목록은 위아래로 밀어 넘긴다.', { color: C.grey, wordWrap: { width: 456 } });
+    w.small(6, LY + VIS * ROWH + 6, '공·방·상·연·건 = 공격·방어·상업·공연·건축. 해고하면 고용비를 그대로 돌려받는다(원작). 급료를 못 주면 장비 든 대원이 도망간다.', { color: C.grey, wordWrap: { width: 456 } });
   };
   render();
 }
@@ -202,14 +202,6 @@ export function openRoster(ui: UIScene, keepPicked: string | null = null): void 
   render();
 }
 
-/** 백병 대원은 앞쪽 자리부터, 사격 대원은 뒤쪽 자리부터 채운다(지금 대열 기준). 같은 종류끼리는 순서 유지 */
-function autoArrange(sq: { formation: string; members: Person[] }): void {
-  const f = FORMATION_BY_ID.get(sq.formation)!; const n = sq.members.length;
-  const slots = Array.from({ length: n }, (_, k) => k + 1).sort((a, b) => f.slots[a][0] - f.slots[b][0]);
-  const order = [...sq.members.filter(m => kindOf(m) !== 'ranged'), ...sq.members.filter(m => kindOf(m) === 'ranged')];
-  const next: Person[] = new Array(n); slots.forEach((si, k) => { next[si - 1] = order[k]; }); sq.members = next;
-}
-
 /** 대원 한 명 자세히: 능력치(뜻 붙여서)·장비·다른 부대로 옮기기 */
 function openMember(ui: UIScene, id: string): void {
   const g = ui.g; const sq = g.squad; const here = sq.siteId;
@@ -269,9 +261,9 @@ export function openCollector(ui: UIScene, onFight: () => void, onDone: () => vo
   w.text(58, 6, line, { wordWrap: { width: 290 }, color });
   w.small(58, 66, '소지금 ' + fmt(l.cash) + '골  /  부채 ' + fmt(l.debt) + '골  /  미룬 횟수 ' + g.deferrals, { color: C.gold });
   if (v.short) {
-    w.button(58, 82, '호위대와 싸운다 (' + g.squad.name + ')', () => { w.close(); onFight(); }, { w: 240, h: 24, color: 0x5a3a2a, disabled: !g.squad.siteId });
+    w.button(58, 82, '호위대와 싸운다 (' + g.squad.name + ')', () => { w.close(); onFight(); }, { w: 240, h: 24, color: 0x5a3a2a });
     w.button(58, 110, '가산금을 받아들인다 (+' + fmt(BALANCE.missedPenalty) + ')', () => { g.collectorAccept(); w.close(); onDone(); }, { w: 240, h: 24 });
-    w.small(58, 140, '싸우는 부대는 지금 선택한 부대. 부대장이 쓰러지면 패배.', { color: C.grey });
+    w.small(58, 140, '싸우는 부대는 지금 선택한 부대(' + g.squad.name + ', 전투력 ' + Math.round(g.squad.power) + '). 부대장이 쓰러지면 패배.', { color: C.grey, wordWrap: { width: 290 } });
     return;
   }
   w.small(58, 80, '추가로 갚기', { color: C.grey });

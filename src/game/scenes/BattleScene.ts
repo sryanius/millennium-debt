@@ -102,7 +102,7 @@ export class BattleScene extends Phaser.Scene {
     const w = this.openPopup(230, 120, u.name + ' (' + u.job + ')');
     w.text(6, 4, 'HP ' + Math.max(0, Math.round(u.hp)) + '/' + u.maxHp + '   공격 ' + u.atk + '   방어 ' + u.def);
     w.small(6, 20, (u.range > 0 ? '사격 사거리 ' + u.range : '백병') + '   피로 ' + u.fatigue + '   회복약 ' + u.potions + '   상태 ' + ({ fight: '교전', retreat: '후퇴 중', fled: '이탈', dead: '전사' } as const)[u.state], { color: C.paperDark });
-    if (u.person) w.small(6, 32, 'E ' + u.person.stats.e + '  S ' + u.person.stats.s + '  D ' + u.person.stats.d + '  T ' + u.person.stats.t + '  P ' + u.person.stats.p + '  B ' + u.person.stats.b, { color: C.grey });
+    if (u.person) { const s = u.person.stats; w.small(6, 32, '경험 ' + s.e + ' · 상업 ' + s.t + ' · 공연 ' + s.p + ' · 건축 ' + s.b + (u.person.weapon ? ' · 무기 있음' : ''), { color: C.grey }); }
     if (u.side === 'ally' && u.state === 'fight') w.button(6, w.bodyH - 30, '후퇴', () => { this.battle!.retreatUnit(u.id); this.closePopup(); }, { w: 70, h: 24, color: 0x5a3a2a });
     w.button(w.bw - 96, w.bodyH - 30, '전투재개', () => this.closePopup(), { w: 84, h: 24 });
   }

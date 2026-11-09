@@ -1,6 +1,7 @@
 import { BALANCE } from './balance';
 import { WEAPON_BY_ID, ARMOR_BY_ID, TOOL_BY_ID } from './equipment';
-import type { AttackMode, Stance } from './formation';
+import { FORMATION_BY_ID, type AttackMode, type Stance } from './formation';
+import { JOB_BY_ID } from './jobs';
 
 /** 능력치(GDD §2.4): HP·E 경험·F 피로·S 사격(우리는 공격)·D 방어·T 상업·P 공연·B 건축 */
 export interface Stats { hp: number; maxHp: number; e: number; f: number; s: number; d: number; t: number; p: number; b: number }
@@ -111,4 +112,16 @@ export function defenseOf(p: Person): number { return p.stats.d + (p.armor ? ARM
 export function isRanged(p: Person, jobRange: number): boolean {
   const w = p.weapon ? WEAPON_BY_ID.get(p.weapon) : undefined;
   return w ? w.ranged : jobRange > 0;
+}
+/** 대원이 사격 대원인가(무기가 있으면 무기, 없으면 직업으로) */
+export function isRangedPerson(p: Person): boolean { return isRanged(p, JOB_BY_ID.get(p.job)?.range ?? 0); }
+/**
+ * 대원 순서 = 대열 자리(1번부터). 백병 대원을 앞쪽(적 쪽, x 가 작은) 자리부터, 사격 대원을 뒤쪽 자리부터 세운다.
+ * 같은 종류끼리는 지금 순서를 지킨다. 편성 창의 «자동 배치»와 대열을 바꿀 때(편성 창·전투 중) 쓴다.
+ */
+export function autoArrange(sq: { formation: string; members: Person[] }): void {
+  const f = FORMATION_BY_ID.get(sq.formation); const n = sq.members.length; if (!f || n === 0) return;
+  const slots = Array.from({ length: n }, (_, k) => k + 1).sort((a, b) => f.slots[a][0] - f.slots[b][0]);
+  const order = [...sq.members.filter(m => !isRangedPerson(m)), ...sq.members.filter(m => isRangedPerson(m))];
+  const next: Person[] = new Array(n); slots.forEach((si, k) => { next[si - 1] = order[k]; }); sq.members = next;
 }

@@ -2,7 +2,7 @@ import { BALANCE } from './balance';
 import type { EnemyDef } from './battle';
 import type { Game } from './game';
 import { fmt } from './game';
-import type { Person } from './squad';
+import { isRangedPerson, type Person } from './squad';
 
 /**
  * 이벤트 시스템(4·5단계). 대화창 하나 = GameEvent. 선택지의 effect 가 상태를 바꾸고 다음 대사를 돌려준다.
@@ -121,11 +121,11 @@ const BIG: EventDef[] = [
   // 4. 다라광 전차 → 저주받은 골렘(상아탑)
   {
     id: 'ev4_golem', once: true, trigger: (g, c) => at(c, 'C050'),
-    build: g => ({
+    build: (g, c) => ({
       id: 'ev4_golem', title: '상아탑의 지하', portrait: '마법사 알라릭',
       text: '"이 골렘은 저주받았네. 최강이지만 한 부대에 귀속되어 떠나지 못하고, 매달 마석 값 ' + fmt(1_500) + '골을 먹지. 그래도 가져가겠나? ' + fmt(30_000) + '골."',
       choices: [
-        { label: '골렘을 산다 (' + fmt(30_000) + ')', disabled: g.ledger.cash < 30_000 ? '돈 부족' : sq(g, {}).members.length >= 8 ? '부대가 가득' : null, effect: g => { g.ledger.spend('equipment', 30_000); g.flags.add('golem'); const p = person('golem', '저주받은 골렘', '골렘', '골렘', 'golem', { maxHp: 120, hp: 120, s: 40, d: 40, b: 20 }); p.wage = 1_500; g.squad.members.push(p); return '골렘이 ' + g.squad.name + '에 귀속되었다. 해고·이동 불가, 급료 1,500.'; } },
+        { label: '골렘을 산다 (' + fmt(30_000) + ')', disabled: g.ledger.cash < 30_000 ? '돈 부족' : sq(g, c).members.length >= 8 ? '부대가 가득' : null, effect: g => { g.ledger.spend('equipment', 30_000); g.flags.add('golem'); const p = person('golem', '저주받은 골렘', '골렘', '골렘', 'golem', { maxHp: 120, hp: 120, s: 40, d: 40, b: 20 }); p.wage = 1_500; sq(g, c).members.push(p); return '골렘이 ' + sq(g, c).name + '에 귀속되었다. 해고·이동 불가, 급료 1,500.'; } },
         { label: '사양한다', effect: () => {} },
       ],
     }),
@@ -139,20 +139,23 @@ const BIG: EventDef[] = [
       choices: [{ label: '맡는다', effect: g => { g.flags.add('ev5_laundry'); g.say('quest', '세탁물을 아델라 성지(P052)로. 여성 부대장(피비·엘라·리젤) 부대만 들어갈 수 있다.'); } }, { label: '거절', effect: () => {} }],
     }),
   },
+  // 남자 부대장이 먼저 가면 막히는 안내만(한 번뿐인 사건을 써 버리지 않게 따로 둔다)
   {
-    id: 'ev5_done', once: true, trigger: (g, c) => at(c, 'P052') && g.flags.has('ev5_laundry'),
-    build: (g, c) => FEMALE.has(sq(g, c).id)
-      ? { id: 'ev5_done', title: '아델라 성지', portrait: '성지의 수녀', text: '"고맙습니다, ' + sq(g, c).leader.name + ' 님." 보수 ' + fmt(20_000) + '골과 치유의 기적 — 부대 전원이 회복되었다.', choices: [{ label: '확인', effect: g => { g.flags.delete('ev5_laundry'); g.ledger.earn('civil', 20_000); for (const p of sq(g, c).people) { p.stats.hp = p.stats.maxHp; p.stats.f = 0; } } }] }
-      : { id: 'ev5_blocked', title: '아델라 성지', portrait: '성지의 수녀', text: '"남자는 들어올 수 없습니다." 피비·엘라·리젤 부대로 다시 오자.', choices: [{ label: '확인', effect: () => {} }] },
+    id: 'ev5_blocked', once: false, trigger: (g, c) => at(c, 'P052') && g.flags.has('ev5_laundry') && !FEMALE.has(sq(g, c).id),
+    build: () => ({ id: 'ev5_blocked', title: '아델라 성지', portrait: '성지의 수녀', text: '"남자는 들어올 수 없습니다." 피비·엘라·리젤 부대로 다시 오자.', choices: [{ label: '확인', effect: () => {} }] }),
+  },
+  {
+    id: 'ev5_done', once: true, trigger: (g, c) => at(c, 'P052') && g.flags.has('ev5_laundry') && FEMALE.has(sq(g, c).id),
+    build: (g, c) => ({ id: 'ev5_done', title: '아델라 성지', portrait: '성지의 수녀', text: '"고맙습니다, ' + sq(g, c).leader.name + ' 님." 보수 ' + fmt(20_000) + '골과 치유의 기적 — 부대 전원이 회복되었다.', choices: [{ label: '확인', effect: g => { g.flags.delete('ev5_laundry'); g.ledger.earn('civil', 20_000); for (const p of sq(g, c).people) { p.stats.hp = p.stats.maxHp; p.stats.f = 0; } } }] }),
   },
   // 6. 총술 대회 → 라엘린 궁술 대회(1001년 4월 이후), 토너먼트 3회전
   {
     id: 'ev6_tourney', once: true, trigger: (g, c) => at(c, 'C014') && ymd(g) >= 100104,
-    build: g => ({
+    build: (g, c) => ({
       id: 'ev6_tourney', title: '라엘린 궁술 대회', portrait: '엘프 심판',
       text: '"세 번의 과녁 대결. 참가비 ' + fmt(2_000) + '골. 우승 트로피는 후일 쓸모가 있을 거요." 부대의 사격 대원이 많을수록 유리하다.',
       choices: [
-        { label: '참가한다 (' + fmt(2_000) + ')', disabled: g.ledger.cash < 2_000 ? '돈 부족' : null, effect: g => { g.ledger.spend('other', 2_000); const ranged = g.squad.people.filter(p => p.weapon && ['r1', 'r2', 'r3', 'r4'].includes(p.weapon)).length; const score = ranged * 20 + g.squad.leader.stats.s + g.rngNext() * 40; if (score >= 70) { g.flags.add('trophy'); g.ledger.earn('battle', 15_000); return '우승! 트로피와 상금 ' + fmt(15_000) + '골. (점수 ' + Math.round(score) + ')'; } return '준결승에서 떨어졌다. (점수 ' + Math.round(score) + ' < 70) 사격 대원을 더 데려오자 — 내년에 다시.'; } },
+        { label: '참가한다 (' + fmt(2_000) + ')', disabled: g.ledger.cash < 2_000 ? '돈 부족' : null, effect: g => { g.ledger.spend('other', 2_000); const s = sq(g, c); const ranged = s.people.filter(isRangedPerson).length; const score = ranged * 20 + s.leader.stats.s + g.rngNext() * 40; if (score >= 70) { g.flags.add('trophy'); g.ledger.earn('battle', 15_000); return '우승! 트로피와 상금 ' + fmt(15_000) + '골. (점수 ' + Math.round(score) + ')'; } return '준결승에서 떨어졌다. (점수 ' + Math.round(score) + ' < 70) 사격 대원을 더 데려오자 — 내년에 다시.'; } },
         { label: '구경만 한다', effect: () => {} },
       ],
     }),
@@ -184,11 +187,11 @@ const BIG: EventDef[] = [
   // 9. 바이어런스의 공주 → 황태후의 밀서(1003년), 황제 탈출 대작전
   {
     id: 'ev9_letter', once: true, trigger: (g, c) => at(c, 'C001') && g.flags.has('regency_crisis'),
-    build: g => ({
+    build: (g, c) => ({
       id: 'ev9_letter', title: '황태후의 밀서', portrait: '황태후의 시녀',
       text: '"폐하를 제도에서 남쪽으로 빼내야 합니다. 섭정부 근위대가 세 번은 길을 막을 거예요. 오르블랑까지 모셔 주시면 ' + fmt(2_500_000) + '골. 역사에는 남지 않을 겁니다."',
       choices: [
-        { label: '폐하를 모신다', disabled: g.squad.power < 250 ? '부대가 너무 약하다(전투력 250 필요)' : null, effect: g => { g.flags.add('ev9_escort'); g.say('quest', '어린 황제 레온을 오르블랑(C025)까지. 근위대 세 부대가 길을 막는다.'); const p = g.world.path('C001', 'C025', g.blocked, g.enemyHeld); const mid = p?.nodes.slice(1, -1) ?? []; const picks = [mid[Math.floor(mid.length * 0.25)], mid[Math.floor(mid.length * 0.5)], mid[Math.floor(mid.length * 0.75)]].filter((x, i, a) => x && a.indexOf(x) === i); picks.forEach((site, i) => g.bands.push({ id: 'ev9band' + i, name: '섭정부 근위대 ' + (i + 1) + '진', site, tier: 3 + i, questId: null, kind: 'roam', nextMove: 1e9 })); return '"폐하는 당신들 마차 안에 계십니다. 서두르세요."'; } },
+        { label: '폐하를 모신다', disabled: sq(g, c).power < 250 ? '부대가 너무 약하다(전투력 250 필요)' : null, effect: g => { g.flags.add('ev9_escort'); g.say('quest', '어린 황제 레온을 오르블랑(C025)까지. 근위대 세 부대가 길을 막는다.'); const p = g.world.path('C001', 'C025', g.blocked, g.enemyHeld); const mid = p?.nodes.slice(1, -1) ?? []; const picks = [mid[Math.floor(mid.length * 0.25)], mid[Math.floor(mid.length * 0.5)], mid[Math.floor(mid.length * 0.75)]].filter((x, i, a) => x && a.indexOf(x) === i); picks.forEach((site, i) => g.bands.push({ id: 'ev9band' + i, name: '섭정부 근위대 ' + (i + 1) + '진', site, tier: 3 + i, questId: null, kind: 'roam', nextMove: 1e9 })); return '"폐하는 당신들 마차 안에 계십니다. 서두르세요."'; } },
         { label: '너무 위험하다', effect: () => {} },
       ],
     }),

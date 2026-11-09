@@ -16,6 +16,7 @@ export function loadGame(world: World): Game | null {
     const g = Game.fromJSON(world, j);
     // 집행관 대화 중에 저장된 것은 멈춘 채로 돌아오므로 다시 흐르게 한다
     if (g.clock.speed === 0 && !g.ending) g.clock.speed = 1;
+    g.refireArrivals(); // 저장 때 열려 있던 도착 대화(합류·관문 …)를 다시 띄운다
     return g;
   } catch { return null; }
 }
