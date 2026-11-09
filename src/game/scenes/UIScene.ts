@@ -10,14 +10,14 @@ import { attackOf, defenseOf, levelOf } from '../../core/squad';
 import { shortName } from '../formationView';
 import { GameClock as Clock } from '../../core/clock';
 import { FULL_H, FULL_W, TITLE_H, Window, makeButton } from '../Window';
-import { hasSave, loadGame, saveGame, startNewGame } from '../save';
+import { saveGame, startNewGame } from '../save';
 import { C, H, K, REGION_COLOR, TEXT, TEXT_SMALL, W, portraitKey } from '../theme';
 import type { MapScene } from './MapScene';
 import type { BattleScene } from './BattleScene';
 import { openCollector as openCollector2, openContract, openEquip, openHospital, openMilitary as openMilitary2, openRoster, openShop } from '../windows2';
 import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
-import { openNotebook } from '../windows5';
+import { openHelp, openNotebook, openSlots } from '../windows5';
 import { buttonKey, hasSkin, nine } from '../skin';
 import { AUDIO } from '../audio';
 import { Tutorial } from '../tutorial';
@@ -514,10 +514,11 @@ export class UIScene extends Phaser.Scene {
     this.g.unread = 0;
   }
   private openSystem(): void {
-    const w = this.win(300, 186, '시스템');
+    const w = this.win(300, 212, '시스템');
     const end = w.menu([
-      { label: '저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
-      { label: '불러오기', disabled: !hasSave(), onClick: () => { const g = loadGame(this.g.world); if (g) { this.registry.set('game', g); location.reload(); } } },
+      { label: '지금 저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
+      { label: '저장 칸 (3)', onClick: () => openSlots(this) },
+      { label: '도움말', onClick: () => openHelp(this) },
       { label: '음악 ' + (AUDIO.musicOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setMusic(!AUDIO.musicOn); w.close(); this.openSystem(); } },
       { label: '효과음 ' + (AUDIO.sfxOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setSfx(!AUDIO.sfxOn); w.close(); this.openSystem(); } },
       { label: '속도 측정 ' + (this.perfOn ? '끄기' : '켜기'), onClick: () => { this.setPerf(!this.perfOn); w.close(); this.openSystem(); } },
