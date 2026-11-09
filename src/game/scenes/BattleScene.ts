@@ -7,7 +7,7 @@ import { hash } from '../../core/market';
 import { Window, makeButton } from '../Window';
 import { drawFormation, formationMods } from '../formationView';
 import { AUDIO } from '../audio';
-import { C, H, K, TEXT, TEXT_SMALL, UNIT_SCALE, W, unitFrame } from '../theme';
+import { C, H, K, TEXT, TEXT_SMALL, UNIT_SCALE, W, battleBgKey, unitFrame } from '../theme';
 
 /**
  * 전투 화면(GDD §7.3): 별도 화면이 아니라 지도 위에 타원 전장이 겹쳐 뜬다.
@@ -26,7 +26,10 @@ export class BattleScene extends Phaser.Scene {
   private enemyPanel!: Phaser.GameObjects.Text; private allyPanel!: Phaser.GameObjects.Text;
   private logText!: Phaser.GameObjects.Text;
   private popup: Window | null = null;
-  private cx = W / 2; private cy = H / 2 - 4; private sx = 2.3; private sy = 2.1;
+  /** 전장 그림 자리(설계): 480×220, 위 18. 병사는 그림의 아래 2/3(땅) 위에 선다 */
+  private static readonly BG_X = Math.round((W - 480) / 2); private static readonly BG_Y = 18; private static readonly BG_W = 480; private static readonly BG_H = 220;
+  private cx = W / 2; private cy = 166; private sx = 2.3; private sy = 1.3;
+  private bg!: Phaser.GameObjects.Image;
   private resultShown = false;
   onResultClosed?: () => void;
 
@@ -34,12 +37,14 @@ export class BattleScene extends Phaser.Scene {
   create(): void {
     this.g = this.registry.get('game') as Game;
     this.cameras.main.setZoom(K).centerOn(W / 2, H / 2);
-    this.floor = this.add.graphics(); this.gfx = this.add.graphics().setDepth(6); // 섬광·화살은 병사 위에
-    this.enemyPanel = this.add.text(4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } });
-    this.allyPanel = this.add.text(W - 4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } }).setOrigin(1, 0);
-    this.logText = this.add.text(W / 2, H - 56, '', { ...TEXT_SMALL, color: C.white, backgroundColor: '#1a140dcc', padding: { x: 3, y: 1 } }).setOrigin(0.5, 1);
+    this.floor = this.add.graphics();
+    this.bg = this.add.image(BattleScene.BG_X, BattleScene.BG_Y, '__DEFAULT').setOrigin(0).setScale(UNIT_SCALE).setDepth(1).setVisible(false); // 전장 배경(캔버스 픽셀 1:1)
+    this.gfx = this.add.graphics().setDepth(6); // 섬광·화살은 병사 위에
+    this.enemyPanel = this.add.text(4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } }).setDepth(10);
+    this.allyPanel = this.add.text(W - 4, 20, '', { ...TEXT_SMALL, backgroundColor: '#1a140dcc', padding: { x: 3, y: 2 } }).setOrigin(1, 0).setDepth(10);
+    this.logText = this.add.text(W / 2, H - 36, '', { ...TEXT_SMALL, color: C.white, backgroundColor: '#1a140dcc', padding: { x: 3, y: 1 } }).setOrigin(0.5, 1).setDepth(10);
     // 전장 클릭 = 멈춤 + 명령 팝업
-    const hit = this.add.rectangle(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy, 0, 0).setInteractive();
+    const hit = this.add.rectangle(BattleScene.BG_X + BattleScene.BG_W / 2, BattleScene.BG_Y + BattleScene.BG_H / 2, BattleScene.BG_W, BattleScene.BG_H, 0, 0).setInteractive();
     hit.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); if (this.battle && !this.battle.result && !this.popup) this.openCommands(); });
     this.scene.sleep();
   }
@@ -52,11 +57,22 @@ export class BattleScene extends Phaser.Scene {
     this.popup?.destroy(); this.popup = null;
     this.drawFloor();
   }
-  /** 싸우는 거점의 지형 색으로 바닥을 칠한다(숲은 초록, 사막은 모래, 설원은 흰색 …) */
+  /** 싸우는 거점의 지형에 맞는 전장 그림(art/battle)을 깐다. 공성전은 성벽 앞. 그림이 없으면 지형색 타원(옛 방식) */
   private drawFloor(): void {
     const g = this.g; const sq = g.squads[g.battleSquad] ?? g.squad; const siteId = sq.siteId ?? (sq.pos.kind === 'road' ? sq.pos.to : null);
-    let ch = 'p';
-    if (siteId && g.world.map) { const st = g.world.site(siteId); const row = g.world.map.terrain[Math.max(0, Math.min(g.world.map.height - 1, Math.round(st.y)))]; ch = row?.[Math.max(0, Math.min(g.world.map.width - 1, Math.round(st.x)))] ?? 'p'; }
+    const bgKey = siteId ? battleBgKey(g.world.map, g.world.site(siteId)) : 'plain';
+    const ch = ({ plain: 'p', farm: 'R', forest: 'f', hills: 'h', mountain: 'm', swamp: 's', shore: 'w', river: 'F', desert: 'd', snow: 'n', rift: 'x' } as Record<string, string>)[bgKey] ?? 'p'; // 옛 타원 색용
+    const key = 'bf_' + (this.battle?.kind === 'siege' ? 'siege' : bgKey);
+    const gfx0 = this.floor; gfx0.clear();
+    if (this.textures.exists(key)) {
+      gfx0.fillStyle(0x000000, 0.45).fillRect(0, 0, W, H); // 뒤 지도를 어둡게
+      this.bg.setTexture(key).setVisible(true);
+      gfx0.lineStyle(2, C.border, 1).strokeRect(BattleScene.BG_X - 1, BattleScene.BG_Y - 1, BattleScene.BG_W + 2, BattleScene.BG_H + 2);
+      // 땅 위 그림자 띠: 병사 발밑 부분을 살짝 어둡게 해 땅에 붙어 보이게
+      gfx0.fillStyle(0x000000, 0.08).fillRect(BattleScene.BG_X, this.cy - ARENA.ry * this.sy - 10, BattleScene.BG_W, ARENA.ry * 2 * this.sy + 20);
+      return;
+    }
+    this.bg.setVisible(false);
     // [테두리, 바닥, 안쪽 밝은 바닥, 점]
     const PAL: Record<string, [number, number, number, number]> = {
       p: [0x6e7a3c, 0x9fae62, 0xb3c176, 0x7f8c48], R: [0x8a6a3c, 0xc9a66b, 0xd4b57c, 0xb08a52], f: [0x2e4a28, 0x4f7a42, 0x5c8a4c, 0x3c6232], h: [0x6a5a36, 0x9c8c5e, 0xaa9a6a, 0x7e6e44],
@@ -64,7 +80,7 @@ export class BattleScene extends Phaser.Scene {
       x: [0x33203c, 0x5a4068, 0x6a4a78, 0x3f2a4a], w: [0x8a6a3c, 0xc9a66b, 0xd4b57c, 0xb08a52], W: [0x8a6a3c, 0xc9a66b, 0xd4b57c, 0xb08a52], F: [0x6e7a3c, 0x9fae62, 0xb3c176, 0x7f8c48],
     };
     const [rim, base, inner, dot] = PAL[ch] ?? PAL.p;
-    const gfx = this.floor; gfx.clear();
+    const gfx = this.floor;
     gfx.fillStyle(0x000000, 0.25).fillRect(0, 0, W, H); // 뒤 지도를 살짝 어둡게
     gfx.fillStyle(rim, 0.96).fillEllipse(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy);
     gfx.fillStyle(base, 0.95).fillEllipse(this.cx, this.cy - 1, ARENA.rx * 2 * this.sx - 6, ARENA.ry * 2 * this.sy - 8);
@@ -88,7 +104,7 @@ export class BattleScene extends Phaser.Scene {
     const sprite = this.textures.exists('units') && !u.wall;
     const leaderId = u.isLeader ? this.battle!.squad.id : u.person?.job === 'golem' ? 'golem' : undefined;
     const body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = u.wall
-      ? this.add.rectangle(0, 0, 10, 70, 0x6a6a6a).setStrokeStyle(1, 0x222222)
+      ? this.add.rectangle(0, 0, 14, 60, 0x8a8278, 0.35).setStrokeStyle(1, 0x3a3028, 0.6)
       : sprite
         ? this.add.image(0, 5, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5, 1).setScale(UNIT_SCALE).setFlipX(ally) // 그림은 오른쪽을 본다 → 아군(오른쪽에 섬)은 뒤집어 적을 본다. 촘촘한 도트라 1/3 배
         : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
@@ -100,7 +116,7 @@ export class BattleScene extends Phaser.Scene {
     // 같은 직업끼리 구분되게 대원마다 옷 색을 살짝 다르게(이름으로 정해져 늘 같은 색). 부대장·적은 그대로
     if (sprite && ally && !u.isLeader && u.person) { const TINTS = [0xffffff, 0xffe2c8, 0xd8f0ff, 0xe4ffd8, 0xfff2b8, 0xf0d8ff, 0xffd8d8, 0xd8fff4]; (body as Phaser.GameObjects.Image).setTint(TINTS[hash(u.person.id) % TINTS.length]); }
     const lv = u.person && !u.isLeader ? levelOf(u.person.stats.e) : 0;
-    const mark = this.add.text(0, by - 6, !sprite && u.range > 0 ? '↑' : lv >= 6 ? '★★' : lv >= 3 ? '★' : '', { ...TEXT_SMALL, color: '#ffd65a', stroke: '#1a1008', strokeThickness: 2 }).setOrigin(0.5);
+    const mark = this.add.text(0, by - 6, u.wall ? '성벽' : !sprite && u.range > 0 ? '↑' : lv >= 6 ? '★★' : lv >= 3 ? '★' : '', { ...TEXT_SMALL, color: '#ffd65a', stroke: '#1a1008', strokeThickness: 2 }).setOrigin(0.5);
     c.add([shadow, body, barBg, bar, mark]); c.setDepth(5);
     body.setInteractive({ useHandCursor: true });
     body.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); if (this.battle && !this.battle.result) this.openUnit(u); });
@@ -160,7 +176,7 @@ export class BattleScene extends Phaser.Scene {
     w.small(6, 32, '전과: ' + (kills || '없음'), { wordWrap: { width: 244 }, color: C.paperDark });
     if (b.grown.length) w.small(6, 44, '★ 단계 상승: ' + b.grown.map(x => x.name + ' ' + x.level + '단계').join(', '), { wordWrap: { width: 244 }, color: C.gold });
     w.small(6, 58, b.events.slice(-2).map(e => e.text).join('\n'), { color: C.grey, wordWrap: { width: 244 } });
-    w.button(w.bw - 84, w.bodyH - 30, '닫기', () => { this.closePopup(false); this.battle = null; for (const d of this.dots.values()) d.c.destroy(); this.dots.clear(); this.floor.clear(); this.scene.sleep(); this.onResultClosed?.(); }, { w: 72, h: 24 });
+    w.button(w.bw - 84, w.bodyH - 30, '닫기', () => { this.closePopup(false); this.battle = null; for (const d of this.dots.values()) d.c.destroy(); this.dots.clear(); this.floor.clear(); this.bg.setVisible(false); this.scene.sleep(); this.onResultClosed?.(); }, { w: 72, h: 24 });
   }
 
   update(_t: number, delta: number): void {

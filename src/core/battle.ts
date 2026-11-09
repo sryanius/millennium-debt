@@ -65,7 +65,9 @@ export class Battle {
     const hasWall = enemies.some(e => e.wall);
     enemies.forEach((e, i) => {
       const n = enemies.length; const y = (i - (n - 1) / 2) * 9;
-      const x = e.wall ? -20 : e.range > 0 ? (hasWall ? -30 : -57) : -45;
+      // 적이 많으면(7명 넘게) 두 줄로 어긋나게 세워 한 줄로 겹쳐 보이지 않게
+      const col = enemies.length > 6 && !e.wall ? (i % 2) * -9 : 0;
+      const x = e.wall ? -20 : (e.range > 0 ? (hasWall ? -30 : -57) : -45) + col;
       this.units.push({
         id: 'e' + this.seq++, side: 'enemy', name: e.name, job: e.job, isLeader: false, wall: e.wall,
         hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0, heal: e.heal ?? 0,

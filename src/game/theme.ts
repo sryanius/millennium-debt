@@ -27,6 +27,22 @@ export function siteIcon(kind: string, size: number): number {
 /** art/units.png 프레임(12×16) — tools/pixel-samples.mjs 의 UNITS 순서 */
 /** art/units.png 프레임(96×120, 캔버스 픽셀 1:1 → 화면에선 1/3 배 = 설계 32×40). 순서는 tools/sprites-ai.mjs 의 UNITS 와 같다 */
 export const UNIT_W = 96, UNIT_H = 120;
+/** 전장 배경(art/battle/<키>.png, 1440×660 = 설계 480×220). 지형 글자(map.terrain) → 키. tools/battlefields-ai.mjs 의 TERRAIN_BG 와 같다 */
+export const BATTLE_BG = ['plain', 'farm', 'forest', 'hills', 'mountain', 'swamp', 'shore', 'river', 'desert', 'snow', 'rift', 'siege'] as const;
+export const TERRAIN_BG: Record<string, string> = { p: 'plain', R: 'farm', f: 'forest', h: 'hills', m: 'mountain', s: 'swamp', w: 'shore', W: 'shore', F: 'river', d: 'desert', n: 'snow', x: 'rift' };
+/**
+ * 거점에 맞는 전장 배경 키. 거점 자리의 글자는 거의 다 평지(p)라서 둘레 13×13 칸의 지형을 센다:
+ * 평지는 0.6, 길(R)은 0.3 으로 낮춰 세고 가장 많은 것을 고른다. 항구는 물가, 광산은 산, 균열은 균열, 곡창·제도의 성은 농경지.
+ */
+export function battleBgKey(map: { width: number; height: number; terrain: string[] } | undefined, site: { x: number; y: number; kind: string; region: string; size?: number }): string {
+  if (site.kind === 'port') return 'shore'; if (site.kind === 'mine') return 'mountain'; if (site.kind === 'rift') return 'rift';
+  if (!map) return 'plain';
+  const cnt: Record<string, number> = {}; const cx = Math.round(site.x), cy = Math.round(site.y);
+  for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) { const y = cy + dy, x = cx + dx; if (y < 0 || y >= map.height || x < 0 || x >= map.width) continue; const ch = map.terrain[y][x]; cnt[ch] = (cnt[ch] ?? 0) + (ch === 'p' ? 0.6 : ch === 'R' ? 0.3 : 1); }
+  let best = 'p', bestN = -1; for (const [ch, n] of Object.entries(cnt)) if (n > bestN) { bestN = n; best = ch; }
+  if (best === 'p' && site.kind === 'castle' && (site.region === 'reg_r06' || site.region === 'reg_r01' || site.region === 'reg_r04')) return 'farm';
+  return TERRAIN_BG[best] ?? 'plain';
+}
 /** 병사 그림을 설계 좌표에 놓을 때 배율(촘촘한 도트: 캔버스 픽셀 1:1) */
 export const UNIT_SCALE = 1 / 3;
 export const UNIT_FRAME: Record<string, number> = {

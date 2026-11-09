@@ -4,7 +4,7 @@ import { World } from '../../core/world';
 import { WORLD_DATA } from '../../data/world';
 import { loadGame } from '../save';
 import { makeSkin } from '../skin';
-import { FONT, FONT_SMALL, K, PORTRAIT_KEYS, TEXT, W, H } from '../theme';
+import { BATTLE_BG, FONT, FONT_SMALL, K, PORTRAIT_KEYS, TEXT, W, H } from '../theme';
 
 /** 글꼴을 기다렸다가 게임 상태를 만들고(저장이 있으면 복원) 지도·UI 장면을 띄운다. */
 export class BootScene extends Phaser.Scene {
@@ -14,6 +14,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('mappx', 'art/map-pixel.png');
     this.load.spritesheet('icons', 'art/icons.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('sites', 'art/sites.png', { frameWidth: 48, frameHeight: 48 }); // AI 도트 거점(tools/ai-icons.mjs)
+    for (const k of BATTLE_BG) this.load.image('bf_' + k, 'art/battle/' + k + '.png'); // 전장 배경(지형별, tools/battlefields-ai.mjs)
     this.load.spritesheet('units', 'art/units.png', { frameWidth: 96, frameHeight: 120 }); // AI 도트 병사(tools/sprites-ai.mjs) — 캔버스 픽셀 1:1 로 그린다(화면에선 1/3 배)
     for (const k of PORTRAIT_KEYS) { this.load.image('p_' + k, 'art/portraits-px/' + k + '.png'); this.load.image('P_' + k, 'art/portraits-px/' + k + '@2.png'); }
     this.load.on('loaderror', (f: { key: string }) => { /* 없는 초상은 네모로 대신한다 */ void f; });
