@@ -39,7 +39,7 @@ describe('2026-11-09 점검에서 고친 것', () => {
     const g = new Game(world(), 5); const sq = g.squads[0]; sq.members = [member('a', 'sword'), member('b', 'sword')];
     const b = new Battle(sq, makeGarrison(false), '수비대', new Rng(3), 'siege');
     const archers = b.enemies.filter(u => u.range > 0 && !u.wall); expect(archers.length).toBeGreaterThan(0);
-    for (const a of archers) expect(a.x).toBe(-30);
+    for (const a of archers) { expect(a.x).toBeLessThanOrEqual(-30); expect(a.x).toBeGreaterThanOrEqual(-40); } // 성벽(-20) 바로 뒤, 두 줄로 어긋나도 사거리 안
     let t = 0; while (t < 20 && !b.result) { b.tick(0.1); t += 0.1; }
     expect(b.allies.some(u => u.hp < u.maxHp)).toBe(true); // 성벽을 치는 동안 맞는다
   });
