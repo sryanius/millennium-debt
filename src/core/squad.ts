@@ -43,8 +43,10 @@ export type SquadPos =
 export interface SquadJSON {
   id: string; leader: Person; members: Person[]; pos: SquadPos; path: string[]; order: 'idle' | 'move' | 'stay' | 'build';
   cargo: Record<string, number>; quests: string[]; formation: string; stance: Stance; attackMode: AttackMode;
-  work: BuildWork | null;
+  work: BuildWork | null; auto?: AutoTrade | null;
 }
+/** 왕복 교역 명령: from 에서 good 을 가득 사서 to 에 팔고 돌아오기를 반복 */
+export interface AutoTrade { from: string; to: string; good: string; trips: number; earned: number; spent: number }
 /** 건축 작업 중(3단계) */
 export interface BuildWork { jobId: string; site: string; name: string; work: number; progress: number; reward: number }
 
@@ -55,6 +57,7 @@ export class Squad {
   path: string[] = [];
   order: 'idle' | 'move' | 'stay' | 'build' = 'idle';
   work: BuildWork | null = null;
+  auto: AutoTrade | null = null;
   cargo: Record<string, number> = {};
   quests: string[] = [];
   members: Person[] = [];
@@ -93,11 +96,11 @@ export class Squad {
   }
   addCargo(good: string, qty: number): void { this.cargo[good] = (this.cargo[good] ?? 0) + qty; if (this.cargo[good] <= 0) delete this.cargo[good]; }
   toJSON(): SquadJSON {
-    return { id: this.id, leader: this.leader, members: this.members, pos: this.pos, path: [...this.path], order: this.order, cargo: { ...this.cargo }, quests: [...this.quests], formation: this.formation, stance: this.stance, attackMode: this.attackMode, work: this.work };
+    return { id: this.id, leader: this.leader, members: this.members, pos: this.pos, path: [...this.path], order: this.order, cargo: { ...this.cargo }, quests: [...this.quests], formation: this.formation, stance: this.stance, attackMode: this.attackMode, work: this.work, auto: this.auto };
   }
   static fromJSON(j: SquadJSON): Squad {
     const s = new Squad(j.id, j.leader, ''); s.pos = j.pos; s.path = [...j.path]; s.order = j.order; s.cargo = { ...j.cargo }; s.quests = [...j.quests]; s.members = j.members;
-    s.formation = j.formation ?? 'line'; s.stance = j.stance ?? 'normal'; s.attackMode = j.attackMode ?? 'melee'; s.work = j.work ?? null;
+    s.formation = j.formation ?? 'line'; s.stance = j.stance ?? 'normal'; s.attackMode = j.attackMode ?? 'melee'; s.work = j.work ?? null; s.auto = j.auto ?? null;
     for (const m of s.people) if (m.tool === undefined) m.tool = null;
     return s;
   }

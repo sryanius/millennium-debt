@@ -193,6 +193,8 @@ export class Game {
       }
       if (s.order === 'build') this.buildTick(s);
     }
+    // 전투·집행관 때문에 멈춰 선 왕복 교역 부대는 다음 날 다시 떠난다
+    this.squads.forEach((s, i) => { if (s.auto && s.order !== 'move' && s.siteId && !this.battle) this.autoStep(s, i); });
     if (this.clock.day === BALANCE.wageDay) this.payWages();
     // 급료일 3일 전에 돈이 모자라면 미리 알린다
     if (this.clock.day === BALANCE.daysPerMonth - 2) { const total = this.squads.reduce((a, s) => a + s.wages, 0); if (total > this.ledger.cash) this.say('warn', '3일 뒤 1일은 급료일 — ' + fmt(total) + '골이 필요한데 소지금은 ' + fmt(this.ledger.cash) + '골. 못 주면 장비 든 대원이 도망간다.'); }
@@ -319,6 +321,8 @@ export class Game {
     if (band) { s.path = []; s.order = 'idle'; this.engageBand(idx, band); return true; }
     // 잿빛 점령지면 공성전
     if (this.enemyHeld.has(siteId)) { s.path = []; s.order = 'idle'; this.startSiege(idx, siteId); return true; }
+    // 왕복 교역 중이면 여기서 팔고·사고 다시 떠난다
+    if (s.auto && s.path.length === 0) { s.order = 'idle'; this.autoStep(s, idx); if ((s.order as string) === 'move') return true; }
     return false;
   }
   /** 이동 명령. 도로 위면 지금 향하던 거점을 거쳐 간다. 막힌 지역이면 false. */
@@ -330,6 +334,8 @@ export class Game {
   }
   move(squadIdx: number, toSite: string): boolean {
     const s = this.squads[squadIdx]; if (squadIdx === this.battleSquad || !this.isActive(squadIdx)) return false;
+    // 손으로 다른 곳에 보내면 왕복 교역은 끝(왕복 자체가 부르는 move 는 목적지가 from/to 다)
+    if (s.auto && toSite !== s.auto.from && toSite !== s.auto.to) this.stopAutoTrade(squadIdx);
     if (!this.canEnter(squadIdx, this.world.site(toSite).region).ok) return false;
     const origin = s.pos.kind === 'at' ? s.pos.site : s.pos.to;
     const p = this.world.path(origin, toSite, this.blocked, this.enemyHeld); if (!p) return false;
@@ -339,7 +345,8 @@ export class Game {
     if (s.pos.kind === 'at' && s.path.length === 0) { s.order = 'idle'; this.onStop(s); }
     return true;
   }
-  stay(squadIdx: number): void { const s = this.squads[squadIdx]; s.path = []; if (s.pos.kind === 'at') { s.order = 'stay'; } else s.order = 'move'; }
+  /** 대기·정지. 왕복 교역 중이면 그것도 그만둔다(손으로 세운 부대가 다시 떠나지 않게) */
+  stay(squadIdx: number): void { const s = this.squads[squadIdx]; if (s.auto) this.stopAutoTrade(squadIdx); s.path = []; if (s.pos.kind === 'at') { s.order = 'stay'; } else s.order = 'move'; }
   /** 이동 예상 일수 */
   eta(squadIdx: number, toSite: string): number | null {
     const s = this.squads[squadIdx];
@@ -393,6 +400,35 @@ export class Game {
   }
   /** 수첩에 한 번이라도 적힌 상품들 */
   get notedGoods(): string[] { const s = new Set<string>(); for (const e of this.notebook.values()) for (const g of Object.keys(e.prices)) s.add(g); return [...s]; }
+
+  // ───── 왕복 교역(자동): from 에서 사서 to 에 팔고 돌아오기 ─────
+  /** 지금 서 있는 교역소를 출발지로 왕복을 건다. 바로 첫 걸음(사기·출발)을 밟는다 */
+  setAutoTrade(squadIdx: number, to: string, good: string): { ok: boolean; reason?: string } {
+    const s = this.squads[squadIdx]; const from = s.siteId;
+    if (!from || !this.market(from)) return { ok: false, reason: '교역소에 서 있어야 한다' };
+    if (!hasMarket(this.world.site(to)) || to === from) return { ok: false, reason: '목적지에 교역소가 없다' };
+    if (this.eta(squadIdx, to) === null) return { ok: false, reason: '그곳까지 길이 없다' };
+    if (s.work) return { ok: false, reason: '건축 작업 중이다' };
+    s.auto = { from, to, good, trips: 0, earned: 0, spent: 0 };
+    this.say('info', s.name + ': ' + this.world.site(from).name + ' ↔ ' + this.world.site(to).name + ' ' + goodName(good) + ' 왕복 교역을 시작한다.');
+    this.autoStep(s, squadIdx); return { ok: true };
+  }
+  stopAutoTrade(squadIdx: number): void { const s = this.squads[squadIdx]; if (s.auto) { this.say('info', s.name + ' 왕복 교역을 멈췄다(' + s.auto.trips + '회 왕복, 판 돈 ' + fmt(s.auto.earned) + '골).'); s.auto = null; } }
+  /** 왕복의 한 걸음: 거점에 서 있을 때 팔고·사고·다음 목적지로 떠난다 */
+  protected autoStep(s: Squad, idx: number): void {
+    const a = s.auto; const here = s.siteId; if (!a || !here || this.battle || s.order === 'move') return;
+    const sellAll = () => { for (const g of Object.keys(s.cargo)) { const r = this.sell(idx, g, 9999); if (r.ok) a.earned += r.income ?? 0; } };
+    const stop = (why: string) => { this.say('warn', s.name + ' 왕복 교역을 멈췄다: ' + why); s.auto = null; };
+    if (here === a.to) { sellAll(); a.trips++; }
+    else if (here === a.from) {
+      sellAll();
+      const r = this.buy(idx, a.good, 9999);
+      if (!r.ok) { stop(goodName(a.good) + '을(를) 못 샀다(' + (r.reason ?? '') + ')'); return; }
+      a.spent += r.cost ?? 0;
+    }
+    const dest = here === a.to ? a.from : a.to;
+    if (!this.move(idx, dest)) stop(this.world.site(dest).name + '까지 길이 없다');
+  }
 
   /** 술집 소문: 이 지역 안에서 가장 남는 교역 한 줄(원작의 "수첩" 대신) */
   rumor(siteId: string): string {

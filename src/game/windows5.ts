@@ -107,3 +107,24 @@ export function openHelp(ui: UIScene): void {
   };
   render();
 }
+
+/**
+ * 왕복 교역 설정: 지금 교역소에서 고른 상품을 사서 팔러 갈 곳을 수첩에서 고른다(하나에 남는 돈 큰 순).
+ * 고르면 부대가 바로 가득 사서 출발하고, 도착하면 팔고 돌아와 다시 산다. 멈추기: 부대 정보 창 «왕복 그만» 또는 «대기».
+ */
+export function openAutoTrade(ui: UIScene, siteId: string, good: string): void {
+  const g = ui.g; const sq = g.squad; const m = g.market(siteId); if (!m) return;
+  const buyHere = m.buyPrice(good, sq.tradeSkill);
+  const rows = g.noteSellers(good).filter(r => r.site !== siteId).map(r => ({ ...r, gain: Math.round(r.sell * (m.sellPrice(good, sq.tradeSkill) / Math.max(1, m.sellPrice(good, 0)))) - buyHere, eta: g.eta(g.selected, r.site) })).filter(r => r.eta !== null).sort((a, b) => b.gain - a.gain);
+  const w = ui.win(400, 214, goodName(good) + ' 왕복 교역 — 어디에 팔까?');
+  w.small(6, 2, sq.name + '가 여기(' + g.world.site(siteId).name + ')서 ' + goodName(good) + '을(를) 하나 ' + fmt(buyHere) + '골에 가득 사서, 고른 곳에 팔고 돌아오기를 반복한다. 한 번에 최대 ' + Math.max(0, sq.capacity - sq.load) + '개.', { color: C.paperDark, wordWrap: { width: 388 } });
+  if (!rows.length) w.small(6, 40, '수첩에 이 상품을 사 주는 다른 곳이 아직 없다. 다른 교역소에 들러 값을 적어 오자.', { color: C.grey, wordWrap: { width: 388 } });
+  rows.slice(0, 5).forEach((r, i) => {
+    const y = 36 + i * 26; const site = g.world.site(r.site);
+    w.rect(4, y, 392, 24, C.panelLight, i % 2 === 0 ? 0.45 : 0.25);
+    w.small(8, y + 7, site.name.slice(0, 8) + ' · 판값 ' + fmt(r.sell) + ' · ' + Math.ceil(r.eta!) + '일 · ' + (g.day - r.day === 0 ? '오늘 값' : (g.day - r.day) + '일 전 값'), { color: C.paper });
+    w.small(232, y + 7, (r.gain > 0 ? '+' : '') + fmt(r.gain) + '/개', { color: r.gain > 0 ? '#8fd07a' : C.red });
+    w.button(302, y + 2, '여기로 왕복', () => { const res = g.setAutoTrade(g.selected, r.site, good); if (!res.ok) { ui.toast(res.reason ?? ''); return; } w.close(); ui.toast('왕복 교역 시작 — 멈추려면 부대 정보에서 «왕복 그만»'); }, { w: 90, h: 20, disabled: r.gain <= 0 });
+  });
+  w.small(6, w.bodyH - 16, '값은 적힌 날 기준이라 가 보면 달라질 수 있다. 돈이 모자라 못 사면 저절로 멈춘다.', { color: C.grey, wordWrap: { width: 388 } });
+}

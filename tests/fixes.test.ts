@@ -3,7 +3,7 @@ import { BALANCE } from '../src/core/balance';
 import { Battle, makeBandits, makeGarrison } from '../src/core/battle';
 import { Game } from '../src/core/game';
 import { Rng } from '../src/core/rng';
-import { autoArrange, type Person } from '../src/core/squad';
+import { autoArrange, expToNext, gainExp, levelOf, type Person } from '../src/core/squad';
 import { World } from '../src/core/world';
 import { WORLD_DATA } from '../src/data/world';
 
@@ -67,5 +67,56 @@ describe('2026-11-09 점검에서 고친 것', () => {
     const g = new Game(world(), 7); g.flags.add('ev5_laundry');
     teleport(g, 0, 'P052'); g.fireEvents({ site: 'P052', squadIdx: 0 }); expect(g.event?.id).toBe('ev5_blocked'); g.chooseEvent(0);
     teleport(g, 2, 'P052'); g.fireEvents({ site: 'P052', squadIdx: 2 }); expect(g.event?.id).toBe('ev5_done');
+  });
+});
+
+describe('2026-11-09 새 기능', () => {
+  it('경험이 쌓이면 단계가 오르고 공격·방어 +1, 체력 +2', () => {
+    const p = member('a', 'sword'); const s0 = p.stats.s;
+    expect(levelOf(0)).toBe(0); expect(levelOf(10)).toBe(1); expect(levelOf(30)).toBe(2); expect(levelOf(29)).toBe(1); expect(expToNext(10)).toBe(20);
+    expect(gainExp(p, 10)).toBe(1); expect(p.stats.s).toBe(s0 + 1); expect(p.stats.maxHp).toBe(32);
+    expect(gainExp(p, 50)).toBe(2); expect(p.stats.s).toBe(s0 + 3); // 60 → 3단계
+  });
+  it('전투가 끝나면 산 대원은 경험 +1(처치 +2), 전투 결과에 단계 상승이 적힌다', () => {
+    const g = new Game(world(), 5); const sq = g.squads[0]; sq.members = [member('a', 'heavy'), member('b', 'heavy')]; sq.members.forEach(m => { m.stats.e = 9; m.stats.hp = m.stats.maxHp = 60; m.stats.d = 30; });
+    const b = new Battle(sq, [{ name: '허수아비', job: '도적', hp: 5, s: 1, d: 0, range: 0, cooldown: 1, speed: 20, bounty: 0 }], 'x', new Rng(2));
+    let t = 0; while (!b.result && t < 100) { b.tick(0.1); t += 0.1; }
+    expect(b.result).toBe('victory'); expect(sq.members.every(m => m.stats.e >= 10)).toBe(true); expect(b.grown.length).toBe(2);
+  });
+  it('대원 이름은 이름+성 꼴이고, 좁은 칸에서는 이름만 남는다', () => {
+    const g = new Game(world(), 5); const c = g.office('C028')!; expect(c.length).toBeGreaterThan(0);
+    for (const x of c) expect(x.name.split(' ').length).toBe(2);
+  });
+  it('시세 수첩: 교역소에 들르면 값이 적히고, 상품별로 비싼 순으로 본다', () => {
+    const g = new Game(world(), 5); g.autoEvents = true;
+    expect(g.notebook.size).toBe(0);
+    g.noteMarket('C028'); g.noteMarket('C025');
+    const goods = g.notedGoods; expect(goods.length).toBeGreaterThan(0);
+    const rows = g.noteSellers(goods[0]); expect(rows.length).toBeGreaterThan(0); for (let i = 1; i < rows.length; i++) expect(rows[i - 1].sell).toBeGreaterThanOrEqual(rows[i].sell);
+    const j = JSON.parse(JSON.stringify(g.toJSON())); const g2 = Game.fromJSON(world(), j); expect(g2.notebook.size).toBe(2);
+  });
+  it('의뢰 포기: 위약금 20%, 매복 도적도 함께 사라진다', () => {
+    const g = new Game(world(), 7); g.autoEvents = true; const b = g.board('C028')!; const q = b.quests[0];
+    g.accept(0, q.id); const cash = g.ledger.cash;
+    const fee = g.abandon(q.id); expect(fee).toBe(Math.round(q.reward * BALANCE.civilAbandonFeeRate)); expect(g.ledger.cash).toBe(cash - fee);
+    expect(g.activeQuests.has(q.id)).toBe(false); expect(g.squads[0].quests).not.toContain(q.id); expect(g.bands.some(x => x.id === 'R' + q.id)).toBe(false);
+  });
+  it('연속 6번 미납이면 해산 결말, 갚으면 연속이 끊긴다', () => {
+    const g = new Game(world(), 7); g.autoEvents = true; g.ledger.cash = 0;
+    for (let i = 0; i < 5; i++) { g.ledger.penalize(); } expect(g.ledger.missedStreak).toBe(5);
+    g.ledger.cash = 5000; expect(g.ledger.payDue()).toBe(5000); expect(g.ledger.missedStreak).toBe(0);
+    for (let i = 0; i < BALANCE.bankruptMisses - 1; i++) g.ledger.penalize();
+    g.collectorVisit = { day: g.day, paid: 0, penalty: 0, squadSite: 'C028', short: true, escortLevel: 1 }; g.collectorAccept();
+    expect(g.ending).toBe('bankrupt'); expect(g.paused).toBe(true);
+  });
+  it('왕복 교역: 사서 떠나고, 도착하면 팔고 돌아온다. «대기»면 멈춘다', () => {
+    const g = new Game(world(), 7); g.autoEvents = true; g.ledger.cash = 50_000;
+    g.noteMarket('C028'); g.noteMarket('C025'); const good = g.market('C028')!.lines[0].good;
+    const r = g.setAutoTrade(0, 'C025', good); expect(r.ok).toBe(true);
+    expect(g.squads[0].load).toBeGreaterThan(0); expect(g.squads[0].order).toBe('move'); expect(g.squads[0].destination).toBe('C025');
+    for (let i = 0; i < 12 * 3 && g.squads[0].siteId !== 'C025'; i++) { g.tick(1); if (g.collectorVisit) g.dismissCollector(); }
+    // 도착 → 팔고 바로 돌아간다
+    expect(g.squads[0].auto!.trips).toBe(1); expect(g.squads[0].load).toBe(0); expect(g.squads[0].destination).toBe('C028');
+    g.stay(0); expect(g.squads[0].auto).toBeNull();
   });
 });

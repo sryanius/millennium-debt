@@ -17,7 +17,7 @@ import type { BattleScene } from './BattleScene';
 import { openCollector as openCollector2, openContract, openEquip, openHospital, openMilitary as openMilitary2, openRoster, openShop } from '../windows2';
 import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
-import { openHelp, openNotebook, openSlots } from '../windows5';
+import { openAutoTrade, openHelp, openNotebook, openSlots } from '../windows5';
 import { buttonKey, hasSkin, nine } from '../skin';
 import { AUDIO } from '../audio';
 import { Tutorial } from '../tutorial';
@@ -330,6 +330,7 @@ export class UIScene extends Phaser.Scene {
         [['1개', 1], ['10개', 10], ['가득', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 60, lb as string, () => act(() => g.buy(g.selected, id, n as number)), { w: bw, h: 24, disabled: !l || l.stock <= 0 || sq.load >= sq.capacity }));
         w.small(RX, LY + 92, '팔기', { color: C.grey });
         [['1개', 1], ['10개', 10], ['전부', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 104, lb as string, () => act(() => g.sell(g.selected, id, n as number)), { w: bw, h: 24, color: 0x3a5a3a, disabled: have <= 0 }));
+        if (l && !sq.auto) w.button(RX, LY + 148, '이 상품 왕복 교역…', () => openAutoTrade(this, siteId, id), { w: RW - 4, h: 20, small: true });
         // 수첩: 다른 곳에서 본 가장 비싼 판값
         const best = g.noteSellers(id).find(r => r.site !== siteId);
         if (best) { const gain = best.sell - m.buyPrice(id, 0); w.small(RX, LY + 134, '수첩: ' + g.world.site(best.site).name + ' 판값 ' + fmt(best.sell) + ' (' + (g.day - best.day === 0 ? '오늘' : (g.day - best.day) + '일 전') + ')' + (l ? ' → 하나에 ' + (gain > 0 ? '+' : '') + fmt(gain) : ''), { color: gain > 0 ? '#8fd07a' : C.grey, wordWrap: { width: RW } }); }
@@ -459,6 +460,7 @@ export class UIScene extends Phaser.Scene {
     let y = 40 + w.small(52, 40, '짐 ' + sq.load + '/' + sq.capacity + ': ' + (cargo.length ? cargo.map(([g, n]) => goodName(g) + ' ' + n).join(', ') : '없음'), { wordWrap: { width: 336 } }).height + 2;
     const qs = sq.quests.map(id => this.g.activeQuests.get(id)!).filter(Boolean);
     y += w.small(52, y, '의뢰: ' + (qs.length ? qs.map(q => CIVIL_JOB_LABEL[q.job] + '→' + this.g.world.site(q.to).name + '(' + (q.deadline - this.g.day) + '일)').join(', ') : '없음'), { wordWrap: { width: 336 } }).height + 2;
+    if (sq.auto) y += w.small(52, y, '왕복 교역: ' + this.g.world.site(sq.auto.from).name + ' ↔ ' + this.g.world.site(sq.auto.to).name + ' ' + goodName(sq.auto.good) + ' · ' + sq.auto.trips + '회 · 판 돈 ' + fmt(sq.auto.earned) + '골', { color: C.gold, wordWrap: { width: 336 } }).height + 2;
     if (sq.work) y += w.small(52, y, '건축: ' + sq.work.name + ' ' + Math.min(100, Math.round(sq.work.progress / sq.work.work * 100)) + '% (건축력 ' + sq.buildSkill + '/일)', { color: C.gold }).height + 2;
     // 대원 목록: 3줄 × 3칸 (이름 · HP · 피로)
     y = Math.max(y + 4, 58);
@@ -470,7 +472,7 @@ export class UIScene extends Phaser.Scene {
     });
     const by = w.bodyH - 28;
     w.button(6, by, '지도에서 보기', () => { w.close(); this.map.focusSquad(i); }, { w: 110, h: 24 });
-    w.button(122, by, sq.order === 'move' ? '정지' : '대기', () => { this.g.stay(i); w.close(); }, { w: 80, h: 24 });
+    w.button(122, by, sq.auto ? '왕복 그만' : sq.order === 'move' ? '정지' : '대기', () => { this.g.stay(i); w.close(); }, { w: 80, h: 24 });
     w.button(208, by, '부대원 편성', () => { w.close(); openRoster(this); }, { w: 110, h: 24, disabled: !sq.siteId });
   }
   private openLedger(): void {
@@ -616,7 +618,7 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
       if (s.frame) { const k = buttonKey(this, !on ? 0x1e1a16 : i === g.selected ? 0x6a5020 : 0x2e241c, on && i === g.selected ? 'h' : 'n'); if (s.frame.texture.key !== k) s.frame.setTexture(k); }
       if (!on) { if (s.barKey !== '') { s.bars.clear(); s.barKey = ''; } return; }
       const dest = sq.destination;
-      const nl = this.slotW >= 50 ? 4 : 3; const where = g.battleSquad === i ? '교전' : sq.order === 'move' && dest ? '→' + g.world.site(dest).name.slice(0, nl - 1) : sq.order === 'build' ? '공사' : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, nl) : '…');
+      const nl = this.slotW >= 50 ? 4 : 3; const where = g.battleSquad === i ? '교전' : sq.order === 'move' && dest ? (sq.auto ? '↔' : '→') + g.world.site(dest).name.slice(0, nl - 1) : sq.order === 'build' ? '공사' : (sq.siteId ? g.world.site(sq.siteId).name.slice(0, nl) : '…');
       if (s.stateKey !== where) { // 칸 폭에 맞춰 뒤를 자른다(이름이 칸 테두리를 넘지 않게)
         s.stateKey = where; const room = this.slotW - (this.slotW >= 50 ? 26 : 19) - 2; let t = where; s.state.setText(t);
         while (s.state.width > room && t.length > 1) { t = t.slice(0, -1); s.state.setText(t); }
