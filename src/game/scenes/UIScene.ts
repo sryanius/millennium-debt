@@ -515,12 +515,19 @@ export class UIScene extends Phaser.Scene {
     render();
     this.g.unread = 0;
   }
+  /** 도감 쪽(codex.html)으로. 새 창이 열리면 새 창, 막히면(앱 안) 저장하고 이 창에서 연다 — 도감의 «게임으로»가 돌아온다 */
+  private openCodex(): void {
+    saveGame(this.g);
+    let win: ReturnType<typeof window.open> = null; try { win = window.open('codex.html', '_blank'); } catch { /* 막힌 창 */ }
+    if (!win) location.href = 'codex.html';
+  }
   private openSystem(): void {
-    const w = this.win(300, 212, '시스템');
+    const w = this.win(300, 238, '시스템');
     const end = w.menu([
       { label: '지금 저장', onClick: () => { this.toast(saveGame(this.g) ? '저장했다.' : '저장 실패'); } },
       { label: '저장 칸 (3)', onClick: () => openSlots(this) },
       { label: '도움말', onClick: () => openHelp(this) },
+      { label: '도감(자료)', onClick: () => this.openCodex() },
       { label: '음악 ' + (AUDIO.musicOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setMusic(!AUDIO.musicOn); w.close(); this.openSystem(); } },
       { label: '효과음 ' + (AUDIO.sfxOn ? '끄기' : '켜기'), onClick: () => { AUDIO.setSfx(!AUDIO.sfxOn); w.close(); this.openSystem(); } },
       { label: '속도 측정 ' + (this.perfOn ? '끄기' : '켜기'), onClick: () => { this.setPerf(!this.perfOn); w.close(); this.openSystem(); } },

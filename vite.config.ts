@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /** 개발 서버 전용: 브라우저에서 만든 파일(음악 WAV 등)을 docs/mercenary/audio-samples 에 저장. 배포 빌드에는 없다 */
 function devSave(): Plugin {
@@ -22,6 +23,7 @@ export default defineConfig({
   base: './',
   server: { host: true },
   plugins: [devSave()],
-  build: { target: 'es2022', assetsInlineLimit: 0 },
+  // 여러 쪽 빌드: 게임(index.html) + 도감(codex.html)
+  build: { target: 'es2022', assetsInlineLimit: 0, rollupOptions: { input: { main: fileURLToPath(new URL('./index.html', import.meta.url)), codex: fileURLToPath(new URL('./codex.html', import.meta.url)) } } },
   test: { include: ['tests/**/*.test.ts'], environment: 'node' },
 });

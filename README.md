@@ -2,7 +2,7 @@
 
 (개발 중 이름은 《천 년의 빚》이었고, 저장소·주소 이름 millennium-debt 는 그대로 둔다.)
 
-**▶ 바로 플레이: https://sryanius.github.io/millennium-debt/** (PC 브라우저·폰 가로 화면)
+**▶ 바로 플레이: https://sryanius.github.io/millennium-debt/** (PC 브라우저·폰 가로 화면) · **도감: https://sryanius.github.io/millennium-debt/codex.html**
 
 1990년대 PC 게임 《하이리워드》의 진행 방식(실시간 시계, 매주 빚 상환, 여섯 부대를 굴려 돈 버는 다섯 길)을 《균열의 시대》 세계관(제국력 1000년, 베르단 대륙) 위에 올린 도트풍 용병단 경영 게임입니다. 아버지가 남긴 빚 1,000만 골을 갚으면 엔딩입니다.
 
