@@ -14,6 +14,8 @@ function bgOf(data, w, h, ch) {
   return s.map(v => v / pts.length);
 }
 const dist = (data, i, c) => Math.abs(data[i] - c[0]) + Math.abs(data[i + 1] - c[1]) + Math.abs(data[i + 2] - c[2]);
+/** 마젠타 계열(배경색)인가 — 모델이 배경 안에 조금 다른 마젠타 상자를 그릴 때도 지우려고 색조로 본다 */
+export const isMagenta = (r, g, b) => r > 140 && g < 110 && b > 70 && r - g > 60 && b - g > 20;
 
 /**
  * 피치 추정: 색이 바뀌는 자리(모서리)를 모아, 모서리에서 p 만큼 간 곳에도 모서리가 있는 비율이 높은 p 를 고른다.
@@ -52,7 +54,7 @@ export async function toGrid(buf, { tol = 110, pitch = null } = {}) {
     for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]) { const x = Math.min(w - 1, Math.max(0, cx + dx)), y = Math.min(h - 1, Math.max(0, cy + dy)); const i = (y * w + x) * ch; samples.push([data[i], data[i + 1], data[i + 2]]); }
     samples.sort((a, b) => (a[0] + a[1] + a[2]) - (b[0] + b[1] + b[2])); const c = samples[2];
     const o = (gy * gw + gx) * 4;
-    const isBg = Math.abs(c[0] - bg[0]) + Math.abs(c[1] - bg[1]) + Math.abs(c[2] - bg[2]) < tol;
+    const isBg = Math.abs(c[0] - bg[0]) + Math.abs(c[1] - bg[1]) + Math.abs(c[2] - bg[2]) < tol || isMagenta(c[0], c[1], c[2]);
     out[o] = c[0]; out[o + 1] = c[1]; out[o + 2] = c[2]; out[o + 3] = isBg ? 0 : 255;
   }
   // 둘레 잘라내기 + 배경 섬(그림자 바닥 등) 유지

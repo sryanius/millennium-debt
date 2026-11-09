@@ -25,8 +25,10 @@ export function siteIcon(kind: string, size: number): number {
   return ({ gate: ICON.gate, ward_tower: ICON.gate, port: ICON.port, mine: ICON.mine, shrine: ICON.shrine, trade_post: ICON.trade, rift: ICON.rift } as Record<string, number>)[kind] ?? ICON.trade;
 }
 /** art/units.png 프레임(12×16) — tools/pixel-samples.mjs 의 UNITS 순서 */
-/** art/units.png 프레임(32×40). 순서는 tools/sprites-ai.mjs 의 UNITS 와 같다 */
-export const UNIT_W = 32, UNIT_H = 40;
+/** art/units.png 프레임(96×120, 캔버스 픽셀 1:1 → 화면에선 1/3 배 = 설계 32×40). 순서는 tools/sprites-ai.mjs 의 UNITS 와 같다 */
+export const UNIT_W = 96, UNIT_H = 120;
+/** 병사 그림을 설계 좌표에 놓을 때 배율(촘촘한 도트: 캔버스 픽셀 1:1) */
+export const UNIT_SCALE = 1 / 3;
 export const UNIT_FRAME: Record<string, number> = {
   kael: 0, brok: 1, phoebe: 2, ella: 3, liesel: 4, durin: 5,
   sword: 6, heavy: 7, ironclad: 8, crossbow: 9, longbow: 10, mage: 11, merchant: 12, bard: 13, mason: 14, spear: 15, axe: 16, cavalry: 17, horsearcher: 18, slinger: 19, ranger: 20, healer: 21, dancer: 22, carpenter: 23, scribe: 24,

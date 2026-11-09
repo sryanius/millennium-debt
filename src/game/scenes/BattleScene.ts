@@ -7,7 +7,7 @@ import { hash } from '../../core/market';
 import { Window, makeButton } from '../Window';
 import { drawFormation, formationMods } from '../formationView';
 import { AUDIO } from '../audio';
-import { C, H, K, TEXT, TEXT_SMALL, W, unitFrame } from '../theme';
+import { C, H, K, TEXT, TEXT_SMALL, UNIT_SCALE, W, unitFrame } from '../theme';
 
 /**
  * 전투 화면(GDD §7.3): 별도 화면이 아니라 지도 위에 타원 전장이 겹쳐 뜬다.
@@ -90,7 +90,7 @@ export class BattleScene extends Phaser.Scene {
     const body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = u.wall
       ? this.add.rectangle(0, 0, 10, 70, 0x6a6a6a).setStrokeStyle(1, 0x222222)
       : sprite
-        ? this.add.image(0, 5, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5, 1).setFlipX(ally) // 그림은 오른쪽을 본다 → 아군(오른쪽에 섬)은 뒤집어 적을 본다
+        ? this.add.image(0, 5, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5, 1).setScale(UNIT_SCALE).setFlipX(ally) // 그림은 오른쪽을 본다 → 아군(오른쪽에 섬)은 뒤집어 적을 본다. 촘촘한 도트라 1/3 배
         : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
     const shadow = this.add.ellipse(0, 4, sprite ? 18 : 9, sprite ? 6 : 3, 0x000000, 0.4).setVisible(!u.wall);
     // 체력 막대: 테두리 있는 12×3(전에는 8×2 라 폰에서 안 보였다)

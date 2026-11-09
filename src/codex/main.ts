@@ -24,7 +24,7 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ESC[c]);
 const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR');
 const regionName = (id: string) => world.regions.get(id)?.name ?? id;
 const factionName = (id?: string) => (id ? world.factions.get(id)?.name ?? id : '무주지');
-const unitPx = (frame: number) => `<span class="px unit" style="background-image:url(art/units.png);background-position:${-frame * 64}px 0"></span>`;
+const unitPx = (frame: number) => `<span class="px unit" style="background-image:url(art/units.png);background-position:${-frame * 96}px 0"></span>`;
 const sitePx = (frame: number) => `<span class="px site" style="background-image:url(art/sites.png);background-position:${-frame * 48}px 0"></span>`;
 const tag = (t: string, cls = '') => `<i class="tag ${cls}">${esc(t)}</i>`;
 
