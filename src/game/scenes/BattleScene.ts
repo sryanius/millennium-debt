@@ -28,8 +28,8 @@ export class BattleScene extends Phaser.Scene {
   private popup: Window | null = null;
   /** 전장 그림 자리(설계): 480×220, 위 18. 병사는 그림의 아래 2/3(땅) 위에 선다 */
   private static readonly BG_X = Math.round((W - 480) / 2); private static readonly BG_Y = 18; private static readonly BG_W = 480; private static readonly BG_H = 220;
-  /** 병사 띠: 배경 땅(지평선 아래)만 쓰도록 cy 를 내리고 세로를 좁힌다(y 123~233). 지평선은 y≈91 */
-  private cx = W / 2; private cy = 178; private sx = 2.2; private sy = 1.1;
+  /** 병사 띠: 배경의 빈 땅(지평선 아래, 배경 그림은 위 1/4~1/3 만 풍경)에 맞춘다 — y 108~233 */
+  private cx = W / 2; private cy = 170; private sx = 2.2; private sy = 1.25;
   /** 앞뒤 깊이 0(맨 뒤)~1(맨 앞) */
   private depthOf(u: BattleUnit): number { return Math.max(0, Math.min(1, (u.y + ARENA.ry) / (ARENA.ry * 2))); }
   /** 깊이에 따른 크기 배율: 뒤 0.8배 ~ 앞 1.18배 */

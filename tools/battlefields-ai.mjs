@@ -19,21 +19,20 @@ export const W = 1440, H = 660;
 /** 지형 글자(map.terrain) → 배경 키. 바다·강 옆은 물가로 */
 export const TERRAIN_BG = { p: 'plain', R: 'farm', f: 'forest', h: 'hills', m: 'mountain', s: 'swamp', w: 'shore', W: 'shore', F: 'river', d: 'desert', n: 'snow', x: 'rift' };
 const SCENES = {
-  plain: 'a wide open grassy plain with a few scattered trees and distant low hills under a clear blue sky with small clouds',
-  farm: 'golden wheat fields with a wooden fence, haystacks and a distant farmhouse under a warm afternoon sky',
-  forest: 'the edge of a dense dark green forest, big tree trunks on both sides, mossy ground, soft light between the trees',
-  hills: 'rolling brown and green hills with rocky outcrops and sparse bushes under a pale sky',
-  mountain: 'a rocky mountain pass with grey cliffs, scattered boulders and snow-capped peaks behind, cold sky',
-  swamp: 'a misty swamp with dark shallow water, reeds, dead trees and fog hanging low under a grey-green sky',
-  shore: 'a sandy beach with the sea and gentle waves on the horizon, some rocks and driftwood, bright sky',
-  river: 'a shallow river ford with a stony riverbank, reeds and a wooden footbridge in the distance under a soft sky',
-  desert: 'a sun-baked desert with sand dunes, a few dry shrubs and distant rock mesas under a hot hazy sky',
-  snow: 'a snow-covered field with frosted pine trees and icy mountains behind under a pale winter sky',
-  rift: 'a cursed wasteland with cracked dark purple ground, glowing violet crystals and an eerie dark sky with a rift of light',
-  siege: 'the outside of a medieval castle wall with a tall stone gate, battlements and banners, trampled ground in front, dramatic cloudy sky',
+  plain: "a wide grassy plain; distant low hills, a few trees and small clouds only along the horizon",
+  farm: "golden wheat fields; a wooden fence, haystacks and a farmhouse only far back along the horizon",
+  forest: "a forest clearing; big dark tree trunks and foliage only in the upper part behind the clearing, mossy grass ground",
+  hills: "rolling brown-green hills with rocky outcrops only far back along the horizon, grassy ground",
+  mountain: "a mountain pass; grey cliffs and snow-capped peaks only in the upper part, bare rocky dirt ground",
+  swamp: "a misty swamp; dead trees, reeds and dark water only far back along the horizon, muddy ground with puddles",
+  shore: "a beach; the sea with gentle waves only along the horizon in the upper part, wet sand ground",
+  river: "a riverside; the river and a wooden footbridge only along the horizon in the upper part, stony riverbank ground",
+  desert: "a desert; sand dunes and distant rock mesas only along the horizon, flat sand ground",
+  snow: "a snow field; frosted pine trees and icy mountains only along the horizon, flat snow ground",
+  rift: "a cursed wasteland; glowing violet crystals and a rift of light only along the horizon, cracked dark purple ground",
+  siege: "outside a medieval castle; the stone wall with a tall gate, battlements and banners standing along the horizon in the upper part, trampled dirt ground in front",
 };
-// 2026-11-09 시험(tools/bf-test.mjs): 도트 LoRA 를 얹으면 옆으로 흐르는 발판 게임 배경이 되어 버려, LoRA 없이 Z-Image 에 «도트 그림» 문구만 준 것이 가장 자연스러웠다
-const STYLE = (scene) => `Pixel art battle scene background in the style of a 1990s console tactical RPG, ${scene}, three-quarter view from slightly above, open flat ground filling the lower part, horizon and sky in the upper part, painterly dithered pixel shading, warm natural colors, no characters, no monsters, no text, no frame`;
+const STYLE = (scene) => `Pixel art battle scene background in the style of a 1990s console tactical RPG, ${scene}. Three-quarter view from above: the horizon line sits at one third from the top, and the entire lower two thirds of the image is an empty, flat, open ground plane with only subtle texture and tiny details, nothing standing in it — all scenery stays in the upper third behind the horizon. Painterly dithered pixel shading, warm natural colors, no characters, no monsters, no text, no frame`;
 
 const args = process.argv.slice(2); const seed = Number(process.env.SEED ?? 7);
 const todo = Object.keys(SCENES).filter(k => args.length ? args.includes(k) : !fs.existsSync(path.join(RAW, k + '.png')));
