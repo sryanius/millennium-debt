@@ -30,8 +30,8 @@ export function openNotebook(ui: UIScene, good: string | null = null): void {
     // 오른쪽: 거점별 값
     const rows = g.noteSellers(sel!);
     w.text(RX, 2, goodName(sel!), { color: C.gold });
-    w.small(RX + 90, 5, '가진 것 ' + (sq.cargo[sel!] ?? 0) + ' · 값은 상업력 0 기준, 실제로는 상업력만큼 싸진다', { color: C.grey });
-    const cols = [RX + 4, RX + 120, RX + 170, RX + 220, RX + 272];
+    w.small(RX + 96, 5, '가진 것 ' + (sq.cargo[sel!] ?? 0) + ' · 상업력 0 기준 값', { color: C.grey });
+    const cols = [RX + 4, RX + 108, RX + 150, RX + 192, RX + 244];
     ['거점', '산값', '판값', '적은 날', '거리'].forEach((h, i) => w.small(cols[i], LY + 1, h, { color: C.grey }));
     roff = Math.min(roff, Math.max(0, rows.length - RVIS));
     rows.slice(roff, roff + RVIS).forEach((r, k) => {
@@ -42,7 +42,7 @@ export function openNotebook(ui: UIScene, good: string | null = null): void {
       w.small(cols[2], y + 5, fmt(r.sell), { color: k === 0 && roff === 0 ? '#8fd07a' : C.paper });
       w.small(cols[3], y + 5, g.day - r.day === 0 ? '오늘' : (g.day - r.day) + '일 전', { color: g.day - r.day > 14 ? C.grey : C.paperDark });
       w.small(cols[4], y + 5, here ? '여기' : eta === null ? '길 없음' : Math.ceil(eta) + '일');
-      w.button(RX + RW - 54, y + 1, '보기', () => { w.close(); ui.map.focusSite(r.site); }, { w: 44, h: 18, small: true });
+      w.button(RX + RW - 50, y + 1, '보기', () => { w.close(); ui.map.focusSite(r.site); }, { w: 44, h: 18, small: true });
     });
     w.scroll({ x: RX, y: LY + 12, w: RW, h: RVIS * ROWH, rowH: ROWH, count: rows.length, rows: RVIS, get: () => roff, set: v => { roff = v; }, redraw: render });
     // 맨 아래: 지금 자리 기준 가장 남는 곳 한 줄

@@ -330,10 +330,10 @@ export class UIScene extends Phaser.Scene {
         [['1개', 1], ['10개', 10], ['가득', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 60, lb as string, () => act(() => g.buy(g.selected, id, n as number)), { w: bw, h: 24, disabled: !l || l.stock <= 0 || sq.load >= sq.capacity }));
         w.small(RX, LY + 92, '팔기', { color: C.grey });
         [['1개', 1], ['10개', 10], ['전부', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 104, lb as string, () => act(() => g.sell(g.selected, id, n as number)), { w: bw, h: 24, color: 0x3a5a3a, disabled: have <= 0 }));
-        if (l && !sq.auto) w.button(RX, LY + 148, '이 상품 왕복 교역…', () => openAutoTrade(this, siteId, id), { w: RW - 4, h: 20, small: true });
+        if (l && !sq.auto) w.button(RX, LY + 132, '이 상품 왕복 교역…', () => openAutoTrade(this, siteId, id), { w: RW - 4, h: 20, small: true });
         // 수첩: 다른 곳에서 본 가장 비싼 판값
         const best = g.noteSellers(id).find(r => r.site !== siteId);
-        if (best) { const gain = best.sell - m.buyPrice(id, 0); w.small(RX, LY + 134, '수첩: ' + g.world.site(best.site).name + ' 판값 ' + fmt(best.sell) + ' (' + (g.day - best.day === 0 ? '오늘' : (g.day - best.day) + '일 전') + ')' + (l ? ' → 하나에 ' + (gain > 0 ? '+' : '') + fmt(gain) : ''), { color: gain > 0 ? '#8fd07a' : C.grey, wordWrap: { width: RW } }); }
+        if (best) { const gain = best.sell - m.buyPrice(id, 0); w.small(RX, LY + 156, '수첩: ' + g.world.site(best.site).name + ' 판값 ' + fmt(best.sell) + ' (' + (g.day - best.day === 0 ? '오늘' : (g.day - best.day) + '일 전') + ')' + (l ? ' → 하나에 ' + (gain > 0 ? '+' : '') + fmt(gain) : ''), { color: gain > 0 ? '#8fd07a' : C.grey, wordWrap: { width: RW } }); }
       }
       w.small(6, LY + VIS * ROWH + 8, '특산지에서 싸게 사서 먼 지역에 판다. 상업력은 사는 값도 파는 값도 내린다. 목록은 위아래로 밀어 넘긴다.', { color: C.grey, wordWrap: { width: 456 } });
     };
