@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ARENA, type Battle, type BattleUnit } from '../../core/battle';
 import { ATTACK_MODE_LABEL, FORMATIONS } from '../../core/formation';
 import type { Game } from '../../core/game';
+import { levelOf } from '../../core/squad';
 import { Window, makeButton } from '../Window';
 import { drawFormation, formationMods } from '../formationView';
 import { AUDIO } from '../audio';
@@ -102,7 +103,7 @@ export class BattleScene extends Phaser.Scene {
     const w = this.openPopup(230, 120, u.name + ' (' + u.job + ')');
     w.text(6, 4, 'HP ' + Math.max(0, Math.round(u.hp)) + '/' + u.maxHp + '   공격 ' + u.atk + '   방어 ' + u.def);
     w.small(6, 20, (u.range > 0 ? '사격 사거리 ' + u.range : '백병') + '   피로 ' + u.fatigue + '   회복약 ' + u.potions + '   상태 ' + ({ fight: '교전', retreat: '후퇴 중', fled: '이탈', dead: '전사' } as const)[u.state], { color: C.paperDark });
-    if (u.person) { const s = u.person.stats; w.small(6, 32, '경험 ' + s.e + ' · 상업 ' + s.t + ' · 공연 ' + s.p + ' · 건축 ' + s.b + (u.person.weapon ? ' · 무기 있음' : ''), { color: C.grey }); }
+    if (u.person) { const s = u.person.stats; w.small(6, 32, levelOf(s.e) + '단계(경험 ' + s.e + ') · 상업 ' + s.t + ' · 공연 ' + s.p + ' · 건축 ' + s.b, { color: C.grey }); }
     if (u.side === 'ally' && u.state === 'fight') w.button(6, w.bodyH - 30, '후퇴', () => { this.battle!.retreatUnit(u.id); this.closePopup(); }, { w: 70, h: 24, color: 0x5a3a2a });
     w.button(w.bw - 96, w.bodyH - 30, '전투재개', () => this.closePopup(), { w: 84, h: 24 });
   }
@@ -117,7 +118,8 @@ export class BattleScene extends Phaser.Scene {
     w.small(6, 20, dead + (b.bounty ? '   전리품 ' + b.bounty.toLocaleString('en-US') + '골' : ''));
     const kills = b.allies.filter(u => u.kills > 0).map(u => u.name + ' ' + u.kills).join(', ');
     w.small(6, 32, '전과: ' + (kills || '없음'), { wordWrap: { width: 244 }, color: C.paperDark });
-    w.small(6, 56, b.events.slice(-2).map(e => e.text).join('\n'), { color: C.grey, wordWrap: { width: 244 } });
+    if (b.grown.length) w.small(6, 44, '★ 단계 상승: ' + b.grown.map(x => x.name + ' ' + x.level + '단계').join(', '), { wordWrap: { width: 244 }, color: C.gold });
+    w.small(6, 58, b.events.slice(-2).map(e => e.text).join('\n'), { color: C.grey, wordWrap: { width: 244 } });
     w.button(w.bw - 84, w.bodyH - 30, '닫기', () => { this.closePopup(false); this.battle = null; for (const d of this.dots.values()) d.destroy(); this.dots.clear(); this.scene.sleep(); this.onResultClosed?.(); }, { w: 72, h: 24 });
   }
 

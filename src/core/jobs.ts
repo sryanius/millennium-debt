@@ -25,6 +25,8 @@ export const JOBS: readonly Job[] = [
 export const JOB_BY_ID: ReadonlyMap<string, Job> = new Map(JOBS.map(j => [j.id, j]));
 
 const FIRST = ['한스', '이보', '마르코', '브렌', '올라', '테오', '리나', '요나', '카이', '밀라', '울프', '그레타', '도르', '핀', '사샤', '엘로', '구스', '베라', '티모', '라르스'];
+/** 성(짧게 1~2자): 이름이 겹치지 않게 뒤에 붙인다(테오 벨 / 테오 란) */
+const LAST = ['벨', '린', '콜', '란', '하트', '모어', '그란', '로웰', '핀', '카일', '도른', '브릭', '셀', '요크', '마르', '보른', '텐', '윌', '가르', '레인'];
 const RACES_BY_REGION: Record<string, string[]> = {
   reg_r02: ['드워프', '드워프', '인간'], reg_r03: ['엘프', '혼혈'], reg_r05: ['오크', '인간'], reg_r07: ['인간', '오크'], reg_r04: ['인간', '하프링'],
 };
@@ -41,8 +43,9 @@ export function rollCandidate(rng: Rng, job: Job, region: string, seq: number): 
   };
   stats.hp = stats.maxHp;
   const quality = (stats.s + stats.d + stats.t + stats.p + stats.b) / (job.s + job.d + job.t + job.p + job.b || 1);
-  const name = rng.pick(FIRST) + (seq % 2 ? ' ' + rng.pick(['의 아들', '', '', '']) : '');
-  return { name: name.trim(), race, stats, wage: job.wage, hire: Math.round(job.hire * (0.8 + quality * 0.3) / 10) * 10 };
+  void seq;
+  const name = rng.pick(FIRST) + ' ' + rng.pick(LAST);
+  return { name, race, stats, wage: job.wage, hire: Math.round(job.hire * (0.8 + quality * 0.3) / 10) * 10 };
 }
 
 /** 이 거점에서 고용할 수 있는 직업 */

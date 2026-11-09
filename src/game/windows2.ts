@@ -1,10 +1,10 @@
 import { BALANCE } from '../core/balance';
 import { GameClock as Clock } from '../core/clock';
 import { ARMOR_BY_ID, POTION_BY_ID, WEAPON_BY_ID, itemName, itemPrice, SELLBACK, type Armor, type Potion, type Tool, type Weapon } from '../core/equipment';
-import { KIND_LABEL, KIND_TEXT, drawFormation, formationMods, jobName, kindOf } from './formationView';
+import { KIND_LABEL, KIND_TEXT, drawFormation, formationMods, jobName, kindOf, shortName } from './formationView';
 import { FORMATIONS, FORMATION_BY_ID, STANCE_LABEL, ATTACK_MODE_LABEL } from '../core/formation';
 import { fmt, JOB_BY_ID } from '../core/game';
-import { MAX_MEMBERS, attackOf, autoArrange, defenseOf, isRanged, type Person } from '../core/squad';
+import { MAX_MEMBERS, attackOf, autoArrange, defenseOf, expToNext, isRanged, levelOf, type Person } from '../core/squad';
 import { FULL_W, type Window } from './Window';
 import { C } from './theme';
 import type { UIScene } from './scenes/UIScene';
@@ -21,7 +21,7 @@ function memberGrid(ui: UIScene, w: Window, x: number, y: number, selected: stri
   w.small(x, y - 12, sq.name + ' (' + sq.headcount + '/9)', { color: C.grey });
   sq.people.forEach((p, i) => {
     const bx = x + (i % 3) * 51, by = y + Math.floor(i / 3) * 33;
-    w.button(bx, by, (p.isLeader ? '★' : '') + p.name.slice(0, 3) + '\n' + (extra ? extra(p) : 'HP' + p.stats.hp), () => onPick(p.id), { w: 48, h: 30, small: true, selected: p.id === selected, color: p.isLeader ? 0x4a3b2a : undefined });
+    w.button(bx, by, (p.isLeader ? '★' : '') + shortName(p.name, 3) + '\n' + (extra ? extra(p) : 'HP' + p.stats.hp), () => onPick(p.id), { w: 48, h: 30, small: true, selected: p.id === selected, color: p.isLeader ? 0x4a3b2a : undefined });
   });
   return y + 3 * 33;
 }
@@ -110,7 +110,7 @@ export function openHospital(ui: UIScene, siteId: string): void {
     w.clearBody(); const g = ui.g; const sq = g.squad; const cost = g.hospitalCost(g.selected);
     w.portrait(6, 4, 36, 44, 'healer', '치유사');
     w.small(48, 4, cost > 0 ? '"다친 분들이군요. 전부 돌봐 드리면 ' + fmt(cost) + '골입니다."' : '"모두 건강합니다. 또 오십시오."', { color: C.paperDark, wordWrap: { width: 260 } });
-    sq.people.slice(0, 9).forEach((p, i) => w.small(6 + (i % 3) * 104, 52 + Math.floor(i / 3) * 12, p.name.slice(0, 3) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피' + p.stats.f, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paper }));
+    sq.people.slice(0, 9).forEach((p, i) => w.small(6 + (i % 3) * 104, 52 + Math.floor(i / 3) * 12, shortName(p.name, 3) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피' + p.stats.f, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paper }));
     w.button(6, w.bodyH - 30, '치료 (' + fmt(cost) + '골)', () => { if (!g.heal(g.selected)) ui.toast('돈 부족'); render(); }, { w: 130, h: 24, disabled: cost <= 0 || g.ledger.cash < cost });
     w.small(144, w.bodyH - 30, 'HP 1당 ' + BALANCE.hospitalPerHp + '골, 피로 1당 ' + BALANCE.hospitalPerFatigue + '골. 성에서 쉬면 조금씩 낫는다.', { color: C.grey, wordWrap: { width: 166 } });
   };
@@ -172,8 +172,8 @@ export function openRoster(ui: UIScene, keepPicked: string | null = null): void 
       if (!p) { w.rect(x, y, 75, 36, C.panelLight, 0.2); w.small(x + 4, y + 3, String(r + 1), { color: '#6a5a44' }); continue; }
       const k = kindOf(p);
       w.button(x, y, '', () => pick(r), { w: 75, h: 36, selected: picked === p.id });
-      w.small(x + 4, y + 2, (r + 1) + ' ' + p.name.slice(0, 5), { color: k === 'leader' ? C.gold : C.white });
-      w.small(x + 4, y + 13, jobName(p).slice(0, 4) + ' · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k], { color: KIND_TEXT[k] });
+      w.small(x + 4, y + 2, (r + 1) + ' ' + shortName(p.name, 5), { color: k === 'leader' ? C.gold : C.white });
+      w.small(x + 4, y + 13, jobName(p).slice(0, 4) + ' ' + levelOf(p.stats.e) + '단계 · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k], { color: KIND_TEXT[k] });
       w.small(x + 4, y + 24, 'HP ' + p.stats.hp + '/' + p.stats.maxHp, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paperDark });
     }
     // 오른쪽: 대열 그림(같은 번호)
@@ -211,11 +211,11 @@ function openMember(ui: UIScene, id: string): void {
   w.small(6, 4, (idx + 1) + '번 자리 · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k] + (p.isLeader ? '' : ' · 급료 ' + fmt(p.wage) + '/월'), { color: KIND_TEXT[k] });
   const st = p.stats; const atk = attackOf(p), def = defenseOf(p);
   const cells: [string, string][] = [
-    ['HP', st.hp + '/' + st.maxHp], ['공격', atk + (atk !== st.s ? ' (' + st.s + '+무기)' : '')], ['방어', def + (def !== st.d ? ' (' + st.d + '+갑옷)' : '')], ['경험', String(st.e)],
+    ['HP', st.hp + '/' + st.maxHp], ['공격', atk + (atk !== st.s ? ' (' + st.s + '+무기)' : '')], ['방어', def + (def !== st.d ? ' (' + st.d + '+갑옷)' : '')], ['단계', levelOf(st.e) + (expToNext(st.e) ? ' (경험 ' + st.e + ', 다음까지 ' + expToNext(st.e) + ')' : ' (최고)')],
     ['피로', st.f + '/100'], ['상업', String(st.t)], ['공연', String(st.p)], ['건축', String(st.b)],
   ];
   cells.forEach(([lb, v], i) => { const x = 6 + (i % 4) * 96, y = 20 + Math.floor(i / 4) * 14; w.small(x, y, lb, { color: C.grey }); w.small(x + 26, y, v, { color: C.white }); });
-  w.small(6, 52, '무기 ' + itemName(p.weapon) + ' · 갑옷 ' + itemName(p.armor) + ' · 약 ' + (p.potion ? itemName(p.potion) + '×' + p.potions : '-') + ' · 도구 ' + (p.tool ? itemName(p.tool) : '-'), { color: C.paperDark, wordWrap: { width: 380 } });
+  w.small(6, 52, '무기 ' + itemName(p.weapon) + ' · 갑옷 ' + itemName(p.armor) + ' · 약 ' + (p.potion ? itemName(p.potion) + '×' + p.potions : '-') + ' · 도구 ' + (p.tool ? itemName(p.tool) : '-') + ' · 전투마다 경험 +1, 처치마다 +2. 단계가 오르면 공격·방어 +1, 체력 +2', { color: C.paperDark, wordWrap: { width: 380 } });
   const targets = g.squads.map((s, si) => ({ s, si })).filter(({ s, si }) => si !== g.selected && g.isActive(si) && s.siteId === here);
   if (p.isLeader) w.small(6, 78, '부대장은 다른 부대로 옮길 수 없다.', { color: C.grey });
   else if (!targets.length) w.small(6, 78, '같은 거점에 다른 부대가 없어서 옮길 수 없다.', { color: C.grey });

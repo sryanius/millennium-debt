@@ -113,6 +113,20 @@ export function isRanged(p: Person, jobRange: number): boolean {
   const w = p.weapon ? WEAPON_BY_ID.get(p.weapon) : undefined;
   return w ? w.ranged : jobRange > 0;
 }
+/**
+ * 경험 → 단계. 단계 n 은 경험 10·n(n+1)/2 부터: 1단계 10, 2단계 30, 3단계 60, 4단계 100, 5단계 150 …(최대 10).
+ * 단계가 오를 때마다 공격·방어 +1, 최대 체력 +2(growOnLevel). 전투마다 +1, 처치마다 +2 가 쌓인다.
+ */
+export const MAX_LEVEL = 10;
+export function levelOf(e: number): number { return Math.min(MAX_LEVEL, Math.floor((Math.sqrt(1 + 0.8 * Math.max(0, e)) - 1) / 2)); }
+/** 다음 단계까지 남은 경험(최고 단계면 0) */
+export function expToNext(e: number): number { const n = levelOf(e); if (n >= MAX_LEVEL) return 0; return 10 * (n + 1) * (n + 2) / 2 - e; }
+/** 경험을 더하고, 단계가 올랐으면 능력치를 올린 뒤 오른 단계 수를 돌려준다 */
+export function gainExp(p: Person, amount: number): number {
+  const before = levelOf(p.stats.e); p.stats.e += amount; const after = levelOf(p.stats.e); const up = after - before;
+  if (up > 0) { p.stats.s += up; p.stats.d += up; p.stats.maxHp += 2 * up; p.stats.hp = Math.min(p.stats.maxHp, p.stats.hp + 2 * up); }
+  return up;
+}
 /** 대원이 사격 대원인가(무기가 있으면 무기, 없으면 직업으로) */
 export function isRangedPerson(p: Person): boolean { return isRanged(p, JOB_BY_ID.get(p.job)?.range ?? 0); }
 /**

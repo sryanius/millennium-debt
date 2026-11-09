@@ -3,7 +3,7 @@ import { POTION_BY_ID } from './equipment';
 import { FORMATION_BY_ID, type AttackMode, type Formation } from './formation';
 import { JOB_BY_ID } from './jobs';
 import { Rng } from './rng';
-import { attackOf, autoArrange, defenseOf, isRanged, type Person, type Squad } from './squad';
+import { attackOf, autoArrange, defenseOf, gainExp, isRanged, levelOf, type Person, type Squad } from './squad';
 
 /** 전장: 타원 가로 ±100, 세로 ±50. 아군은 오른쪽(+x), 적은 왼쪽(−x). */
 export const ARENA = { rx: 100, ry: 50 };
@@ -189,13 +189,16 @@ export class Battle {
     const dead: Person[] = [];
     for (const u of this.allies) {
       if (!u.person) continue;
-      const p = u.person; p.stats.hp = Math.max(u.state === 'dead' ? 0 : 1, Math.round(u.hp)); p.stats.e += u.kills * 2 + 1; p.stats.f = Math.min(100, p.stats.f + BALANCE.fatigueBattle); p.potions = u.potions;
-      if (u.state === 'dead' && !p.isLeader) dead.push(p);
+      const p = u.person; p.stats.hp = Math.max(u.state === 'dead' ? 0 : 1, Math.round(u.hp)); p.stats.f = Math.min(100, p.stats.f + BALANCE.fatigueBattle); p.potions = u.potions;
+      if (u.state === 'dead' && !p.isLeader) { dead.push(p); continue; }
+      const up = gainExp(p, u.kills * 2 + 1); if (up > 0) this.grown.push({ name: p.name, level: levelOf(p.stats.e) });
     }
     this.squad.members = this.squad.members.filter(m => !dead.includes(m));
     this.dead = dead;
   }
   dead: Person[] = [];
+  /** 이번 전투로 단계가 오른 사람 */
+  grown: { name: string; level: number }[] = [];
   /** 승리 시 전리품 */
   get bounty(): number { return this.result === 'victory' ? this.enemies.reduce((a, e) => a + (e.state === 'dead' ? e.bounty : 0), 0) : 0; }
 }

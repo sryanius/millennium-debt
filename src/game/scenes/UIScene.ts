@@ -6,7 +6,8 @@ import { GameClock } from '../../core/clock';
 import { Game, fmt, goodName } from '../../core/game';
 import { INCOME_LABEL, INCOME_SOURCES } from '../../core/ledger';
 import { KIND_LABEL, hasMarket, isTown } from '../../core/world';
-import { attackOf, defenseOf } from '../../core/squad';
+import { attackOf, defenseOf, levelOf } from '../../core/squad';
+import { shortName } from '../formationView';
 import { GameClock as Clock } from '../../core/clock';
 import { FULL_H, FULL_W, TITLE_H, Window, makeButton } from '../Window';
 import { hasSave, loadGame, saveGame, startNewGame } from '../save';
@@ -435,7 +436,7 @@ export class UIScene extends Phaser.Scene {
     w.portrait(6, 4, 40, 48, sq.id, sq.leader.name);
     const where = sq.siteId ? this.g.world.site(sq.siteId).name : (this.g.world.site((sq.pos as any).to).name + '로 이동 중');
     w.small(52, 4, where + '  ·  ' + (sq.order === 'move' ? '이동' : sq.order === 'stay' ? '체재' : sq.order === 'build' ? '공사' : '대기') + '  ·  대열 ' + (FORMATION_BY_ID.get(sq.formation)?.name ?? sq.formation), { color: C.gold });
-    w.small(52, 16, 'HP ' + st.hp + '/' + st.maxHp + ' · 공격 ' + attackOf(sq.leader) + ' · 방어 ' + defenseOf(sq.leader) + ' · 경험 ' + st.e + ' · 피로 ' + st.f + ' · 상업 ' + st.t + ' · 공연 ' + st.p + ' · 건축 ' + st.b);
+    w.small(52, 16, 'HP ' + st.hp + '/' + st.maxHp + ' · 공격 ' + attackOf(sq.leader) + ' · 방어 ' + defenseOf(sq.leader) + ' · ' + levelOf(st.e) + '단계 · 피로 ' + st.f + ' · 상업 ' + st.t + ' · 공연 ' + st.p + ' · 건축 ' + st.b);
     w.small(52, 28, '대원 ' + sq.members.length + '/8 · 급료 ' + fmt(sq.wages) + '/월 · 전투력 ' + Math.round(sq.power), { color: C.grey });
     const cargo = Object.entries(sq.cargo);
     let y = 40 + w.small(52, 40, '짐 ' + sq.load + '/' + sq.capacity + ': ' + (cargo.length ? cargo.map(([g, n]) => goodName(g) + ' ' + n).join(', ') : '없음'), { wordWrap: { width: 336 } }).height + 2;
@@ -448,7 +449,7 @@ export class UIScene extends Phaser.Scene {
     if (!sq.members.length) w.small(6, y, '아직 대원이 없다 — 마을의 «용병 고용»에서 뽑는다', { color: C.grey });
     sq.members.slice(0, 8).forEach((p, k) => {
       const hurt = p.stats.hp < p.stats.maxHp * 0.5;
-      w.small(6 + (k % 3) * 130, y + Math.floor(k / 3) * 12, p.name.slice(0, 5) + ' ' + p.role.slice(0, 3) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피로' + p.stats.f, { color: hurt ? C.red : C.paper });
+      w.small(6 + (k % 3) * 130, y + Math.floor(k / 3) * 12, shortName(p.name, 5) + ' ' + p.role.slice(0, 3) + levelOf(p.stats.e) + ' ' + p.stats.hp + '/' + p.stats.maxHp + ' 피로' + p.stats.f, { color: hurt ? C.red : C.paper });
     });
     const by = w.bodyH - 28;
     w.button(6, by, '지도에서 보기', () => { w.close(); this.map.focusSquad(i); }, { w: 110, h: 24 });

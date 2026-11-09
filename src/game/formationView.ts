@@ -16,6 +16,8 @@ export const KIND_TEXT: Record<Kind, string> = { leader: '#e0b040', melee: '#e07
 export const KIND_LABEL: Record<Kind, string> = { leader: '부대장', melee: '백병', ranged: '사격' };
 export function kindOf(p: Person): Kind { return p.isLeader ? 'leader' : isRanged(p, JOB_BY_ID.get(p.job)?.range ?? 0) ? 'ranged' : 'melee'; }
 export function jobName(p: Person): string { return p.isLeader ? '부대장' : (JOB_BY_ID.get(p.job)?.name ?? p.role); }
+/** 좁은 칸용 이름: n 자 안에 들면 그대로, 아니면 이름(성 앞부분)만 */
+export function shortName(name: string, n: number): string { if (name.length <= n) return name; const first = name.split(' ')[0]; return first.length <= n ? first : first.slice(0, n); }
 
 /**
  * 대열 그림: 왼쪽이 적 쪽(전장에서 아군은 오른쪽에 선다). 자리마다 번호 동그라미 —

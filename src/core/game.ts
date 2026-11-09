@@ -611,6 +611,7 @@ export class Game {
     this.battle = null; this.lastBattle = b;
     if (!this.autoEvents) this.clock.speed = 0; // 결과창을 보는 동안 멈춘다(닫으면 UI 가 다시 돌린다)
     if (b.dead.length) this.say('battle', '전사: ' + b.dead.map(p => p.name).join(', '));
+    if (b.grown.length) this.say('info', '단계 상승: ' + b.grown.map(x => x.name + ' → ' + x.level + '단계').join(', ') + ' (공격·방어 +1, 체력 +2)');
     if (b.kind === 'bandits') {
       if (b.result === 'victory') {
         const bounty = b.bounty; if (bounty > 0) this.ledger.earn('battle', bounty);
