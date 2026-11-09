@@ -13,7 +13,7 @@ export const PORTRAIT_KEYS = ['kael', 'brok', 'phoebe', 'ella', 'liesel', 'durin
 /** 대사 창의 초상 이름 → 파일 키 */
 export function portraitKey(label: string): string | null {
   const t = label;
-  const table: [RegExp, string][] = [[/로한/, 'rohan'], [/알라릭/, 'alaric'], [/이졸데/, 'isolde'], [/레온/, 'leon'], [/황태후|시녀/, 'empress'], [/전령/, 'herald'], [/토비아스/, 'tobias'], [/오스윈/, 'oswin'], [/수녀|사제|치유/, 'healer'], [/장수|점주|상인/, 'shopkeeper'], [/술집/, 'innkeeper'], [/선장|문지기|경비|심판|사절|사관|수비/, 'officer'], [/길드/, 'guildmaster'], [/게시판|학자|서기/, 'clerk'], [/베라/, 'healer'], [/석문|상자/, 'kael']];
+  const table: [RegExp, string][] = [[/카엘/, 'kael'], [/브록/, 'brok'], [/피비/, 'phoebe'], [/엘라/, 'ella'], [/리젤/, 'liesel'], [/두린/, 'durin'], [/로한/, 'rohan'], [/알라릭/, 'alaric'], [/이졸데/, 'isolde'], [/레온/, 'leon'], [/황태후|시녀/, 'empress'], [/전령/, 'herald'], [/토비아스/, 'tobias'], [/오스윈/, 'oswin'], [/수녀|사제|치유/, 'healer'], [/장수|점주|상인/, 'shopkeeper'], [/술집/, 'innkeeper'], [/선장|문지기|경비|심판|사절|사관|수비/, 'officer'], [/길드/, 'guildmaster'], [/게시판|학자|서기/, 'clerk'], [/베라/, 'healer'], [/석문|상자/, 'kael']];
   for (const [re, k] of table) if (re.test(t)) return k;
   return null;
 }

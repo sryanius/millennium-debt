@@ -173,7 +173,7 @@ export function openRoster(ui: UIScene, keepPicked: string | null = null): void 
       const k = kindOf(p);
       w.button(x, y, '', () => pick(r), { w: 75, h: 36, selected: picked === p.id });
       w.small(x + 4, y + 2, (r + 1) + ' ' + shortName(p.name, 5), { color: k === 'leader' ? C.gold : C.white });
-      w.small(x + 4, y + 13, jobName(p).slice(0, 4) + ' ' + levelOf(p.stats.e) + '단계 · ' + KIND_LABEL[k === 'leader' ? (isRanged(p, 0) ? 'ranged' : 'melee') : k], { color: KIND_TEXT[k] });
+      w.small(x + 4, y + 13, jobName(p).slice(0, 4) + ' ' + levelOf(p.stats.e) + '단계', { color: KIND_TEXT[k] }); // 백병·사격은 글자색(그림 범례와 같다)
       w.small(x + 4, y + 24, 'HP ' + p.stats.hp + '/' + p.stats.maxHp, { color: p.stats.hp < p.stats.maxHp / 2 ? C.red : C.paperDark });
     }
     // 오른쪽: 대열 그림(같은 번호)
@@ -251,25 +251,25 @@ export function openEquip(ui: UIScene): void {
 export function openCollector(ui: UIScene, onFight: () => void, onDone: () => void): void {
   const g = ui.g; const v = g.collectorVisit!; const l = g.ledger;
   const w = ui.win(360, 210, '벨마르 대금고 집행관 — ' + Clock.format(g.clock.date), false);
-  w.portrait(6, 6, 44, 56, 'tobias', '토비아스');
+  w.portrait(6, 6, 80, 93, 'tobias', '토비아스'); // 두 배 도트 초상
   let line: string; let color: string = C.paper;
   if (v.short) { line = '"상환액 ' + fmt(l.minRepayment) + '골이 없으시군요. 뒤에 호위대 ' + v.escortLevel + '단계가 있습니다. 싸워 이기면 이번 주는 봐 드리죠. 아니면 계약대로 가산금 ' + fmt(BALANCE.missedPenalty) + '골입니다."'; color = C.red; }
   else if (v.fought === 'victory') line = '"…졌군요. 좋습니다, 이번 주는 미룹니다. 다음엔 더 센 사람들을 데려오죠."';
   else if (v.fought) { line = '"보셨죠? 가산금 ' + fmt(v.penalty) + '골을 올립니다. 부채 ' + fmt(l.debt) + '골."'; color = C.red; }
   else if (v.paid > 0) line = '"기본상환 ' + fmt(v.paid) + '골, 확실히 받았습니다. 남은 빚은 ' + fmt(l.debt) + '골이군요. 더 내시겠습니까?"';
   else { line = '"계약대로 가산금 ' + fmt(v.penalty) + '골을 올립니다. 부채 ' + fmt(l.debt) + '골."'; color = C.red; }
-  w.text(58, 6, line, { wordWrap: { width: 290 }, color });
-  w.small(58, 66, '소지금 ' + fmt(l.cash) + '골  /  부채 ' + fmt(l.debt) + '골  /  미룬 횟수 ' + g.deferrals + (l.missedStreak ? '  /  연속 미납 ' + l.missedStreak + ' (해산까지 ' + g.missesLeft + ')' : ''), { color: l.missedStreak >= BALANCE.bankruptMisses - 2 ? C.red : C.gold, wordWrap: { width: 290 } });
+  w.text(94, 6, line, { wordWrap: { width: 254 }, color });
+  w.small(94, 66, '소지금 ' + fmt(l.cash) + '골  /  부채 ' + fmt(l.debt) + '골  /  미룬 횟수 ' + g.deferrals + (l.missedStreak ? '  /  연속 미납 ' + l.missedStreak + ' (해산까지 ' + g.missesLeft + ')' : ''), { color: l.missedStreak >= BALANCE.bankruptMisses - 2 ? C.red : C.gold, wordWrap: { width: 254 } });
   if (v.short) {
-    w.button(58, 82, '호위대와 싸운다 (' + g.squad.name + ')', () => { w.close(); onFight(); }, { w: 240, h: 24, color: 0x5a3a2a });
-    w.button(58, 110, '가산금을 받아들인다 (+' + fmt(BALANCE.missedPenalty) + ')', () => { g.collectorAccept(); w.close(); onDone(); }, { w: 240, h: 24 });
-    w.small(58, 140, '싸우는 부대는 지금 선택한 부대(' + g.squad.name + ', 전투력 ' + Math.round(g.squad.power) + '). 부대장이 쓰러지면 패배.', { color: C.grey, wordWrap: { width: 290 } });
+    w.button(94, 86, '호위대와 싸운다 (' + g.squad.name + ')', () => { w.close(); onFight(); }, { w: 254, h: 24, color: 0x5a3a2a });
+    w.button(94, 114, '가산금을 받아들인다 (+' + fmt(BALANCE.missedPenalty) + ')', () => { g.collectorAccept(); w.close(); onDone(); }, { w: 254, h: 24 });
+    w.small(94, 144, '싸우는 부대는 지금 선택한 부대(' + g.squad.name + ', 전투력 ' + Math.round(g.squad.power) + '). 부대장이 쓰러지면 패배.', { color: C.grey, wordWrap: { width: 254 } });
     return;
   }
-  w.small(58, 80, '추가로 갚기', { color: C.grey });
+  w.small(94, 84, '추가로 갚기', { color: C.grey });
   BALANCE.extraRepaymentChoices.forEach((a, i) => {
-    const x = 58 + (i % 4) * 72, y = 92 + Math.floor(i / 4) * 26;
-    w.button(x, y, fmt(a), () => { g.repayExtra(a); w.close(); onDone(); }, { w: 68, h: 22, small: true, disabled: l.cash < a || l.debt <= 0 });
+    const x = 94 + (i % 4) * 64, y = 96 + Math.floor(i / 4) * 26;
+    w.button(x, y, fmt(a), () => { g.repayExtra(a); w.close(); onDone(); }, { w: 60, h: 22, small: true, disabled: l.cash < a || l.debt <= 0 });
   });
   w.button(w.bw - 96, w.bodyH - 30, '다음에', () => { w.close(); onDone(); }, { w: 84, h: 24 });
 }

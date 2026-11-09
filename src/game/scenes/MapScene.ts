@@ -46,9 +46,24 @@ export class MapScene extends Phaser.Scene {
     this.bakeLabels([...world.sites.values()]);
     for (const s of world.sites.values()) this.makeSiteMarker(s);
     // 지역 이름(세계 지도용)
+    // 세계 지도에서 성 그림(약 18 세계 단위)과 겹치지 않는 자리를 고른다: 가운데부터 아래·위·옆 순으로 시험
+    const castles = [...world.sites.values()].filter(st => st.kind === 'castle');
+    const placed: [number, number][] = []; // 먼저 놓인 이름표(56×12 세계 단위)
+    const labelSpot = (cx0: number, cy0: number): [number, number] => {
+      const cands: [number, number][] = [];
+      for (const dy of [0, 14, -14, 26, -26, 38]) for (const dx of [0, 28, -28, 56, -56]) cands.push([dx, dy]);
+      let best: [number, number] = [cx0, cy0], bestN = Infinity;
+      for (const [dx, dy] of cands) {
+        const cx = cx0 + dx, cy = cy0 + dy;
+        const n = castles.filter(st => Math.abs(st.x - cx) < 28 + 10 && Math.abs(st.y - cy) < 6 + 10).length * 1
+          + placed.filter(([px, py]) => Math.abs(px - cx) < 58 && Math.abs(py - cy) < 13).length * 3;
+        if (n < bestN) { bestN = n; best = [cx, cy]; if (n === 0) break; }
+      }
+      placed.push(best); return best;
+    };
     for (const r of world.regions.values()) {
       const b = world.regionBounds(r.id);
-      const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+      const [cx, cy] = labelSpot((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2);
       const c = this.add.container(cx, cy);
       const bg = this.add.image(0, 0, this.tagTex(REGION_COLOR[r.id] ?? C.border)).setDisplaySize(66, 13);
       const t = this.add.text(0, 0, r.name, TEXT).setOrigin(0.5);
@@ -63,6 +78,7 @@ export class MapScene extends Phaser.Scene {
     this.game_.squads.forEach((sq, i) => {
       const c = this.add.container(0, 0).setDepth(30);
       if (this.textures.exists('units')) {
+        const ring = this.shadow(0, 0, 14, 6, 0.9).setTint(0xe0b23c); (c as any).ring = ring; c.add(ring); // 고른 부대 표시
         const shadow = this.shadow(0, 0, 8, 3, 0.45);
         const body = this.add.image(0, -7, 'units', UNIT_FRAME[sq.id] ?? 0).setOrigin(0.5);
         const flag = this.add.image(5, -18, 'icons', ICON.flagBlue).setOrigin(0, 0.5);
@@ -106,8 +122,8 @@ export class MapScene extends Phaser.Scene {
       for (const e of world.edges) {
         if (e.sea) continue;
         const a = world.site(e.a), b = world.site(e.b);
-        line(a.x, a.y + 0.25, b.x, b.y + 0.25, 0.6, 'rgba(42,30,20,0.45)', [1.9, 1.3]);
-        line(a.x, a.y, b.x, b.y, 0.4, 'rgba(240,220,168,0.8)', [1.9, 1.3]);
+        line(a.x, a.y + 0.25, b.x, b.y + 0.25, 0.8, 'rgba(42,30,20,0.55)', [1.9, 1.3]);
+        line(a.x, a.y, b.x, b.y, 0.5, 'rgba(250,236,190,0.95)', [1.9, 1.3]);
       }
       for (const e of world.seaEdges) {
         const a = world.site(e.a), b = world.site(e.b);
@@ -239,6 +255,7 @@ export class MapScene extends Phaser.Scene {
     const flag = m.add(f, 10.7, this.game_.enemyHeld.has(s.id));
     this.heldFlags.set(s.id, flag);
     const label = m.add(this.add.image(0, sprite ? 3 : size / 2 + 2, 'mlabels', s.id).setOrigin(0.5, 0).setScale(1 / K), 10.8);
+    (label as any).baseOy = label.oy;
     const big = box instanceof Phaser.GameObjects.Image && box.texture.key === 'sites';
     if (sprite) box.setInteractive({ hitArea: big ? new Phaser.Geom.Rectangle(-8, 0, 64, 80) : new Phaser.Geom.Rectangle(-6, -2, 28, 30), hitAreaCallback: Phaser.Geom.Rectangle.Contains, useHandCursor: true });
     else box.setInteractive({ useHandCursor: true });
@@ -315,12 +332,35 @@ export class MapScene extends Phaser.Scene {
     // 작은 거점(광산·항구·사원·교역소) 이름은 많이 확대했을 때만
     for (const [id, l] of this.siteLabels) { const k = this.game_.world.site(id).kind; l.m.setOn(l, !worldish && (k === 'castle' || k === 'gate' || k === 'rift' || z >= 4.5 * K)); }
     for (const c of this.regionLabels) c.setVisible(worldish);
+    this.unstackLabels(z);
     // 세계 지도에선 성만 보인다
     for (const id of this.siteMarkers.keys()) this.siteWant.set(id, !worldish || this.game_.world.site(id).kind === 'castle');
     this.cullSites(true);
     this.events.emit('zoom', z);
   }
 
+  /**
+   * 보이는 거점 이름이 서로 겹치면 뒤쪽 것을 한 줄(8px) 아래로 내린다. 배율이 바뀔 때마다 다시 계산.
+   * 이름 폭은 구운 글자판의 조각 폭(K 배)에서 얻는다.
+   */
+  private unstackLabels(z: number): void {
+    const inv = K / z;
+    const on = [...this.siteLabels.entries()].filter(([, l]) => l.on).map(([id, l]) => { const st = this.game_.world.site(id); const img = l.o as Phaser.GameObjects.Image; const base = (l as any).baseOy as number; return { l, w: img.width / K, x: st.x / inv, y: st.y / inv + base, base }; });
+    // 성(이름이 중요한 곳)부터, 그다음 왼쪽부터 놓는다
+    on.sort((a, b) => a.x - b.x);
+    const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
+    for (const e of on) {
+      let row = 0;
+      for (; row < 4; row++) {
+        const y0 = e.y + row * 8, y1 = y0 + 9, x0 = e.x - e.w / 2, x1 = e.x + e.w / 2;
+        if (!placed.some(p => x0 < p.x1 && x1 > p.x0 && y0 < p.y1 && y1 > p.y0)) break;
+      }
+      if (row === 4) row = 0;
+      e.l.oy = e.base + row * 8;
+      placed.push({ x0: e.x - e.w / 2, x1: e.x + e.w / 2, y0: e.y + row * 8, y1: e.y + row * 8 + 9 });
+    }
+    for (const e of on) e.l.m.setScale(inv);
+  }
   showRegion(regionId: string): void {
     this.regionId = regionId;
     const b = this.game_.world.regionBounds(regionId);
@@ -375,8 +415,9 @@ export class MapScene extends Phaser.Scene {
       const numT = (c as any).num as Phaser.GameObjects.Text | undefined; const want = here.map(j => j + 1).join('·');
       if (numT && numT.text !== want) numT.setText(want).setOrigin(0, 0.5).setX(6);
       // 거점 위에 있으면 성 그림 왼쪽 아래에 비켜 선다(성을 누를 수 있게)
-      const off = sq.siteId ? 11 * this.inv : 0;
-      c.setPosition(p.x - off, p.y + off * 0.35);
+      const off = sq.siteId ? 14 * this.inv : 0;
+      c.setPosition(p.x - off, p.y + off * 0.45);
+      const ring = (c as any).ring as Phaser.GameObjects.Image | undefined; if (ring) { const on = i === g.selected; if (ring.visible !== on) ring.setVisible(on); if (on) ring.setAlpha(0.55 + Math.sin(_t / 250) * 0.3); }
       const fl = (c as any).flag; if ((c as any).sprite) (fl as Phaser.GameObjects.Image).setFrame(i === g.selected ? ICON.flagGold : ICON.flagBlue); else (fl as Phaser.GameObjects.Rectangle).setFillStyle(i === g.selected ? C.flagSel : C.flag);
     });
     // 막힌 지역은 세계 지도에서 흐리게 + 자물쇠
@@ -409,7 +450,9 @@ export class MapScene extends Phaser.Scene {
       const pts = [sq.position(id => g.world.site(id))];
       if (sq.pos.kind === 'road') pts.push(g.world.site(sq.pos.to));
       for (const id of sq.path) pts.push(g.world.site(id));
-      this.pathGfx.lineStyle(0.8, 0xffffff, 0.8);
+      this.pathGfx.lineStyle(0.9, 0x1a1008, 0.7);
+      for (let k = 1; k < pts.length; k++) this.pathGfx.lineBetween(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y);
+      this.pathGfx.lineStyle(0.5, 0xe0b23c, 0.95);
       for (let k = 1; k < pts.length; k++) this.pathGfx.lineBetween(pts[k - 1].x, pts[k - 1].y, pts[k].x, pts[k].y);
     }
   }

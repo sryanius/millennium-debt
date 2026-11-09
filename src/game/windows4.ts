@@ -14,14 +14,15 @@ import type { UIScene } from './scenes/UIScene';
 export function openEvent(ui: UIScene): void {
   const g = ui.g; const e = g.event; if (!e) return;
   // 본문 높이를 재서 창 높이를 정한다(선택지는 손가락으로 누를 수 있게 24 + 틈 4)
-  const probe = ui.make.text({ text: e.text, style: { ...TEXT, wordWrap: { width: 300 } }, add: false }); const th = probe.height; probe.destroy();
-  const n = e.choices.length; const h = Math.min(FULL_H, Math.max(150, 18 + 8 + Math.max(60, th) + 8 + n * 28 + 8));
-  const w = ui.win(380, h, e.title, false);
-  w.portrait(6, 6, 48, 56, portraitKey(e.portrait), e.portrait.slice(0, 7));
-  w.text(62, 6, e.text, { wordWrap: { width: 300 } });
+  // 초상은 두 배 도트(96×112)를 80×93 으로: 폰에서 얼굴이 보이게
+  const probe = ui.make.text({ text: e.text, style: { ...TEXT, wordWrap: { width: 280 } }, add: false }); const th = probe.height; probe.destroy();
+  const n = e.choices.length; const h = Math.min(FULL_H, Math.max(160, 18 + 8 + Math.max(96, th) + 8 + n * 28 + 8));
+  const w = ui.win(390, h, e.title, false);
+  w.portrait(6, 6, 80, 93, portraitKey(e.portrait), e.portrait.slice(0, 7));
+  w.text(94, 6, e.text, { wordWrap: { width: 280 } });
   e.choices.forEach((c, i) => {
     const y = w.bodyH - 6 - (n - i) * 28;
-    w.button(62, y, c.label + (c.disabled ? '  — ' + c.disabled : ''), () => { w.close(); g.chooseEvent(i); }, { w: 306, h: 24, small: true, disabled: !!c.disabled });
+    w.button(94, y, c.label + (c.disabled ? '  — ' + c.disabled : ''), () => { w.close(); g.chooseEvent(i); }, { w: 284, h: 24, small: true, disabled: !!c.disabled });
   });
 }
 
