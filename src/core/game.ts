@@ -11,11 +11,12 @@ import { MilitaryBoard, type EnemyBand, type MilitaryQuest } from './military';
 import { Rng } from './rng';
 import { BLACK_SPEAR_ALLIES, EVENTS, type EventCtx, type GameEvent } from './events';
 import { LEADERS, MAX_MEMBERS, Squad, type Person } from './squad';
+import { talkLine } from './talks';
 import { fortMax, hasMarket, isFort, isTown, World, type Site, type WorldData } from './world';
 
 /** 결말: 완납(가장 많이 번 길) 또는 해산 */
 export type Ending = IncomeSource | 'bankrupt';
-export type MessageKind = 'info' | 'money' | 'collector' | 'quest' | 'ending' | 'warn' | 'battle' | 'fort';
+export type MessageKind = 'info' | 'money' | 'collector' | 'quest' | 'ending' | 'warn' | 'battle' | 'fort' | 'talk';
 export interface GameMessage { day: number; kind: MessageKind; text: string }
 
 /** 상환일에 집행관이 들른 결과. UI가 대화창으로 보여 주고 지운다. */
@@ -47,6 +48,7 @@ export interface GameJSON {
   recruited?: string[];
   tutorial?: number;
   notebook?: { siteId: string; day: number; prices: NoteEntry['prices'] }[];
+  talks?: Record<string, { day: number; n: number }>;
 }
 
 export const START_SITE = 'C028'; // 샹파르(GDD §4.1)
@@ -129,6 +131,7 @@ export class Game {
     const i = this.squads.findIndex(s => s.id === id); if (i < 0 || this.recruited.has(id)) return;
     this.recruited.add(id); const s = this.squads[i]; s.pos = { kind: 'at', site: siteId }; s.path = []; s.order = 'idle';
     this.say('info', '★ ' + s.leader.name + '이(가) 용병단에 합류했다! 화면 아래 ' + (i + 1) + '번 칸.');
+    this.meet(i, siteId);
   }
   /** 게임 시작 뒤 지난 날 수 */
   get elapsed(): number { return this.day - this.startDay; }
@@ -321,6 +324,7 @@ export class Game {
     if (band) { s.path = []; s.order = 'idle'; this.engageBand(idx, band); return true; }
     // 잿빛 점령지면 공성전
     if (this.enemyHeld.has(siteId)) { s.path = []; s.order = 'idle'; this.startSiege(idx, siteId); return true; }
+    if (s.path.length === 0) this.meet(idx, siteId);
     // 왕복 교역 중이면 여기서 팔고·사고 다시 떠난다
     if (s.auto && s.path.length === 0) { s.order = 'idle'; this.autoStep(s, idx); if ((s.order as string) === 'move') return true; }
     return false;
@@ -839,7 +843,7 @@ export class Game {
       // 아직 고르지 않은 대화(큐)는 저장되지 않으므로 "나왔다"로 치지 않는다. 그래야 저장 뒤 다시 켰을 때 다시 나온다(합류·관문 같은 한 번뿐인 사건이 사라지던 문제)
       flags: [...this.flags], firedEvents: [...this.firedEvents].filter(id => !this.eventQueue.some(e => e.id === id)), jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
       recruited: [...this.recruited], tutorial: this.tutorial,
-      notebook: [...this.notebook.entries()].map(([siteId, e]) => ({ siteId, day: e.day, prices: e.prices })),
+      notebook: [...this.notebook.entries()].map(([siteId, e]) => ({ siteId, day: e.day, prices: e.prices })), talks: { ...this.talks },
     };
   }
   static fromJSON(world: World | WorldData, j: GameJSON): Game {
@@ -859,10 +863,23 @@ export class Game {
     if (j.startDay !== undefined) g.startDay = j.startDay;
     if (j.recruited) g.recruited = new Set(j.recruited);
     g.tutorial = j.tutorial ?? -1;
-    g.notebook = new Map((j.notebook ?? []).map(n => [n.siteId, { day: n.day, prices: n.prices }]));
+    g.notebook = new Map((j.notebook ?? []).map(n => [n.siteId, { day: n.day, prices: n.prices }])); g.talks = { ...(j.talks ?? {}) };
     g.flags = new Set(j.flags ?? []); g.firedEvents = new Set(j.firedEvents ?? []); g.jointTarget = j.jointTarget ?? null; g.lastMonth = j.lastMonth ?? g.clock.month;
     g.blocked = new Set(j.blocked); g.messages = j.messages; g.unread = 0; g.ending = j.ending; g.selected = j.selected;
     return g;
+  }
+  // ───── 부대장끼리의 짧은 대화: 같은 거점에서 만나면 쌍마다 28일에 한 번 ─────
+  talks: Record<string, { day: number; n: number }> = {};
+  protected meet(idx: number, siteId: string): void {
+    const me = this.squads[idx];
+    this.squads.forEach((o, j) => {
+      if (j === idx || !this.isActive(j) || o.siteId !== siteId) return;
+      const key = [me.id, o.id].sort().join('|'); const t = this.talks[key] ?? { day: -999, n: 0 };
+      if (this.day - t.day < BALANCE.talkCooldownDays) return;
+      const line = talkLine(me.id, o.id, t.n); if (!line) return;
+      this.talks[key] = { day: this.day, n: t.n + 1 };
+      this.say('talk', line);
+    });
   }
   /** 불러온 뒤: 거점에 서 있는 부대마다 도착 사건을 다시 살핀다(저장 때 열려 있던 대화를 되살린다) */
   refireArrivals(): void {

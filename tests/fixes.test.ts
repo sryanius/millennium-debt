@@ -120,3 +120,15 @@ describe('2026-11-09 새 기능', () => {
     g.stay(0); expect(g.squads[0].auto).toBeNull();
   });
 });
+
+describe('부대장 대화', () => {
+  it('같은 거점에서 만나면 한 줄, 같은 쌍은 28일 안에 다시 안 나온다. 저장에 남는다', () => {
+    const g = new Game(world(), 5); g.autoEvents = true;
+    teleport(g, 1, 'P090'); teleport(g, 0, 'P090');
+    (g as unknown as { meet: (i: number, s: string) => void }).meet(0, 'P090');
+    const talks = g.messages.filter(m => m.kind === 'talk'); expect(talks.length).toBe(1); expect(talks[0].text).toContain('브록');
+    (g as unknown as { meet: (i: number, s: string) => void }).meet(0, 'P090');
+    expect(g.messages.filter(m => m.kind === 'talk').length).toBe(1);
+    const g2 = Game.fromJSON(world(), JSON.parse(JSON.stringify(g.toJSON()))); expect(Object.keys(g2.talks).length).toBe(1);
+  });
+});

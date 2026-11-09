@@ -494,7 +494,7 @@ export class UIScene extends Phaser.Scene {
     if (this.modal) return;
     const w = this.full('소식');
     const all = this.g.messages.slice(-80);
-    const style = (m: (typeof all)[number]) => ({ color: m.kind === 'money' ? C.gold : m.kind === 'collector' || m.kind === 'warn' || m.kind === 'fort' ? C.red : m.kind === 'quest' ? C.green : m.kind === 'battle' ? '#e0a070' : C.paper, wordWrap: { width: 446 } });
+    const style = (m: (typeof all)[number]) => ({ color: m.kind === 'money' ? C.gold : m.kind === 'talk' ? '#d8c8a8' : m.kind === 'collector' || m.kind === 'warn' || m.kind === 'fort' ? C.red : m.kind === 'quest' ? C.green : m.kind === 'battle' ? '#e0a070' : C.paper, wordWrap: { width: 446 } });
     const AREA = w.bodyH - 34;
     // 끝(가장 최근)에서 거슬러 한 화면에 드는 개수
     const fitFrom = (end: number) => { let h = 0, n = 0; for (let i = end - 1; i >= 0; i--) { const t = this.make.text({ text: '[' + all[i].day + '일] ' + all[i].text, style: { ...TEXT_SMALL, ...style(all[i]) }, add: false }); h += t.height + 2; t.destroy(); if (h > AREA) break; n++; } return Math.max(1, n); };
@@ -569,7 +569,7 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
   private alertBox?: Phaser.GameObjects.Container; private seenMsgs = 0;
   private alert(m: GameMessage): void {
     this.alertBox?.destroy();
-    const red = m.kind === 'fort' || m.kind === 'warn' || m.kind === 'collector'; const gold = m.kind === 'money' || m.text.startsWith('★') || m.text.startsWith('단계');
+    const red = m.kind === 'fort' || m.kind === 'warn' || m.kind === 'collector'; const gold = m.kind === 'money' || m.kind === 'talk' || m.text.startsWith('★') || m.text.startsWith('단계');
     const t = this.add.text(0, 0, m.text, { ...TEXT_SMALL, color: C.white, wordWrap: { width: 300 } });
     const bw = t.width + 14, bh = t.height + 10;
     const bg = this.add.rectangle(0, 0, bw, bh, 0x1a140e, 0.95).setOrigin(0).setStrokeStyle(1, red ? 0xd0584c : gold ? 0xe0b23c : 0x8a7a64);
@@ -578,10 +578,10 @@ ${webgl ? 'WebGL' : '캔버스'} ${this.game.canvas.width}×${this.game.canvas.h
     this.alertBox = c;
     this.tweens.add({ targets: c, alpha: 1, y: 44, duration: 150 });
     this.time.delayedCall(3800, () => { if (this.alertBox === c) this.tweens.add({ targets: c, alpha: 0, duration: 300, onComplete: () => { c.destroy(); if (this.alertBox === c) this.alertBox = undefined; } }); });
-    AUDIO.sfx(red ? 'deny' : 'event', 0.3);
+    AUDIO.sfx(red ? 'deny' : m.kind === 'talk' ? 'click' : 'event', 0.3);
   }
   private isAlert(m: GameMessage): boolean {
-    if (m.kind === 'warn' || m.kind === 'ending') return true;
+    if (m.kind === 'warn' || m.kind === 'ending' || m.kind === 'talk') return true;
     if (m.kind === 'fort') return /함락|되찾|진을 쳤다/.test(m.text);
     if (m.kind === 'battle') return /덮쳤다|습격|전사:/.test(m.text);
     if (m.kind === 'money') return /완공|탈환|토벌 완수/.test(m.text);

@@ -96,6 +96,8 @@ export const BALANCE = {
   ferryMaxDistance: 70, ferrySpeedMul: 1.5, ferryFarePerHead: 40,
   // 사막(R05)은 보급이 두 배로 든다 → 행군 피로 ×2
   desertFatigueMul: 2,
+  // 부대장끼리 같은 거점에서 만났을 때 대화: 한 쌍마다 이 날수에 한 번
+  talkCooldownDays: 28,
   // 1004년 피난민 호송: 민사 보수 ×3
   refugeeRewardMul: 3,
 };
