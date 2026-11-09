@@ -28,7 +28,12 @@ export class BattleScene extends Phaser.Scene {
   private popup: Window | null = null;
   /** 전장 그림 자리(설계): 480×220, 위 18. 병사는 그림의 아래 2/3(땅) 위에 선다 */
   private static readonly BG_X = Math.round((W - 480) / 2); private static readonly BG_Y = 18; private static readonly BG_W = 480; private static readonly BG_H = 220;
-  private cx = W / 2; private cy = 166; private sx = 2.3; private sy = 1.3;
+  /** 병사 띠: 배경 땅(지평선 아래)만 쓰도록 cy 를 내리고 세로를 좁힌다(y 123~233). 지평선은 y≈91 */
+  private cx = W / 2; private cy = 178; private sx = 2.2; private sy = 1.1;
+  /** 앞뒤 깊이 0(맨 뒤)~1(맨 앞) */
+  private depthOf(u: BattleUnit): number { return Math.max(0, Math.min(1, (u.y + ARENA.ry) / (ARENA.ry * 2))); }
+  /** 깊이에 따른 크기 배율: 뒤 0.8배 ~ 앞 1.18배 */
+  private persp(u: BattleUnit): number { return 0.8 + 0.38 * this.depthOf(u); }
   private bg!: Phaser.GameObjects.Image;
   private resultShown = false;
   onResultClosed?: () => void;
@@ -69,7 +74,6 @@ export class BattleScene extends Phaser.Scene {
       this.bg.setTexture(key).setVisible(true);
       gfx0.lineStyle(2, C.border, 1).strokeRect(BattleScene.BG_X - 1, BattleScene.BG_Y - 1, BattleScene.BG_W + 2, BattleScene.BG_H + 2);
       // 땅 위 그림자 띠: 병사 발밑 부분을 살짝 어둡게 해 땅에 붙어 보이게
-      gfx0.fillStyle(0x000000, 0.08).fillRect(BattleScene.BG_X, this.cy - ARENA.ry * this.sy - 10, BattleScene.BG_W, ARENA.ry * 2 * this.sy + 20);
       return;
     }
     this.bg.setVisible(false);
@@ -97,7 +101,8 @@ export class BattleScene extends Phaser.Scene {
     gfx.lineStyle(2, C.border, 1).strokeEllipse(this.cx, this.cy, ARENA.rx * 2 * this.sx, ARENA.ry * 2 * this.sy);
     gfx.lineStyle(1, rim, 0.5).lineBetween(this.cx, this.cy - ARENA.ry * this.sy, this.cx, this.cy + ARENA.ry * this.sy);
   }
-  private toScreen(u: BattleUnit): { x: number; y: number } { return { x: this.cx + u.x * this.sx, y: this.cy + u.y * this.sy }; }
+  /** 전장 좌표 → 화면. 뒤쪽은 가로도 좁아져 땅이 멀어지는 느낌(사다리꼴) */
+  private toScreen(u: BattleUnit): { x: number; y: number } { const k = 0.84 + 0.3 * this.depthOf(u); return { x: this.cx + u.x * this.sx * k, y: this.cy + u.y * this.sy }; }
   private makeDot(u: BattleUnit): void {
     const c = this.add.container(0, 0);
     const ally = u.side === 'ally';
@@ -108,7 +113,7 @@ export class BattleScene extends Phaser.Scene {
       : sprite
         ? this.add.image(0, 5, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5, 1).setScale(UNIT_SCALE).setFlipX(ally) // 그림은 오른쪽을 본다 → 아군(오른쪽에 섬)은 뒤집어 적을 본다. 촘촘한 도트라 1/3 배
         : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
-    const shadow = this.add.ellipse(0, 4, sprite ? 18 : 9, sprite ? 6 : 3, 0x000000, 0.4).setVisible(!u.wall);
+    const shadow = this.add.ellipse(0, 4, sprite ? 24 : 9, sprite ? 7 : 3, 0x000000, 0.5).setVisible(!u.wall);
     // 체력 막대: 테두리 있는 12×3(전에는 8×2 라 폰에서 안 보였다)
     const bw = 14, by = u.wall ? -40 : sprite ? -38 : -16;
     const barBg = this.add.rectangle(-bw / 2 - 1, by, bw + 2, 5, 0x1a1008, 0.9).setOrigin(0, 0.5);
@@ -120,7 +125,7 @@ export class BattleScene extends Phaser.Scene {
     c.add([shadow, body, barBg, bar, mark]); c.setDepth(5);
     body.setInteractive({ useHandCursor: true });
     body.on('pointerup', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); if (this.battle && !this.battle.result) this.openUnit(u); });
-    this.dots.set(u.id, { c, body, bar, bw, px: u.x, py: u.y, prevFlash: u.flash, prevHit: u.hitFlash, deadAt: 0, walk: 0 });
+    this.dots.set(u.id, { c, body, bar, bw, shadow, px: u.x, py: u.y, prevFlash: u.flash, prevHit: u.hitFlash, deadAt: 0, walk: 0 });
   }
 
   // ───── 명령 팝업(원작: 전투명령 / 전체퇴각 / 개별퇴각 / 전투재개) ─────
@@ -202,6 +207,7 @@ export class BattleScene extends Phaser.Scene {
         c.setAlpha(alpha); if (alpha <= 0) c.setVisible(false);
       }
       c.setDepth(5 + p.y / 1000);
+      if (!u.wall) { const k = this.persp(u); if (body instanceof Phaser.GameObjects.Image) body.setScale(UNIT_SCALE * k); d.shadow.setScale(k); }
       d.bar.width = Math.max(0, d.bw * u.hp / u.maxHp); d.bar.setFillStyle(u.hp / u.maxHp > 0.5 ? 0x44cc44 : u.hp / u.maxHp > 0.25 ? 0xd0b040 : 0xd04040);
       // 새 공격(flash 가 작아졌다) → 사격이면 화살을 띄운다, 백병이면 흰 섬광
       if (u.flash < d.prevFlash && u.targetId) {
@@ -230,6 +236,6 @@ export class BattleScene extends Phaser.Scene {
 }
 
 /** 전장 위 병사 하나의 그림과 움직임 상태 */
-interface Dot { c: Phaser.GameObjects.Container; body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle; bar: Phaser.GameObjects.Rectangle; bw: number; px: number; py: number; prevFlash: number; prevHit: number; deadAt: number; walk: number }
+interface Dot { c: Phaser.GameObjects.Container; body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle; bar: Phaser.GameObjects.Rectangle; shadow: Phaser.GameObjects.Ellipse; bw: number; px: number; py: number; prevFlash: number; prevHit: number; deadAt: number; walk: number }
 
 export { makeButton };
