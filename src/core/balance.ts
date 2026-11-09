@@ -37,6 +37,7 @@ export const BALANCE = {
   civilRewardPerUnit: 45, // 경로 길이 1단위당
   civilDeadlineSlack: 3, // 최소 이동일 + 여유일
   civilLatePenaltyRate: 0.5, // 기한 초과 시 보수 비율(위약)
+  civilAbandonFeeRate: 0.2, // 의뢰 포기 위약금(보수 대비)
 
   // 2단계: 고용·급료·피로·병원
   contractRefreshDays: 7,

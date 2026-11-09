@@ -17,6 +17,7 @@ import type { BattleScene } from './BattleScene';
 import { openCollector as openCollector2, openContract, openEquip, openHospital, openMilitary as openMilitary2, openRoster, openShop } from '../windows2';
 import { openBuild, openForts, openTavern } from '../windows3';
 import { openEnding as openEnding4, openEvent } from '../windows4';
+import { openNotebook } from '../windows5';
 import { buttonKey, hasSkin, nine } from '../skin';
 import { AUDIO } from '../audio';
 import { Tutorial } from '../tutorial';
@@ -297,8 +298,9 @@ export class UIScene extends Phaser.Scene {
     const ROWH = 22, VIS = 8, LX = 4, LW = 300, LY = 30;
     const render = () => {
       w.clearBody();
-      const sq = this.g.squad; const m = this.g.market(siteId)!;
-      w.small(6, 2, '소지금 ' + fmt(this.g.ledger.cash) + '골   적재 ' + sq.load + '/' + sq.capacity + '   상업력 T ' + sq.tradeSkill + ' (' + sq.leader.name + ')', { color: C.gold });
+      const sq = this.g.squad; const m = this.g.market(siteId)!; this.g.noteMarket(siteId);
+      w.small(6, 2, '소지금 ' + fmt(this.g.ledger.cash) + '골   적재 ' + sq.load + '/' + sq.capacity + '   상업력 ' + sq.tradeSkill + ' (' + sq.leader.name + ')', { color: C.gold });
+      w.button(FULL_W - 96, 0, '시세 수첩', () => openNotebook(this, sel), { w: 88, h: 20, small: true });
       const cols = [8, 104, 154, 196, 250];
       ['상품', '판값', '재고', '산값', '소유'].forEach((h, i) => w.small(cols[i], 17, h, { color: C.grey }));
       const owned = Object.keys(sq.cargo).filter(gid => !m.line(gid));
@@ -328,6 +330,9 @@ export class UIScene extends Phaser.Scene {
         [['1개', 1], ['10개', 10], ['가득', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 60, lb as string, () => act(() => g.buy(g.selected, id, n as number)), { w: bw, h: 24, disabled: !l || l.stock <= 0 || sq.load >= sq.capacity }));
         w.small(RX, LY + 92, '팔기', { color: C.grey });
         [['1개', 1], ['10개', 10], ['전부', 9999]].forEach(([lb, n], i) => w.button(RX + i * (bw + 4), LY + 104, lb as string, () => act(() => g.sell(g.selected, id, n as number)), { w: bw, h: 24, color: 0x3a5a3a, disabled: have <= 0 }));
+        // 수첩: 다른 곳에서 본 가장 비싼 판값
+        const best = g.noteSellers(id).find(r => r.site !== siteId);
+        if (best) { const gain = best.sell - m.buyPrice(id, 0); w.small(RX, LY + 134, '수첩: ' + g.world.site(best.site).name + ' 판값 ' + fmt(best.sell) + ' (' + (g.day - best.day === 0 ? '오늘' : (g.day - best.day) + '일 전') + ')' + (l ? ' → 하나에 ' + (gain > 0 ? '+' : '') + fmt(gain) : ''), { color: gain > 0 ? '#8fd07a' : C.grey, wordWrap: { width: RW } }); }
       }
       w.small(6, LY + VIS * ROWH + 8, '특산지에서 싸게 사서 먼 지역에 판다. 상업력은 사는 값도 파는 값도 내린다. 목록은 위아래로 밀어 넘긴다.', { color: C.grey, wordWrap: { width: 456 } });
     };
@@ -390,29 +395,41 @@ export class UIScene extends Phaser.Scene {
 
   /** 맡은 의뢰 전부(민사: 부대별 · 군사: 토벌). 줄마다 «보기»로 목적지를 지도에서 보여 준다 */
   openQuests(): void {
-    const g = this.g; type Row = { who: string; what: string; where: string; left: string; red: boolean; reward: number; site: string };
-    const rows: Row[] = [];
-    g.squads.forEach((sq, i) => { if (!g.isActive(i)) return; for (const id of sq.quests) { const q = g.activeQuests.get(id); if (!q) continue; const d = q.deadline - g.day; const to = g.world.site(q.to);
-      rows.push({ who: sq.leader.name.split(' ')[0], what: CIVIL_JOB_LABEL[q.job], where: to.name + '(' + (g.world.regions.get(to.region)?.name ?? '').slice(0, 2) + ')', left: d >= 0 ? d + '일' : '지남', red: d < 2, reward: q.reward, site: q.to }); } });
-    for (const q of g.activeMilitary.values()) { const band = g.bands.find(b => b.questId === q.id); const at = band?.site ?? q.target;
-      rows.push({ who: '토벌', what: '도적단', where: g.world.site(at).name, left: '-', red: false, reward: q.reward, site: at }); }
+    const g = this.g; type Row = { who: string; what: string; where: string; left: string; red: boolean; reward: number; site: string; drop: () => void; fee: number };
+    const build = (): Row[] => {
+      const rows: Row[] = [];
+      g.squads.forEach((sq, i) => { if (!g.isActive(i)) return; for (const id of sq.quests) { const q = g.activeQuests.get(id); if (!q) continue; const d = q.deadline - g.day; const to = g.world.site(q.to);
+        rows.push({ who: sq.leader.name.split(' ')[0], what: CIVIL_JOB_LABEL[q.job], where: to.name + '(' + (g.world.regions.get(to.region)?.name ?? '').slice(0, 2) + ')', left: d >= 0 ? d + '일' : '지남', red: d < 2, reward: q.reward, site: q.to, drop: () => g.abandon(q.id), fee: Math.round(q.reward * BALANCE.civilAbandonFeeRate) }); } });
+      for (const q of g.activeMilitary.values()) { const band = g.bands.find(b => b.questId === q.id); const at = band?.site ?? q.target;
+        rows.push({ who: '토벌', what: '도적단', where: g.world.site(at).name, left: '-', red: false, reward: q.reward, site: at, drop: () => g.abandonMilitary(q.id), fee: 0 }); }
+      return rows;
+    };
+    let rows = build();
     const VIS = 8, ROWH = 24, LY = 16;
     const w = this.win(FULL_W, TITLE_H + 2 + LY + Math.max(2, Math.min(VIS, rows.length)) * ROWH + 26, '맡은 의뢰 ' + rows.length + '개');
-    let off = 0;
+    let off = 0; let confirm: Row | null = null;
     const render = () => {
-      w.clearBody();
-      const cols = [8, 60, 110, 250, 300];
+      w.clearBody(); rows = build();
+      const cols = [8, 56, 100, 232, 278];
       ['누가', '일', '목적지', '기한', '보수'].forEach((h, i) => w.small(cols[i], 3, h, { color: C.grey }));
       if (!rows.length) w.small(8, LY + 4, '맡은 의뢰가 없다. 성의 «민사게시판»·«군사게시판»에서 «수락»하자.', { color: C.grey, wordWrap: { width: 440 } });
+      off = Math.min(off, Math.max(0, rows.length - VIS));
       rows.slice(off, off + VIS).forEach((r, k) => {
         const y = LY + k * ROWH;
         w.rect(4, y, 454, ROWH - 2, C.panelLight, (off + k) % 2 === 0 ? 0.45 : 0.25);
+        if (confirm === r) { // 포기 확인
+          w.small(cols[0], y + 6, r.what + ' → ' + r.where + ' 의뢰를 포기할까? ' + (r.fee ? '위약금 ' + fmt(r.fee) + '골' : '위약금 없음'), { color: C.red });
+          w.button(336, y + 1, '포기한다', () => { r.drop(); confirm = null; render(); }, { w: 60, h: 20, color: 0x5a3a2a });
+          w.button(400, y + 1, '아니오', () => { confirm = null; render(); }, { w: 54, h: 20 });
+          return;
+        }
         w.small(cols[0], y + 6, r.who, { color: C.gold }); w.small(cols[1], y + 6, r.what); w.small(cols[2], y + 6, r.where);
-        w.small(cols[3], y + 6, r.left, { color: r.red ? '#e2a08a' : C.paper }); w.small(cols[4], y + 6, fmt(r.reward) + '골', { color: C.gold });
-        w.button(386, y + 1, '보기', () => { w.close(); this.map.focusSite(r.site); }, { w: 66, h: 20 });
+        w.small(cols[3], y + 6, r.left, { color: r.red ? '#e2a08a' : C.paper }); w.small(cols[4], y + 6, fmt(r.reward), { color: C.gold });
+        w.button(346, y + 1, '보기', () => { w.close(); this.map.focusSite(r.site); }, { w: 52, h: 20 });
+        w.button(402, y + 1, '포기', () => { confirm = r; render(); }, { w: 52, h: 20, color: 0x5a3a2a });
       });
       w.scroll({ x: 4, y: LY, w: 458, h: VIS * ROWH, rowH: ROWH, count: rows.length, rows: VIS, get: () => off, set: v => { off = v; }, redraw: render });
-      w.small(6, w.bodyH - 16, '목적지에 도착하면 보수를 받는다. 기한을 넘기면 절반만.', { color: C.grey });
+      w.small(6, w.bodyH - 16, '목적지에 도착하면 보수를 받는다. 기한을 넘기면 절반만. 포기하면 보수의 20%를 위약금으로 문다(토벌은 없음).', { color: C.grey, wordWrap: { width: 456 } });
     };
     render();
   }
@@ -464,8 +481,11 @@ export class UIScene extends Phaser.Scene {
     w.small(6, 36, '지금까지 갚은 돈 ' + fmt(l.repaid) + '  ·  미납 ' + l.missed + '회', { color: C.paperDark });
     INCOME_SOURCES.forEach((s, i) => w.small(6, 50 + i * 10, INCOME_LABEL[s] + '으로 번 돈  ' + fmt(l.earned[s]), { color: s === l.endingSource && l.earned[s] > 0 ? C.gold : C.paper }));
     w.small(150, 50, '상품 매입 ' + fmt(l.spent.goods), { color: C.grey });
-    w.small(6, 106, '집행관은 상환일에 스스로 온다. 추가 상환은 그때.', { color: C.grey });
+    const wages = this.g.squads.reduce((a, s) => a + s.wages, 0); const toWage = this.g.clock.day === 1 ? 0 : BALANCE.daysPerMonth - this.g.clock.day + 1;
+    w.small(150, 60, '급료 ' + fmt(wages) + '/월 (' + (toWage ? toWage + '일 뒤' : '오늘') + ')', { color: wages > l.cash ? C.red : C.grey });
+    w.small(6, 106, '집행관은 상환일에 스스로 온다. 추가 상환은 그때. 급료는 매달 1일.', { color: C.grey });
     w.button(w.bw - 104, w.bodyH - 28, '요새 보고', () => { w.close(); openForts(this); }, { w: 92, h: 22 });
+    w.button(w.bw - 200, w.bodyH - 28, '시세 수첩', () => openNotebook(this), { w: 92, h: 22 });
   }
   /** 소식: 최근 것부터 아래에 쌓이고, 위로 밀면 지난 소식 */
   private openLog(): void {

@@ -30,6 +30,8 @@ export interface OfficeJSON { siteId: string; day: number; candidates: Candidate
 export interface BuildJob { id: string; name: string; site: string; work: number; reward: number; kind: 'repair' | 'walls' }
 /** 요새 보고 한 줄(원작: "○○가 ○○요새를 공격, 8의 피해") */
 export interface FortReport { day: number; site: string; attacker: string; damage: number; durability: number }
+/** 시세 수첩 한 장: 거점의 값(상업력 0 기준)과 적은 날 */
+export interface NoteEntry { day: number; prices: Record<string, { buy: number; sell: number; stock: number }> }
 /** 공연 결과 */
 export interface ShowResult { ok: boolean; power: number; income: number; penalty: number; text: string }
 
@@ -42,6 +44,7 @@ export interface GameJSON {
   flags: string[]; firedEvents: string[]; jointTarget: string | null; lastMonth: number; startDay: number;
   recruited?: string[];
   tutorial?: number;
+  notebook?: { siteId: string; day: number; prices: NoteEntry['prices'] }[];
 }
 
 export const START_SITE = 'C028'; // 샹파르(GDD §4.1)
@@ -189,6 +192,8 @@ export class Game {
       if (s.order === 'build') this.buildTick(s);
     }
     if (this.clock.day === BALANCE.wageDay) this.payWages();
+    // 급료일 3일 전에 돈이 모자라면 미리 알린다
+    if (this.clock.day === BALANCE.daysPerMonth - 2) { const total = this.squads.reduce((a, s) => a + s.wages, 0); if (total > this.ledger.cash) this.say('warn', '3일 뒤 1일은 급료일 — ' + fmt(total) + '골이 필요한데 소지금은 ' + fmt(this.ledger.cash) + '골. 못 주면 장비 든 대원이 도망간다.'); }
     if (this.clock.isRepaymentDay) this.repaymentDay();
     // 기한 지난 의뢰 경고
     for (const q of this.activeQuests.values()) if (q.deadline === this.day) this.say('warn', CIVIL_JOB_LABEL[q.job] + ' 의뢰(→' + this.world.site(q.to).name + ') 기한이 오늘까지다.');
@@ -285,6 +290,7 @@ export class Game {
       return true;
     }
     if (s.path.length === 0) this.say('info', s.name + '가 ' + site.name + '에 도착했다.');
+    if (hasMarket(site) && !this.enemyHeld.has(siteId)) this.noteMarket(siteId); // 지나가기만 해도 값을 적어 둔다
     // 민사 의뢰 배달
     for (const qid of [...s.quests]) {
       const q = this.activeQuests.get(qid); if (!q || q.to !== siteId) continue;
@@ -359,6 +365,24 @@ export class Game {
     m.putStock(good, qty); s.addCargo(good, -qty); this.ledger.earn('trade', income);
     return { ok: true, qty, income };
   }
+  // ───── 시세 수첩: 부대가 들른 교역소의 값을 적어 둔다(원작의 수첩) ─────
+  notebook = new Map<string, NoteEntry>();
+  /** 이 거점의 지금 값을 수첩에 적는다(교역소가 있는 곳에 들르거나 교역소 창을 열 때) */
+  noteMarket(siteId: string): void {
+    const m = this.market(siteId); if (!m) return;
+    const prices: NoteEntry['prices'] = {};
+    for (const l of m.lines) prices[l.good] = { buy: m.buyPrice(l.good, 0), sell: m.sellPrice(l.good, 0), stock: l.stock };
+    this.notebook.set(siteId, { day: this.day, prices });
+  }
+  /** 수첩에 적힌 이 상품의 거점들(판값 비싼 순) */
+  noteSellers(good: string): { site: string; buy: number; sell: number; stock: number; day: number }[] {
+    const out: { site: string; buy: number; sell: number; stock: number; day: number }[] = [];
+    for (const [site, e] of this.notebook) { const p = e.prices[good]; if (p) out.push({ site, ...p, day: e.day }); }
+    return out.sort((a, b) => b.sell - a.sell);
+  }
+  /** 수첩에 한 번이라도 적힌 상품들 */
+  get notedGoods(): string[] { const s = new Set<string>(); for (const e of this.notebook.values()) for (const g of Object.keys(e.prices)) s.add(g); return [...s]; }
+
   /** 술집 소문: 이 지역 안에서 가장 남는 교역 한 줄(원작의 "수첩" 대신) */
   rumor(siteId: string): string {
     const site = this.world.site(siteId);
@@ -470,6 +494,24 @@ export class Game {
       const mid = p?.nodes.slice(1, -1).filter(id => this.world.site(id).kind !== 'castle' && !this.bands.some(b => b.site === id));
       if (mid && mid.length) { const at = mid[Math.floor(mid.length / 2)]; this.bands.push({ id: 'R' + q.id, name: '매복 도적단', site: at, tier: 1, questId: null, kind: 'roam', nextMove: this.day + 99 }); this.say('warn', '소문: 호송길 ' + this.world.site(at).name + ' 근처에 도적이 매복했다.'); }
     }
+    return true;
+  }
+
+  /** 민사 의뢰 포기: 보수의 일부를 위약금으로 문다(돈이 모자라면 있는 만큼) */
+  abandon(questId: string): number {
+    const q = this.activeQuests.get(questId); if (!q) return 0;
+    this.activeQuests.delete(questId); for (const s of this.squads) s.quests = s.quests.filter(x => x !== questId);
+    this.bands = this.bands.filter(b => b.id !== 'R' + questId);
+    const fee = Math.min(this.ledger.cash, Math.round(q.reward * BALANCE.civilAbandonFeeRate)); this.ledger.spend('other', fee);
+    this.say('quest', CIVIL_JOB_LABEL[q.job] + ' 의뢰(→' + this.world.site(q.to).name + ')를 포기했다. 위약금 ' + fmt(fee) + '골.');
+    return fee;
+  }
+  /** 토벌 의뢰 포기: 위약금 없음, 도적단 표식은 남는다(떠돌이로) */
+  abandonMilitary(questId: string): boolean {
+    const q = this.activeMilitary.get(questId); if (!q) return false;
+    this.activeMilitary.delete(questId);
+    for (const b of this.bands) if (b.questId === questId) { b.questId = null; b.kind = 'roam'; b.nextMove = this.day + BALANCE.roamMoveDays; }
+    this.say('quest', '토벌 의뢰를 포기했다: ' + q.text + '. 도적단은 그 자리에 남아 떠돈다.');
     return true;
   }
 
@@ -750,6 +792,7 @@ export class Game {
       // 아직 고르지 않은 대화(큐)는 저장되지 않으므로 "나왔다"로 치지 않는다. 그래야 저장 뒤 다시 켰을 때 다시 나온다(합류·관문 같은 한 번뿐인 사건이 사라지던 문제)
       flags: [...this.flags], firedEvents: [...this.firedEvents].filter(id => !this.eventQueue.some(e => e.id === id)), jointTarget: this.jointTarget, lastMonth: this.lastMonth, startDay: this.startDay,
       recruited: [...this.recruited], tutorial: this.tutorial,
+      notebook: [...this.notebook.entries()].map(([siteId, e]) => ({ siteId, day: e.day, prices: e.prices })),
     };
   }
   static fromJSON(world: World | WorldData, j: GameJSON): Game {
@@ -769,6 +812,7 @@ export class Game {
     if (j.startDay !== undefined) g.startDay = j.startDay;
     if (j.recruited) g.recruited = new Set(j.recruited);
     g.tutorial = j.tutorial ?? -1;
+    g.notebook = new Map((j.notebook ?? []).map(n => [n.siteId, { day: n.day, prices: n.prices }]));
     g.flags = new Set(j.flags ?? []); g.firedEvents = new Set(j.firedEvents ?? []); g.jointTarget = j.jointTarget ?? null; g.lastMonth = j.lastMonth ?? g.clock.month;
     g.blocked = new Set(j.blocked); g.messages = j.messages; g.unread = 0; g.ending = j.ending; g.selected = j.selected;
     return g;
