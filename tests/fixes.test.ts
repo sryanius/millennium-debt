@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/core/balance';
 import { Battle, makeBandits, makeGarrison } from '../src/core/battle';
 import { Game } from '../src/core/game';
+import { JOBS } from '../src/core/jobs';
 import { Rng } from '../src/core/rng';
 import { autoArrange, expToNext, gainExp, levelOf, type Person } from '../src/core/squad';
 import { World } from '../src/core/world';
@@ -130,5 +131,23 @@ describe('부대장 대화', () => {
     (g as unknown as { meet: (i: number, s: string) => void }).meet(0, 'P090');
     expect(g.messages.filter(m => m.kind === 'talk').length).toBe(1);
     const g2 = Game.fromJSON(world(), JSON.parse(JSON.stringify(g.toJSON()))); expect(Object.keys(g2.talks).length).toBe(1);
+  });
+});
+
+describe('새 직업', () => {
+  it('직업 19개, 치유사는 싸우지 않고 다친 아군을 고친다', () => {
+    expect(JOBS.length).toBe(19); expect(new Set(JOBS.map(j => j.id)).size).toBe(19);
+    const g = new Game(world(), 5); const sq = g.squads[0];
+    const tank = member('t', 'heavy'); tank.stats.maxHp = 80; tank.stats.hp = 40; tank.stats.d = 60;
+    sq.members = [tank, member('h', 'healer')];
+    const b = new Battle(sq, [{ name: '허수아비', job: '도적', hp: 400, s: 1, d: 60, range: 0, cooldown: 9, speed: 0, bounty: 0 }], 'x', new Rng(2));
+    const healer = b.allies.find(u => u.name === 'h')!; expect(healer.heal).toBe(8); expect(healer.range).toBe(0);
+    let t = 0; while (t < 12 && !b.result) { b.tick(0.1); t += 0.1; }
+    const tankU = b.allies.find(u => u.name === 't')!; expect(tankU.hp).toBeGreaterThan(40); expect(healer.kills).toBe(0);
+  });
+  it('자동 배치: 치유사는 사격처럼 뒷줄', () => {
+    const g = new Game(world(), 5); const sq = g.squads[0];
+    sq.members = [member('h', 'healer'), member('a', 'sword'), member('b', 'spear')]; sq.formation = 'archers'; autoArrange(sq);
+    expect(sq.members[sq.members.length - 1].job === 'healer' || sq.members.findIndex(m => m.job === 'healer') >= 2).toBe(true);
   });
 });

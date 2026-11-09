@@ -80,7 +80,7 @@ export class MapScene extends Phaser.Scene {
       if (this.textures.exists('units')) {
         const ring = this.shadow(0, 0, 14, 6, 0.9).setTint(0xe0b23c); (c as any).ring = ring; c.add(ring); // 고른 부대 표시
         const shadow = this.shadow(0, 0, 8, 3, 0.45);
-        const body = this.add.image(0, -7, 'units', UNIT_FRAME[sq.id] ?? 0).setOrigin(0.5);
+        const body = this.add.image(0, 2, 'units', UNIT_FRAME[sq.id] ?? 0).setOrigin(0.5, 1).setScale(0.5).setFlipX(true); // 32×40 그림을 반으로, 왼쪽(지도 안쪽)을 보게
         const flag = this.add.image(5, -18, 'icons', ICON.flagBlue).setOrigin(0, 0.5);
         const num = this.add.text(9, -18.5, String(i + 1), { ...TEXT_SMALL, color: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5);
         c.add([shadow, body, flag, num]);
@@ -431,7 +431,7 @@ export class MapScene extends Phaser.Scene {
       const c = this.add.container(site.x, site.y).setDepth(25).setScale(K / this.cameras.main.zoom);
       if (this.textures.exists('units')) {
         const sh = this.shadow(4, 0, 8, 3, 0.45);
-        const body = this.add.image(4, -7, 'units', b.kind === 'rebel' ? UNIT_FRAME.rebel : UNIT_FRAME.bandit).setOrigin(0.5);
+        const body = this.add.image(4, 2, 'units', b.kind === 'rebel' ? UNIT_FRAME.rebel : UNIT_FRAME.bandit).setOrigin(0.5, 1).setScale(0.5);
         const flag = this.add.image(8, -19, 'icons', b.kind === 'rebel' ? ICON.flagPurple : ICON.flagRed).setOrigin(0, 0.5);
         c.add([sh, body, flag]);
       } else {

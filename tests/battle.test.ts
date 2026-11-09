@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { JOB_BY_ID } from '../src/core/jobs';
 import { BALANCE } from '../src/core/balance';
 import { Battle, makeBandits, makeEscort } from '../src/core/battle';
 import { Game, START_SITE } from '../src/core/game';
@@ -14,7 +15,7 @@ BALANCE.roamSpawnDays = 1e9; BALANCE.rebelStartDay = 1e9;
 /** 샹파르 계약소에서 검병·석궁병을 살 수 있을 만큼 고용 */
 function hireSome(g: Game, idx: number, n: number): number {
   let hired = 0;
-  for (const c of [...g.office(START_SITE)!]) { if (hired >= n) break; if (c.job === 'sword' || c.job === 'crossbow' || c.job === 'heavy' || c.job === 'longbow') { if (g.hire(idx, c.cid).ok) hired++; } }
+  for (const c of [...g.office(START_SITE)!]) { if (hired >= n) break; if (JOB_BY_ID.get(c.job)!.s >= 14 && !JOB_BY_ID.get(c.job)!.heal) { if (g.hire(idx, c.cid).ok) hired++; } } // 싸우는 직업이면(직업이 늘어도 시험이 깨지지 않게)
   return hired;
 }
 function runBattle(b: Battle, maxSec = 300): void { let t = 0; while (!b.result && t < maxSec) { b.tick(0.1); t += 0.1; } }

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { FORMATIONS, type Formation } from '../core/formation';
 import { JOB_BY_ID } from '../core/game';
-import { isRanged, type Person } from '../core/squad';
+import { isRanged, isSupportPerson, type Person } from '../core/squad';
 import { isTap, type Window } from './Window';
 import { C } from './theme';
 
@@ -10,11 +10,11 @@ const all = FORMATIONS.flatMap(f => f.slots);
 const X0 = Math.min(...all.map(p => p[0])) - 3, X1 = Math.max(...all.map(p => p[0])) + 3;
 const Y0 = Math.min(...all.map(p => p[1])) - 3, Y1 = Math.max(...all.map(p => p[1])) + 3;
 
-export type Kind = 'leader' | 'melee' | 'ranged';
-export const KIND_COLOR: Record<Kind, number> = { leader: 0xe0b040, melee: 0xc8604a, ranged: 0x4a9ad0 };
-export const KIND_TEXT: Record<Kind, string> = { leader: '#e0b040', melee: '#e07a62', ranged: '#6ab4e8' };
-export const KIND_LABEL: Record<Kind, string> = { leader: '부대장', melee: '백병', ranged: '사격' };
-export function kindOf(p: Person): Kind { return p.isLeader ? 'leader' : isRanged(p, JOB_BY_ID.get(p.job)?.range ?? 0) ? 'ranged' : 'melee'; }
+export type Kind = 'leader' | 'melee' | 'ranged' | 'support';
+export const KIND_COLOR: Record<Kind, number> = { leader: 0xe0b040, melee: 0xc8604a, ranged: 0x4a9ad0, support: 0x9a6ad0 };
+export const KIND_TEXT: Record<Kind, string> = { leader: '#e0b040', melee: '#e07a62', ranged: '#6ab4e8', support: '#c09af0' };
+export const KIND_LABEL: Record<Kind, string> = { leader: '부대장', melee: '백병', ranged: '사격', support: '지원' };
+export function kindOf(p: Person): Kind { return p.isLeader ? 'leader' : isSupportPerson(p) ? 'support' : isRanged(p, JOB_BY_ID.get(p.job)?.range ?? 0) ? 'ranged' : 'melee'; }
 export function jobName(p: Person): string { return p.isLeader ? '부대장' : (JOB_BY_ID.get(p.job)?.name ?? p.role); }
 /** 좁은 칸용 이름: n 자 안에 들면 그대로, 아니면 이름(성 앞부분)만 */
 export function shortName(name: string, n: number): string { if (name.length <= n) return name; const first = name.split(' ')[0]; return first.length <= n ? first : first.slice(0, n); }
@@ -39,8 +39,8 @@ export function drawFormation(w: Window, x: number, y: number, bw: number, bh: n
   w.small(x + 3, ay + 6, '적', { color: '#b4302a' });
   // 색 뜻
   const lx = x + bw - legendW, lc = C.paperDark;
-  (['leader', 'melee', 'ranged'] as const).forEach((k, i) => { g.fillStyle(KIND_COLOR[k], 1); g.fillCircle(lx + 4, y + 9 + i * 12, 3); w.small(lx + 10, y + 3 + i * 12, KIND_LABEL[k], { color: lc }); });
-  g.lineStyle(1, 0x8a7a64, 1); g.strokeCircle(lx + 4, y + 45, 3); w.small(lx + 10, y + 39, '빈 자리', { color: lc });
+  (['leader', 'melee', 'ranged', 'support'] as const).forEach((k, i) => { g.fillStyle(KIND_COLOR[k], 1); g.fillCircle(lx + 4, y + 9 + i * 11, 3); w.small(lx + 10, y + 3 + i * 11, KIND_LABEL[k], { color: lc }); });
+  g.lineStyle(1, 0x8a7a64, 1); g.strokeCircle(lx + 4, y + 53, 3); w.small(lx + 10, y + 47, '빈 자리', { color: lc });
   const r = Math.max(4, Math.min(6, s * 4));
   f.slots.forEach(([fx, fy], i) => {
     const cx = px(fx), cy = py(fy); const p = people[i];

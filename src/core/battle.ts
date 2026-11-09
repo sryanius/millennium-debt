@@ -10,7 +10,7 @@ export const ARENA = { rx: 100, ry: 50 };
 const MELEE_RANGE = 7;
 const EXIT_X = 108;
 
-export interface EnemyDef { name: string; job: string; hp: number; s: number; d: number; range: number; cooldown: number; speed: number; bounty: number; wall?: boolean }
+export interface EnemyDef { name: string; job: string; hp: number; s: number; d: number; range: number; cooldown: number; speed: number; bounty: number; wall?: boolean; heal?: number }
 
 export type UnitState = 'fight' | 'retreat' | 'fled' | 'dead';
 export interface BattleUnit {
@@ -20,6 +20,8 @@ export interface BattleUnit {
   /** 아군이면 원래 인물(전투 뒤 HP·경험·약 반영) */
   person?: Person;
   hp: number; maxHp: number; atk: number; def: number; range: number; cooldown: number; speed: number; fatigue: number;
+  /** 치유량(>0 이면 치유사: 다친 아군에게 가서 고친다, 공격하지 않는다) */
+  heal: number;
   potions: number; potionHeal: number; bounty: number;
   x: number; y: number; homeX: number; homeY: number;
   state: UnitState; cd: number; potionCd: number; targetId: string | null;
@@ -48,11 +50,12 @@ export class Battle {
     this.attackMode = squad.attackMode;
     squad.people.forEach((p, i) => {
       const job = JOB_BY_ID.get(p.job);
-      const ranged = isRanged(p, job?.range ?? 0);
+      const heal = job?.heal ?? 0;
+      const ranged = !heal && isRanged(p, job?.range ?? 0);
       const u: BattleUnit = {
         id: 'a' + this.seq++, side: 'ally', name: p.name, job: p.isLeader ? '부대장' : (job?.name ?? p.role), isLeader: p.isLeader, person: p,
         hp: p.stats.hp, maxHp: p.stats.maxHp, atk: attackOf(p), def: defenseOf(p),
-        range: ranged ? (job?.range || 24) : 0, cooldown: job?.cooldown ?? 1.0, speed: job?.speed ?? 20, fatigue: p.stats.f,
+        range: ranged ? (job?.range || 24) : 0, cooldown: job?.cooldown ?? 1.0, speed: job?.speed ?? 20, fatigue: p.stats.f, heal,
         potions: p.potions, potionHeal: p.potion ? POTION_BY_ID.get(p.potion)?.heal ?? 0 : 0, bounty: 0,
         x: 0, y: 0, homeX: 0, homeY: 0, state: p.stats.hp > 0 ? 'fight' : 'fled', cd: this.rng.next() * 0.5, potionCd: 0, targetId: null, flash: 9, hitFlash: 9, kills: 0,
       };
@@ -65,14 +68,14 @@ export class Battle {
       const x = e.wall ? -20 : e.range > 0 ? (hasWall ? -30 : -57) : -45;
       this.units.push({
         id: 'e' + this.seq++, side: 'enemy', name: e.name, job: e.job, isLeader: false, wall: e.wall,
-        hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0,
+        hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0, heal: e.heal ?? 0,
         potions: 0, potionHeal: 0, bounty: e.bounty, x, y: e.wall ? 0 : y, homeX: x, homeY: e.wall ? 0 : y,
         state: 'fight', cd: this.rng.next() * 0.5, potionCd: 0, targetId: null, flash: 9, hitFlash: 9, kills: 0,
       });
     });
     allies.forEach((e, i) => this.units.push({
       id: 'x' + this.seq++, side: 'ally', name: e.name, job: e.job, isLeader: false,
-      hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0,
+      hp: e.hp, maxHp: e.hp, atk: e.s, def: e.d, range: e.range, cooldown: e.cooldown, speed: e.speed, fatigue: 0, heal: 0,
       potions: 0, potionHeal: 0, bounty: 0, x: 70, y: (i - (allies.length - 1) / 2) * 10, homeX: 70, homeY: (i - (allies.length - 1) / 2) * 10,
       state: 'fight', cd: this.rng.next() * 0.5, potionCd: 0, targetId: null, flash: 9, hitFlash: 9, kills: 0,
     }));
@@ -140,6 +143,7 @@ export class Battle {
     if (u.potions > 0 && u.potionCd <= 0 && u.hp / u.maxHp < BALANCE.battlePotionAt) {
       u.potions--; u.hp = Math.min(u.maxHp, u.hp + u.potionHeal); u.potionCd = 2; if (u.person) u.person.potions = u.potions;
     }
+    if (u.heal > 0) { this.actHealer(u, dt); return; }
     const foe = this.nearestFoe(u); if (!foe) return;
     u.targetId = foe.id;
     const d = Math.hypot(foe.x - u.x, foe.y - u.y);
@@ -158,6 +162,24 @@ export class Battle {
       // 타원 밖으로 나가지 않게
       const k = (u.x / ARENA.rx) ** 2 + (u.y / ARENA.ry) ** 2; if (k > 1) { const s = 1 / Math.sqrt(k); u.x *= s; u.y *= s; }
     }
+  }
+  /** 치유사: 가장 많이 다친 같은 편(사거리 40 안)에게 다가가 cooldown 마다 heal 만큼 고친다. 다친 사람이 없으면 제자리 */
+  private actHealer(u: BattleUnit, dt: number): void {
+    const HEAL_RANGE = 12;
+    let best: BattleUnit | null = null, bestRatio = 1;
+    for (const v of this.units) {
+      if (v.side !== u.side || v === u || v.wall || v.state !== 'fight' || v.hp >= v.maxHp) continue;
+      const r = v.hp / v.maxHp; if (r < bestRatio && Math.hypot(v.x - u.x, v.y - u.y) < 40) { bestRatio = r; best = v; }
+    }
+    u.cd -= dt;
+    const tx = best ? best.x : u.homeX, ty = best ? best.y : u.homeY;
+    const d = Math.hypot(tx - u.x, ty - u.y);
+    if (best && d <= HEAL_RANGE) {
+      u.targetId = best.id;
+      if (u.cd <= 0) { u.cd = u.cooldown; u.flash = 0; best.hp = Math.min(best.maxHp, best.hp + u.heal); this.lastHit = this.time; }
+      return;
+    }
+    if (d > 1) { const step = Math.min(d, u.speed * dt); u.x += (tx - u.x) / d * step; u.y += (ty - u.y) / d * step; }
   }
   private attack(u: BattleUnit, v: BattleUnit): void {
     const f = u.side === 'ally' ? this.formation : null;

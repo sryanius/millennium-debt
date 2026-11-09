@@ -14,7 +14,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('mappx', 'art/map-pixel.png');
     this.load.spritesheet('icons', 'art/icons.png', { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet('sites', 'art/sites.png', { frameWidth: 48, frameHeight: 48 }); // AI 도트 거점(tools/ai-icons.mjs)
-    this.load.spritesheet('units', 'art/units.png', { frameWidth: 12, frameHeight: 16 });
+    this.load.spritesheet('units', 'art/units.png', { frameWidth: 32, frameHeight: 40 }); // AI 도트 병사(tools/sprites-ai.mjs)
     for (const k of PORTRAIT_KEYS) { this.load.image('p_' + k, 'art/portraits-px/' + k + '.png'); this.load.image('P_' + k, 'art/portraits-px/' + k + '@2.png'); }
     this.load.on('loaderror', (f: { key: string }) => { /* 없는 초상은 네모로 대신한다 */ void f; });
   }

@@ -26,7 +26,7 @@ export class BattleScene extends Phaser.Scene {
   private enemyPanel!: Phaser.GameObjects.Text; private allyPanel!: Phaser.GameObjects.Text;
   private logText!: Phaser.GameObjects.Text;
   private popup: Window | null = null;
-  private cx = W / 2; private cy = H / 2 - 8; private sx = 1.9; private sy = 1.9;
+  private cx = W / 2; private cy = H / 2 - 4; private sx = 2.3; private sy = 2.1;
   private resultShown = false;
   onResultClosed?: () => void;
 
@@ -90,12 +90,11 @@ export class BattleScene extends Phaser.Scene {
     const body: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = u.wall
       ? this.add.rectangle(0, 0, 10, 70, 0x6a6a6a).setStrokeStyle(1, 0x222222)
       : sprite
-        ? this.add.image(0, -4, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5).setFlipX(!ally)
+        ? this.add.image(0, 5, 'units', unitFrame(u.person?.job ?? u.job, u.side, leaderId, u.range > 0)).setOrigin(0.5, 1).setFlipX(ally) // 그림은 오른쪽을 본다 → 아군(오른쪽에 섬)은 뒤집어 적을 본다
         : this.add.rectangle(0, 0, u.isLeader ? 8 : 6, u.isLeader ? 10 : 8, ally ? (u.isLeader ? C.flagSel : C.flag) : (u.job === '두목' || u.job === '대장' ? 0xd04040 : u.job.startsWith('교단') || u.job === '사제' ? 0x8a3a8a : C.enemy)).setStrokeStyle(1, 0x111111);
-    if (sprite && (u.job === '두목' || u.job === '대장')) (body as Phaser.GameObjects.Image).setScale(1.25);
-    const shadow = this.add.ellipse(0, 4, 9, 3, 0x000000, 0.4).setVisible(!u.wall);
+    const shadow = this.add.ellipse(0, 4, sprite ? 18 : 9, sprite ? 6 : 3, 0x000000, 0.4).setVisible(!u.wall);
     // 체력 막대: 테두리 있는 12×3(전에는 8×2 라 폰에서 안 보였다)
-    const bw = u.wall ? 14 : 12, by = u.wall ? -40 : -16;
+    const bw = 14, by = u.wall ? -40 : sprite ? -38 : -16;
     const barBg = this.add.rectangle(-bw / 2 - 1, by, bw + 2, 5, 0x1a1008, 0.9).setOrigin(0, 0.5);
     const bar = this.add.rectangle(-bw / 2, by, bw, 3, 0x44cc44).setOrigin(0, 0.5);
     // 같은 직업끼리 구분되게 대원마다 옷 색을 살짝 다르게(이름으로 정해져 늘 같은 색). 부대장·적은 그대로
@@ -182,7 +181,7 @@ export class BattleScene extends Phaser.Scene {
       c.setPosition(Math.round(p.x + ox), Math.round(p.y + oy));
       const body = d.body as Phaser.GameObjects.Image;
       if (u.state === 'dead') {
-        if (!d.deadAt) { d.deadAt = this.now; if (!u.wall) body.setAngle(u.side === 'ally' ? 90 : -90); }
+        if (!d.deadAt) { d.deadAt = this.now; if (!u.wall) { body.setAngle(u.side === 'ally' ? 80 : -80); body.setY(-6); } }
         const since = this.now - d.deadAt; const alpha = since < 1.2 ? 0.6 : Math.max(0, 0.6 - (since - 1.2) / 1.5);
         c.setAlpha(alpha); if (alpha <= 0) c.setVisible(false);
       }

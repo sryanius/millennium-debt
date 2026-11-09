@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { JOB_BY_ID } from '../src/core/jobs';
 import { BALANCE } from '../src/core/balance';
 import { ENDING_POEM, EPILOGUES, EVENTS } from '../src/core/events';
 import { Game, START_SITE } from '../src/core/game';
@@ -80,7 +81,7 @@ describe('5단계: 대형 이벤트와 엔딩', () => {
   it('황태후의 밀서: 1003년, 강한 부대로 아르덴에서 받으면 근위대 3진이 길을 막고, 오르블랑에 닿으면 250만', () => {
     const g = new Game(world(), 34); g.flags.add('regency_crisis'); g.ledger.cash = 300_000;
     teleport(g, 0, 'C001'); g.fireEvents({ site: 'C001', squadIdx: 0 }); expect(g.event?.id).toBe('ev9_letter'); expect(g.event?.choices[0].disabled).toContain('약하다'); g.chooseEvent(1);
-    for (const c of [...g.office('C001')!]) if (['sword', 'heavy', 'crossbow', 'longbow'].includes(c.job)) g.hire(0, c.cid);
+    for (const c of [...g.office('C001')!]) if (JOB_BY_ID.get(c.job)!.s >= 14 && !JOB_BY_ID.get(c.job)!.heal) g.hire(0, c.cid); // 싸우는 직업이면
     for (const p of g.squads[0].people) { g.buyItem(0, p.id, 'w3'); g.buyItem(0, p.id, 'a3'); }
     g.firedEvents.delete('ev9_letter'); g.fireEvents({ site: 'C001', squadIdx: 0 }); expect(g.event?.choices[0].disabled).toBeNull(); g.chooseEvent(0); g.chooseEvent(0);
     expect(g.bands.filter(b => b.id.startsWith('ev9band')).length).toBeGreaterThanOrEqual(2);

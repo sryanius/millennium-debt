@@ -44,7 +44,7 @@ export function openContract(ui: UIScene, siteId: string): void {
       const y = LY + k * ROWH;
       w.rect(4, y, 300, ROWH - 2, C.panelLight, (off + k) % 2 === 0 ? 0.45 : 0.25);
       w.small(cols[0], y + 1, c.name.slice(0, 6) + '(' + c.race[0] + ')');
-      w.small(cols[0], y + 11, c.role, { color: C.paperDark });
+      w.small(cols[0], y + 11, c.role + (JOB_BY_ID.get(c.job)?.heal ? ' · 치유' : (JOB_BY_ID.get(c.job)?.range ?? 0) > 0 ? ' · 사격' : (JOB_BY_ID.get(c.job)?.s ?? 0) >= 14 ? ' · 백병' : ''), { color: C.paperDark });
       w.small(cols[1], y + 6, String(c.stats.maxHp));
       w.small(cols[2], y + 6, fmt(c.wage));
       w.small(cols[3], y + 6, c.stats.s + ' ' + c.stats.d + ' ' + c.stats.t + ' ' + c.stats.p + ' ' + c.stats.b);

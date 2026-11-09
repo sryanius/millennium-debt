@@ -24,7 +24,7 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ESC[c]);
 const fmt = (n: number) => Math.round(n).toLocaleString('ko-KR');
 const regionName = (id: string) => world.regions.get(id)?.name ?? id;
 const factionName = (id?: string) => (id ? world.factions.get(id)?.name ?? id : '무주지');
-const unitPx = (frame: number) => `<span class="px unit" style="background-image:url(art/units.png);background-position:${-frame * 36}px 0"></span>`;
+const unitPx = (frame: number) => `<span class="px unit" style="background-image:url(art/units.png);background-position:${-frame * 64}px 0"></span>`;
 const sitePx = (frame: number) => `<span class="px site" style="background-image:url(art/sites.png);background-position:${-frame * 48}px 0"></span>`;
 const tag = (t: string, cls = '') => `<i class="tag ${cls}">${esc(t)}</i>`;
 
@@ -81,10 +81,10 @@ const jobView: View = {
   render(f) {
     const rows = JOBS.filter(j => hit(j.name + whereText(j), f) && (!f.reg || !j.where || (j.where.regions ?? []).includes(f.reg) || (j.where.sites ?? []).some(id => world.site(id).region === f.reg)));
     return out(`<div class="list">${rows.map(j => row({
-      view: 'job', id: j.id, name: j.name, tags: tag(j.range > 0 ? '사격' : '백병', j.range > 0 ? 'k-freq' : 'k-battle'), sub: whereText(j) + (j.weight >= 4 ? ' · 흔함' : j.weight <= 1 ? ' · 드묾' : ''),
+      view: 'job', id: j.id, name: j.name, tags: tag(j.heal ? '지원' : j.range > 0 ? '사격' : j.s >= 14 ? '백병' : '비전투', j.heal ? 'k-item' : j.range > 0 ? 'k-freq' : j.s >= 14 ? 'k-battle' : 'k-text'), sub: (j.desc ? j.desc + ' · ' : '') + whereText(j),
       thumb: unitPx(UNIT_FRAME[j.id] ?? 6),
       nums: [['체력', j.hp], ['공격', j.s], ['방어', j.d], ['급료/월', fmt(j.wage)], ['고용비', fmt(j.hire)]],
-      detail: grid(dcell('상업', j.t), dcell('공연', j.p), dcell('건축', j.b), dcell('사거리', j.range > 0 ? j.range + ' (사격)' : '백병'), dcell('공격 간격', j.cooldown + '초'), dcell('걸음', j.speed), dcell('고용 가능', whereText(j), true))
+      detail: grid(dcell('상업', j.t), dcell('공연', j.p), dcell('건축', j.b), dcell('사거리', j.heal ? '치유 ' + j.heal + '/' + j.cooldown + '초' : j.range > 0 ? j.range + ' (사격)' : '백병'), dcell('공격 간격', j.cooldown + '초'), dcell('걸음', j.speed), dcell('고용 가능', whereText(j), true))
         + note('무기를 들면 무기 쪽이 우선이다: 활·석궁을 들면 사격 대원, 검을 들면 백병 대원이 된다. 해고하면 고용비를 그대로 돌려받는다.'),
     })).join('')}</div>`, rows.length);
   },

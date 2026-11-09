@@ -219,7 +219,7 @@ table.mini td:first-child, table.mini th:first-child { text-align: left; color: 
 
 /* 도트 조각: 그림판에서 한 칸만 잘라 보여 준다(배경 위치). 확대해도 번지지 않게 */
 .px { image-rendering: pixelated; flex: none; background-repeat: no-repeat; }
-.px.unit { width: 36px; height: 48px; background-size: calc(252px * 3) auto; }
+.px.unit { width: 64px; height: 80px; background-size: calc(1120px * 2) auto; }
 .px.site { width: 48px; height: 48px; background-size: 432px auto; }
 .portrait { width: 48px; height: 56px; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; flex: none; }
 .formsvg { width: 100%; max-width: 420px; height: auto; display: block; margin: 12px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
